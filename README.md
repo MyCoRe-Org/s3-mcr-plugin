@@ -25,11 +25,14 @@ If not you can take a look at the file **src/main/resources/xsl/metadata/extende
 
 ### ACL
 The user which read or write the encrypted data from the object need to have the permission for that.
+The users also need the right to read and write from the rest API.
 
 | Objekt ID                 | Zugriffsrecht | Regel                    |
 |---------------------------|---------------|--------------------------|
 | crypt:cipher:bucket-crypt | crypt         | editor and administrator |
 | crypt:cipher:bucket-crypt | decrypt       | always allowed           |
+| restapi:/fs/              | write         | editor and administrator |
+| restapi:/fs/              | read          | always allowed           |
 
 ## How is the Bucket stored?
 The top mods:extension is how it looks decrypted.
