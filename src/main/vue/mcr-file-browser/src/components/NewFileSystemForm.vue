@@ -1,36 +1,67 @@
 <template>
   <div class="mcr-file-system-tab">
     <form v-on:submit.prevent.stop="">
+      <slot></slot>
       <div class="form-group">
         <label for="protocol">Protocol</label>
-        <select class="form-control" v-model="bucketSettings.protocol" id="protocol">
-          <option disabled value="">{{i18n.chooseProtocol}}</option>
+        <select id="protocol" v-model="bucketSettings.protocol" :class="{
+                'is-valid' : !isValid.protocol.clean && isValid.protocol.valid,
+                'is-invalid' :  !isValid.protocol.clean && !isValid.protocol.valid
+        }" class="form-control">
+          <option disabled value="">{{ i18n.chooseProtocol }}</option>
           <option>http</option>
           <option>https</option>
         </select>
+        <div v-if="!isValid.protocol.clean && !isValid.protocol.valid" class="invalid-feedback">
+          {{ i18n.validationProtocolFail }}
+        </div>
       </div>
       <div class="form-group">
         <label for="endpoint">{{ i18n.s3Endpoint }}</label>
-        <input type="text" class="form-control" id="endpoint" v-model="bucketSettings.endpoint">
+        <input id="endpoint" v-model="bucketSettings.endpoint" :class="{
+                'is-valid' : !isValid.endpoint.clean && isValid.endpoint.valid,
+                'is-invalid' :  !isValid.endpoint.clean && !isValid.endpoint.valid
+        }" class="form-control" type="text">
+        <div v-if="!isValid.endpoint.clean && !isValid.endpoint.valid" class="invalid-feedback">
+          {{ i18n.validationEndpointFail }}
+        </div>
       </div>
       <div class="form-group">
-        <label for="bucket">{{i18n.s3BucketName}}</label>
-        <input type="text" class="form-control" id="bucket" v-model="bucketSettings.bucket">
+        <label for="bucket">{{ i18n.s3BucketName }}</label>
+        <input id="bucket" v-model="bucketSettings.bucket" :class="{
+                'is-valid' : !isValid.bucket.clean && isValid.bucket.valid,
+                'is-invalid' :  !isValid.bucket.clean && !isValid.bucket.valid
+        }" class="form-control" type="text">
+        <div v-if="!isValid.bucket.clean && !isValid.bucket.valid" class="invalid-feedback">
+          {{ i18n.validationBucketFail }}
+        </div>
       </div>
       <div class="form-group">
-        <label for="accessKey">{{i18n.s3AccessKey}}</label>
-        <input type="text" class="form-control" id="accessKey" v-model="bucketSettings.accessKey">
+        <label for="accessKey">{{ i18n.s3AccessKey }}</label>
+        <input id="accessKey" v-model="bucketSettings.accessKey" :class="{
+                'is-valid' : !isValid.accessKey.clean && isValid.accessKey.valid,
+                'is-invalid' :  !isValid.accessKey.clean && !isValid.accessKey.valid
+        }" class="form-control" type="text">
+        <div v-if="!isValid.accessKey.clean && !isValid.accessKey.valid" class="invalid-feedback">
+          {{ i18n.validationAccesKeyFail }}
+        </div>
       </div>
       <div class="form-group">
-        <label for="secretKey">{{i18n.s3SecretKey}}</label>
-        <input type="password" class="form-control" id="secretKey" v-model="bucketSettings.secretKey">
+        <label for="secretKey">{{ i18n.s3SecretKey }}</label>
+        <input id="secretKey" v-model="bucketSettings.secretKey" :class="{
+                'is-valid' : !isValid.secretKey.clean && isValid.secretKey.valid,
+                'is-invalid' :  !isValid.secretKey.clean && !isValid.secretKey.valid
+        }" class="form-control" type="password">
+        <div v-if="!isValid.secretKey.clean && !isValid.secretKey.valid" class="invalid-feedback">
+          {{ i18n.validationSecretKeyFail }}
+        </div>
       </div>
       <div class="form-check">
-        <input type="checkbox" class="form-check-input" id="pathStyleAccess" v-model="bucketSettings.pathStyleAccess">
-        <label class="form-check-label" for="pathStyleAccess">{{i18n.s3PathStyleAccess}}</label>
+        <input id="pathStyleAccess" v-model="bucketSettings.pathStyleAccess" class="form-check-input" type="checkbox">
+        <label class="form-check-label" for="pathStyleAccess">{{ i18n.s3PathStyleAccess }}</label>
       </div>
 
-      <button type="submit" class="btn btn-primary" v-on:click="save()">{{i18n.save}}</button>
+      <button class="btn btn-primary" type="submit" v-on:click="save()">{{ i18n.save }}</button>
     </form>
   </div>
 </template>
@@ -51,13 +82,14 @@ export default class NewFileSystemForm extends Vue {
     s3BucketName: "",
     s3AccessKey: "",
     s3SecretKey: "",
-    s3PathStyleAccess: ""
+    s3PathStyleAccess: "",
+    validationOk: "",
+    validationEndpointFail: "",
+    validationBucketFail: "",
+    validationAccesKeyFail: "",
+    validationSecretKeyFail: "",
+    validationProtocolFail: ""
   };
-
-  async created() {
-    await I18n.loadToObject(this.i18n);
-  }
-
   private bucketSettings: S3BucketSettings = {
     endpoint: "",
     bucket: "",
@@ -66,10 +98,38 @@ export default class NewFileSystemForm extends Vue {
     accessKey: "",
     pathStyleAccess: false
   }
+  private isValid = {
+    endpoint: {clean: true, valid: false},
+    bucket: {clean: true, valid: false},
+    protocol: {clean: true, valid: false},
+    secretKey: {clean: true, valid: false},
+    accessKey: {clean: true, valid: false}
+  }
+
+  async created() {
+    await I18n.loadToObject(this.i18n);
+  }
 
   private save() {
-    this.$emit("saveBucket", this.bucketSettings);
+    this.isValid.endpoint.clean = false;
+    this.isValid.bucket.clean = false;
+    this.isValid.protocol.clean = false;
+    this.isValid.secretKey.clean = false;
+    this.isValid.accessKey.clean = false;
 
+    this.isValid.endpoint.valid = this.bucketSettings.endpoint.trim().length > 0;
+    this.isValid.bucket.valid = this.bucketSettings.bucket.trim().length > 0;
+    this.isValid.protocol.valid = this.bucketSettings.protocol.trim().length > 0 && ("http" === this.bucketSettings.protocol || "https" === this.bucketSettings.protocol);
+    this.isValid.secretKey.valid = this.bucketSettings.secretKey.trim().length > 0;
+    this.isValid.accessKey.valid = this.bucketSettings.accessKey.trim().length > 0;
+
+    if (this.isValid.endpoint.valid &&
+        this.isValid.bucket.valid &&
+        this.isValid.protocol.valid &&
+        this.isValid.secretKey.valid &&
+        this.isValid.accessKey.valid) {
+      this.$emit("saveBucket", this.bucketSettings);
+    }
   }
 
   private resetBucketSettings() {
