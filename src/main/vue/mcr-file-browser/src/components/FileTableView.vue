@@ -1,5 +1,6 @@
 <template>
   <div class="mcr-file-table-view">
+    <!--
     <table v-if="fs != null" class="table table-striped">
       <thead>
       <tr>
@@ -20,7 +21,37 @@
         <td v-else></td>
       </tr>
       </tbody>
-    </table>
+    </table> -->
+    <b-table id="my-table" :current-page="currentPage" :fields="fields"
+             :items="fs.children"
+             :per-page="perPage" hover striped>
+      <template #cell(name)="data">
+        <a href="#" v-on:click.prevent="childClicked(data.item)"> {{ data.item.name }}</a>
+      </template>
+
+      <template #cell(lastModified)="data">
+        <template v-if="data.item.lastModified!=null">{{ new Date(data.item.lastModified).toLocaleString() }}
+        </template>
+        <template v-else></template>
+      </template>
+
+      <template #cell(size)="data">
+        <template v-if="data.item.size>0">
+          {{ size(data.item.size) }}
+        </template>
+        <template v-else>
+        </template>
+      </template>
+    </b-table>
+    <b-pagination
+        v-model="currentPage"
+        :fields="fields"
+        :per-page="perPage"
+        :total-rows="fs.children.length"
+        aria-controls="my-table"
+        align="center"
+        v-show="Math.ceil(fs.children.length/perPage)>1"
+    ></b-pagination>
   </div>
 </template>
 
@@ -29,26 +60,53 @@ import {Component, Prop, Vue} from 'vue-property-decorator';
 import {FileBase} from "@/model/FileBase";
 import {default as filesize} from "filesize.js"
 import {I18n} from "@/i18n";
+import {PaginationPlugin, TablePlugin} from "bootstrap-vue";
+
+Vue.use(PaginationPlugin)
+Vue.use(TablePlugin)
 
 @Component
 export default class FileTableView extends Vue {
   @Prop() private fs!: FileBase;
 
+  private perPage = 10;
+  private currentPage = 1;
+
   private i18n: Record<string, string> = {
-    fileSize:"",
-    fileDate:"",
-    fileName:""
+    fileSize: "",
+    fileDate: "",
+    fileName: ""
   };
+
+  private fields = [{
+    key: 'name',
+    sortable: true,
+    headerTitle: this.i18n.fileName
+  },
+    {
+      key: 'lastModified',
+      sortable: true,
+      headerTitle: this.i18n.fileDate
+    },
+    {
+      key: 'size',
+      sortable: true,
+      headerTitle: this.i18n.fileSize
+    }]
+
 
   async created() {
     await I18n.loadToObject(this.i18n);
+    this.fields[0].headerTitle = this.i18n.fileName;
+    this.fields[1].headerTitle = this.i18n.fileDate;
+    this.fields[2].headerTitle = this.i18n.fileSize;
   }
 
   public childClicked(file: FileBase): void {
     this.$emit("childClicked", file);
   }
 
-  public backButtonClicked(){
+  public backButtonClicked() {
     this.$emit("backButtonClicked");
   }
 
@@ -60,7 +118,7 @@ export default class FileTableView extends Vue {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-  .clickable {
-    cursor: pointer;
-  }
+.clickable {
+  cursor: pointer;
+}
 </style>
