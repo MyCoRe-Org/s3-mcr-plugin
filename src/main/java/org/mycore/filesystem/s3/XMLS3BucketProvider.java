@@ -20,6 +20,7 @@ package org.mycore.filesystem.s3;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -34,8 +35,10 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
+import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
@@ -46,8 +49,12 @@ import org.mycore.filesystem.FileSystemToXML;
 import org.mycore.filesystem.model.Directory;
 import org.mycore.filesystem.model.File;
 import org.mycore.filesystem.FileSystemFromXML;
+import org.mycore.filesystem.model.FileBase;
 import org.mycore.filesystem.model.Root;
 import org.mycore.filesystem.model.RootInfo;
+import org.mycore.filesystem.utils.CompressedDirectoryResolver;
+import org.mycore.filesystem.utils.TarDirectoryResolver;
+import org.mycore.filesystem.utils.ZipDirectoryResolver;
 import org.w3c.dom.Node;
 
 import com.amazonaws.AmazonServiceException;
@@ -121,57 +128,101 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
 
     @Override
     public Root getRootDirectory(Element extensionGrandChild) {
-        S3BucketSettings bucketSettings = getBucketSettings(extensionGrandChild);
-        AmazonS3 conn = getConnection(bucketSettings);
+        try {
+            S3BucketSettings bucketSettings = getBucketSettings(extensionGrandChild);
+            AmazonS3 conn = getConnection(bucketSettings);
 
-        ListObjectsV2Result lor = null;
-        Root bucketRootDirectory = null;
-        HashMap<String, Directory> lazyDirectoryMap = new HashMap<>();
+            ListObjectsV2Result lor = null;
+            Root bucketRootDirectory = null;
+            HashMap<String, Directory> lazyDirectoryMap = new HashMap<>();
 
-        do {
-            ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request();
-            listObjectsV2Request.setBucketName(bucketSettings.getBucket());
+            do {
+                ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request();
+                listObjectsV2Request.setBucketName(bucketSettings.getBucket());
 
-            if (lor != null) {
-                listObjectsV2Request.setContinuationToken(lor.getNextContinuationToken());
-            }
+                if (lor != null) {
+                    listObjectsV2Request.setContinuationToken(lor.getNextContinuationToken());
+                }
 
-            lor = conn.listObjectsV2(listObjectsV2Request);
+                lor = conn.listObjectsV2(listObjectsV2Request);
 
-            if (bucketRootDirectory == null) {
-                bucketRootDirectory = new Root();
-                bucketRootDirectory.setName("" + "/");
-                bucketRootDirectory.setChildren(new ArrayList<>());
-                bucketRootDirectory.setPath(bucketSettings.getBucket());
-            }
+                if (bucketRootDirectory == null) {
+                    bucketRootDirectory = new Root();
+                    bucketRootDirectory.setName("" + "/");
+                    bucketRootDirectory.setChildren(new ArrayList<>());
+                    bucketRootDirectory.setPath(bucketSettings.getBucket());
+                }
 
-            processSummaries(lor, bucketRootDirectory, "", lazyDirectoryMap);
-        } while (lor.isTruncated());
-        return bucketRootDirectory;
+                processSummaries(lor, bucketRootDirectory, "", lazyDirectoryMap);
+            } while (lor.isTruncated());
+            return bucketRootDirectory;
+        } catch (SdkClientException sdkClientException){
+            throw new UncheckedIOException("Error while accessing S3", new IOException(sdkClientException));
+        }
     }
 
     @Override
-    public Directory getDirectory(Element extensionGrandChild, String path) {
+    public Directory getDirectory(Element extensionGrandChild, String path) throws IOException {
         S3BucketSettings bucketSettings = getBucketSettings(extensionGrandChild);
         AmazonS3 conn = getConnection(bucketSettings);
 
         ListObjectsV2Result lor = null;
-        HashMap<String, Directory> lazyDirectoryMap = new HashMap<>();
 
-        do {
-            ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request();
-            listObjectsV2Request.setBucketName(bucketSettings.getBucket());
-            //listObjectsV2Request.setDelimiter("/");
-            listObjectsV2Request.setPrefix(path);
-            if (lor != null) {
-                listObjectsV2Request.setContinuationToken(lor.getNextContinuationToken());
+        String[] parts = path.split("/");
+        boolean isCompressed = Arrays.stream(parts)
+            .anyMatch(p -> p.endsWith(".zip") || p.endsWith("tar.gz") || p.endsWith(".tar"));
+
+        if (!isCompressed) {
+            HashMap<String, Directory> lazyDirectoryMap = new HashMap<>();
+            do {
+                ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request();
+                listObjectsV2Request.setBucketName(bucketSettings.getBucket());
+                //listObjectsV2Request.setDelimiter("/");
+                listObjectsV2Request.setPrefix(path);
+                if (lor != null) {
+                    listObjectsV2Request.setContinuationToken(lor.getNextContinuationToken());
+                }
+
+                lor = conn.listObjectsV2(listObjectsV2Request);
+                processSummaries(lor, null, path, lazyDirectoryMap);
+            } while (lor.isTruncated());
+
+            return lazyDirectoryMap.get(path);
+        } else {
+            // get path to tar
+            StringBuilder pathToCompressedFile = new StringBuilder();
+            StringBuilder pathAfterCompressedFile = new StringBuilder();
+
+            boolean cfPassed = false;
+            String cfPart = null;
+            for (String part : parts) {
+                if (!cfPassed) {
+                    pathToCompressedFile.append(part).append('/');
+                } else {
+                    pathAfterCompressedFile.append(part).append('/');
+                }
+                if (part.endsWith(".tar.gz") || part.endsWith(".tar") || part.endsWith(".zip")) {
+                    cfPassed = true;
+                    cfPart = part;
+                }
             }
 
-            lor = conn.listObjectsV2(listObjectsV2Request);
-            processSummaries(lor, null, path, lazyDirectoryMap);
-        } while (lor.isTruncated());
+            S3Object object = conn.getObject(bucketSettings.getBucket(),
+                pathToCompressedFile.deleteCharAt(pathToCompressedFile.length() - 1).toString());
+            try(S3ObjectInputStream s3IS = object.getObjectContent()) {
+                CompressedDirectoryResolver compressedDirectoryResolver = cfPart != null && cfPart.endsWith(".zip")
+                        ? new ZipDirectoryResolver()
+                        : new TarDirectoryResolver();
 
-        return lazyDirectoryMap.get(path);
+                try {
+                    return compressedDirectoryResolver.resolveDirectory(s3IS, pathToCompressedFile.toString(),
+                            pathAfterCompressedFile.toString());
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+        }
+
     }
 
     private void processSummaries(ListObjectsV2Result lor, Directory parent, String prefix,
@@ -184,9 +235,11 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
             List<String> pathParts = getParentFolders(filePath);
             Directory fileParentDirectory = buildDirectories(lazyDirectoryMap, parent, pathParts);
 
-            File file = new File();
+            String fn = getFileName(filePath);
+
+            FileBase file = fn.endsWith(".tar") || fn.endsWith(".tar.gz") || fn.endsWith(".zip") ? new Directory() : new File();
             file.setPath(filePath);
-            file.setName(getFileName(filePath));
+            file.setName(fn);
             file.setSize((int) summary.getSize());
             file.setLastModified(lastModified);
             file.setEtag(eTag);
