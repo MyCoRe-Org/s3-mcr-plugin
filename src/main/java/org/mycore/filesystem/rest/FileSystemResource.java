@@ -19,7 +19,6 @@
 package org.mycore.filesystem.rest;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
@@ -47,13 +46,13 @@ import org.jdom2.JDOMException;
 import org.jdom2.filter.Filters;
 import org.jdom2.xpath.XPathExpression;
 import org.jdom2.xpath.XPathFactory;
+import org.mycore.access.MCRAccessManager;
 import org.mycore.crypt.MCRCryptKeyNoPermissionException;
 import org.mycore.datamodel.metadata.MCRMetadataManager;
 import org.mycore.datamodel.metadata.MCRObject;
 import org.mycore.datamodel.metadata.MCRObjectID;
 import org.mycore.filesystem.FileSystemFromXMLProvider;
 import org.mycore.filesystem.FileSystemToXMLProvider;
-import org.mycore.filesystem.model.Directory;
 import org.mycore.filesystem.model.RootInfo;
 import org.mycore.restapi.annotations.MCRRequireTransaction;
 
@@ -69,6 +68,9 @@ public class FileSystemResource {
     public Response add(@PathParam("objectID") String objectIDString, @PathParam("impl") String impl,
         Map<String, String> settings) {
         try {
+            if(!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_WRITE)){
+                return Response.status(Response.Status.FORBIDDEN).build();
+            }
             return FileSystemToXMLProvider.addFileSystem(objectIDString, impl, settings);
         } catch (AuthenticationException e) {
             return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
@@ -83,6 +85,10 @@ public class FileSystemResource {
     @Produces(MediaType.APPLICATION_JSON)
     @MCRRequireTransaction
     public Response listInfo(@PathParam("objectID") String objectIDString) {
+        if(!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_READ)){
+            return Response.status(Response.Status.FORBIDDEN).build();
+        }
+
         Document document = getDocument(objectIDString);
         List<Element> results = getExtensionList(document);
 
@@ -100,6 +106,10 @@ public class FileSystemResource {
     @MCRRequireTransaction
     public Response getFile(@PathParam("objectID") String objectIDString, @PathParam("rootID") String base64RootID,
         @PathParam("filePath") String base64FilePath) {
+        if(!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_READ)){
+            return Response.status(Response.Status.FORBIDDEN).build();
+        }
+
         Document document = getDocument(objectIDString);
         List<Element> results = getExtensionList(document);
 
@@ -129,6 +139,10 @@ public class FileSystemResource {
     @Produces(MediaType.APPLICATION_JSON)
     @MCRRequireTransaction
     public Response listRoot(@PathParam("objectID") String objectIDString, @PathParam("rootID") String base64RootID) {
+        if(!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_READ)){
+            return Response.status(Response.Status.FORBIDDEN).build();
+        }
+
         Document document = getDocument(objectIDString);
         List<Element> results = getExtensionList(document);
 
@@ -159,6 +173,9 @@ public class FileSystemResource {
     @MCRRequireTransaction
     public Response listRoot(@PathParam("objectID") String objectIDString, @PathParam("rootID") String base64RootID,
         @PathParam("directoryID") String base64DirectoryID) {
+        if(!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_READ)){
+            return Response.status(Response.Status.FORBIDDEN).build();
+        }
         Document document = getDocument(objectIDString);
         List<Element> results = getExtensionList(document);
 
