@@ -23,4 +23,8 @@ public class File extends FileBase {
     public File() {
         super(FileType.FILE);
     }
+
+    public File(FileType fileType) {
+        super(fileType);
+    }
 }

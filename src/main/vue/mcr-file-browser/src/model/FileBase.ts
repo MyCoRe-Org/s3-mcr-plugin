@@ -24,9 +24,6 @@ export interface FileBase {
     lastModified: number | null;
     size: number;
     children: FileBase[];
-    type:"ROOT"|"DIRECTORY"|"FILE";
+    type:"ROOT"|"DIRECTORY"|"FILE"|"BROWSABLE_FILE";
 }
 
-export interface RootInfo {
-    id: string;
-}

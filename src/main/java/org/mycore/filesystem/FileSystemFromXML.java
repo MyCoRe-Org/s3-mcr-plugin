@@ -20,7 +20,6 @@ package org.mycore.filesystem;
 
 import org.jdom2.Element;
 import org.mycore.filesystem.model.Directory;
-import org.mycore.filesystem.model.RootInfo;
 
 import javax.naming.AuthenticationException;
 import java.io.IOException;
@@ -28,7 +27,6 @@ import java.io.OutputStream;
 
 public interface FileSystemFromXML {
     void streamFile(Element extensionGrandChild, String path, OutputStream os) throws IOException;
-    RootInfo getRootInfo(Element extensionGrandChild);
     Directory getRootDirectory(Element extensionGrandChild);
     Directory getDirectory(Element extensionGrandChild, String path) throws IOException;
     boolean test(Element extensionGrandChild) throws AuthenticationException;

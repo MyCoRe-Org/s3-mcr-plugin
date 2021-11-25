@@ -25,6 +25,18 @@
     <b-table id="my-table" :current-page="currentPage" :fields="fields"
              :items="fs.children"
              :per-page="perPage" hover striped>
+      <template #head(name)="">
+        <span class="text-info">{{i18n.fileName}}</span>
+      </template>
+
+      <template #head(lastModified)="">
+        <span class="text-info">{{i18n.fileDate}}</span>
+      </template>
+
+      <template #head(size)="">
+        <span class="text-info">{{i18n.fileSize}}</span>
+      </template>
+
       <template #cell(name)="data">
         <a href="#" v-on:click.prevent="childClicked(data.item)"> {{ data.item.name }}</a>
       </template>
@@ -42,7 +54,9 @@
         <template v-else>
         </template>
       </template>
+
     </b-table>
+
     <b-pagination
         v-model="currentPage"
         :fields="fields"
@@ -80,26 +94,20 @@ export default class FileTableView extends Vue {
 
   private fields = [{
     key: 'name',
-    sortable: true,
-    headerTitle: this.i18n.fileName
+    sortable: true
   },
     {
       key: 'lastModified',
-      sortable: true,
-      headerTitle: this.i18n.fileDate
+      sortable: true
     },
     {
       key: 'size',
-      sortable: true,
-      headerTitle: this.i18n.fileSize
+      sortable: true
     }]
 
 
   async created() {
     await I18n.loadToObject(this.i18n);
-    this.fields[0].headerTitle = this.i18n.fileName;
-    this.fields[1].headerTitle = this.i18n.fileDate;
-    this.fields[2].headerTitle = this.i18n.fileSize;
   }
 
   public childClicked(file: FileBase): void {

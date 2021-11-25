@@ -183,10 +183,5 @@
             <artifactId>mycore-restapi</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.mycore</groupId>
-            <artifactId>mycore-mods</artifactId>
-            <scope>provided</scope>
-        </dependency>
     </dependencies>
 </project>

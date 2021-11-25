@@ -18,18 +18,14 @@
 
 package org.mycore.filesystem.model;
 
-public class RootInfo {
-    private String id;
+public class BrowsableFile extends File {
 
-    public RootInfo(String id) {
-        this.id = id;
+    BrowsableFile(FileType fileType) {
+        super(fileType);
     }
 
-    public String getId() {
-        return id;
+    public BrowsableFile() {
+        super(FileType.BROWSABLE_FILE);
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
 }

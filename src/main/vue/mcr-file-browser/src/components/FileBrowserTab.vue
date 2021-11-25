@@ -17,7 +17,7 @@
   -->
 
 <template>
-  <div id="app">
+  <div>
     <section v-if="this.currentRequestedPath">
       <BreadcrumbView :path="this.currentRequestedPath" v-on:crumbClicked="crumbClickedBreadCrumbView"/>
     </section>
@@ -49,7 +49,7 @@ export default class FileBrowserTab extends Vue {
 
   @Prop() private objectId?: string;
   @Prop() private baseUrl?: string;
-  @Prop() private rootId?: string;
+  @Prop() private derivateId?: string;
   @Prop() private token?: TokenResponse;
   private directoryPath?: string | null = "";
   private url: string | null = null;
@@ -58,7 +58,7 @@ export default class FileBrowserTab extends Vue {
   private currentRequestedPath: string | null = null;
 
   childClickedFileTableView(child: FileBase) {
-    if (child.type == "DIRECTORY") {
+    if (child.type == "DIRECTORY" || child.type == "BROWSABLE_FILE") {
       this.directoryPath = child.path;
       this.onDirectoryChange();
     } else if (child.type == "FILE") {
@@ -67,13 +67,13 @@ export default class FileBrowserTab extends Vue {
   }
 
   openFile(path: string) {
-    if (this.rootId != null) {
+    if (this.derivateId != null) {
       //window.open(`${this.baseUrl}api/v2/fs/${this.objectId}/download/${btoa(this.rootId)}/${btoa(path)}`);
     }
   }
 
   crumbClickedBreadCrumbView(crumb: Crumb) {
-    this.directoryPath = crumb.id.substr((this.objectId + "/" + this.rootId + "/").length);
+    this.directoryPath = crumb.id.substr((this.objectId + "/" + this.derivateId + "/").length);
     this.onDirectoryChange();
   }
 
@@ -99,7 +99,7 @@ export default class FileBrowserTab extends Vue {
   }
 
   private async onDirectoryChange() {
-    if (!this.token || this.rootId == null || this.objectId == null || this.baseUrl == null) {
+    if (!this.token || this.derivateId == null || this.objectId == null || this.baseUrl == null) {
       return;
     }
     try {
@@ -116,11 +116,11 @@ export default class FileBrowserTab extends Vue {
         }*/
       }
       if (this.directoryPath != null) {
-        loadingURL = `${this.baseUrl}api/v2/fs/${this.objectId}/list/${btoa(this.rootId)}/${btoa(this.directoryPath)}`;
-        this.currentRequestedPath = this.objectId + "/" + this.rootId + "/" + this.directoryPath;
+        loadingURL = `${this.baseUrl}api/v2/fs/${this.objectId}/list/${btoa(this.derivateId)}/${btoa(this.directoryPath)}`;
+        this.currentRequestedPath = this.objectId + "/" + this.derivateId + "/" + this.directoryPath;
       } else {
-        loadingURL = `${this.baseUrl}api/v2/fs/${this.objectId}/list/${btoa(this.rootId)}`;
-        this.currentRequestedPath = this.objectId + "/" + this.rootId + "/";
+        loadingURL = `${this.baseUrl}api/v2/fs/${this.objectId}/list/${btoa(this.derivateId)}`;
+        this.currentRequestedPath = this.objectId + "/" + this.derivateId + "/";
       }
 
 

@@ -26,7 +26,6 @@ import org.mycore.crypt.MCRCipher;
 import org.mycore.crypt.MCRCipherManager;
 import org.mycore.crypt.MCRCryptKeyNoPermissionException;
 import org.mycore.filesystem.model.Directory;
-import org.mycore.filesystem.model.RootInfo;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -36,24 +35,8 @@ import java.util.List;
 /**
  *
  */
-public class FileSystemFromXMLProvider {
+public class FileSystemFromXMLHelper {
 
-    public static RootInfo getInfo(Element extensionElement)  {
-        if (extensionElement.getAttributeValue("class") == null) {
-            return null;
-        }
-        String clazz = extensionElement.getAttributeValue("class");
-
-        FileSystemFromXML fsProvider = MCRConfiguration2.instantiateClass(clazz);
-        Element element = null;
-        try {
-            element = processBindElement(extensionElement);
-        } catch (IOException | JDOMException | MCRCryptKeyNoPermissionException e) {
-            return null;
-        }
-
-        return fsProvider.getRootInfo(element);
-    }
 
     public static Directory getDirectory(Element extensionElement) throws IOException, MCRCryptKeyNoPermissionException, JDOMException {
         String clazz = extensionElement.getAttributeValue("class");

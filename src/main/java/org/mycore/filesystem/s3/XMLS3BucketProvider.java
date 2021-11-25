@@ -35,23 +35,20 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.s3.model.ListObjectsV2Request;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.output.DOMOutputter;
 import org.jdom2.transform.JDOMResult;
+import org.mycore.filesystem.FileSystemFromXML;
 import org.mycore.filesystem.FileSystemToXML;
+import org.mycore.filesystem.FileSystemValidationHelper;
+import org.mycore.filesystem.model.BrowsableFile;
 import org.mycore.filesystem.model.Directory;
 import org.mycore.filesystem.model.File;
-import org.mycore.filesystem.FileSystemFromXML;
 import org.mycore.filesystem.model.FileBase;
 import org.mycore.filesystem.model.Root;
-import org.mycore.filesystem.model.RootInfo;
 import org.mycore.filesystem.utils.CompressedDirectoryResolver;
 import org.mycore.filesystem.utils.TarDirectoryResolver;
 import org.mycore.filesystem.utils.ZipDirectoryResolver;
@@ -60,6 +57,7 @@ import org.w3c.dom.Node;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
+import com.amazonaws.SdkClientException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -68,12 +66,13 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.HeadBucketRequest;
 import com.amazonaws.services.s3.model.HeadBucketResult;
+import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
-
-    private static final Logger LOGGER = LogManager.getLogger();
 
     public static final String ENDPOINT = "endpoint";
     public static final String BUCKET = "bucket";
@@ -81,6 +80,7 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
     public static final String PATH_STYLE_ACCESS = "pathStyleAccess";
     public static final String PROTOCOL = "protocol";
     public static final String ACCESS_KEY = "accessKey";
+    private static final Logger LOGGER = LogManager.getLogger();
 
     public S3BucketSettings getBucketSettings(Element extensionGrandChild) {
         Node bucketSettingsNode;
@@ -121,12 +121,6 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
     }
 
     @Override
-    public RootInfo getRootInfo(Element extensionGrandChild) {
-        S3BucketSettings bucketSettings = getBucketSettings(extensionGrandChild);
-        return new RootInfo(bucketSettings.getBucket());
-    }
-
-    @Override
     public Root getRootDirectory(Element extensionGrandChild) {
         try {
             S3BucketSettings bucketSettings = getBucketSettings(extensionGrandChild);
@@ -156,7 +150,7 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
                 processSummaries(lor, bucketRootDirectory, "", lazyDirectoryMap);
             } while (lor.isTruncated());
             return bucketRootDirectory;
-        } catch (SdkClientException sdkClientException){
+        } catch (SdkClientException sdkClientException) {
             throw new UncheckedIOException("Error while accessing S3", new IOException(sdkClientException));
         }
     }
@@ -209,14 +203,14 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
 
             S3Object object = conn.getObject(bucketSettings.getBucket(),
                 pathToCompressedFile.deleteCharAt(pathToCompressedFile.length() - 1).toString());
-            try(S3ObjectInputStream s3IS = object.getObjectContent()) {
+            try (S3ObjectInputStream s3IS = object.getObjectContent()) {
                 CompressedDirectoryResolver compressedDirectoryResolver = cfPart != null && cfPart.endsWith(".zip")
-                        ? new ZipDirectoryResolver()
-                        : new TarDirectoryResolver();
+                    ? new ZipDirectoryResolver()
+                    : new TarDirectoryResolver();
 
                 try {
                     return compressedDirectoryResolver.resolveDirectory(s3IS, pathToCompressedFile.toString(),
-                            pathAfterCompressedFile.toString());
+                        pathAfterCompressedFile.toString());
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
@@ -237,7 +231,8 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
 
             String fn = getFileName(filePath);
 
-            FileBase file = fn.endsWith(".tar") || fn.endsWith(".tar.gz") || fn.endsWith(".zip") ? new Directory() : new File();
+            FileBase file = fn.endsWith(".tar") || fn.endsWith(".tar.gz") || fn.endsWith(".zip") ? new BrowsableFile()
+                : new File();
             file.setPath(filePath);
             file.setName(fn);
             file.setSize((int) summary.getSize());
@@ -315,7 +310,7 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
         } catch (AmazonServiceException ase) {
             LOGGER.warn("Bucket head request failed! ", ase);
 
-            if(ase.getStatusCode() == 403){
+            if (ase.getStatusCode() == 403) {
                 throw new AuthenticationException(ase.getErrorMessage());
             }
 
@@ -328,8 +323,8 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
     @Override
     public Element getElement(Map<String, String> settingsObject) throws JAXBException, AuthenticationException {
         if (settingsObject.containsKey(ENDPOINT) && settingsObject.containsKey(BUCKET)
-                && settingsObject.containsKey(PROTOCOL) && settingsObject.containsKey(SECRET_KEY)
-                && settingsObject.containsKey(ACCESS_KEY) && settingsObject.containsKey(PATH_STYLE_ACCESS)) {
+            && settingsObject.containsKey(PROTOCOL) && settingsObject.containsKey(SECRET_KEY)
+            && settingsObject.containsKey(ACCESS_KEY) && settingsObject.containsKey(PATH_STYLE_ACCESS)) {
 
             S3BucketSettings bucketSettings = new S3BucketSettings();
             bucketSettings.setBucket(settingsObject.get(BUCKET));
@@ -339,16 +334,27 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
             bucketSettings.setSecretKey(settingsObject.get(SECRET_KEY));
             bucketSettings.setPathStyleAccess(Boolean.parseBoolean(settingsObject.get(PATH_STYLE_ACCESS)));
 
-
             if (test(bucketSettings)) {
                 JDOMResult result = new JDOMResult();
                 getJAXBContext().createMarshaller().marshal(bucketSettings, result);
-                return result.getDocument().detachRootElement();
+                final Element extension = result.getDocument().detachRootElement();
+
+                final Map<String, String> map = FileSystemValidationHelper.getSimpleValidationMap(this, extension);
+                final Element validation = new Element("validation");
+                extension.addContent(validation);
+
+                map.forEach((key,val )-> {
+                    final Element file = new Element("file");
+                    validation.addContent(file);
+
+                    file.setAttribute("path", key);
+                    file.setAttribute("checksum", val);
+                });
+
+                return extension;
             }
         }
         return null;
     }
-
-
 
 }

@@ -19,12 +19,14 @@
 package org.mycore.filesystem.rest;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.naming.AuthenticationException;
@@ -34,6 +36,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -43,17 +46,16 @@ import org.apache.logging.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
-import org.jdom2.filter.Filters;
-import org.jdom2.xpath.XPathExpression;
-import org.jdom2.xpath.XPathFactory;
+import org.jdom2.input.SAXBuilder;
 import org.mycore.access.MCRAccessManager;
 import org.mycore.crypt.MCRCryptKeyNoPermissionException;
+import org.mycore.datamodel.metadata.MCRMetaLink;
 import org.mycore.datamodel.metadata.MCRMetadataManager;
 import org.mycore.datamodel.metadata.MCRObject;
 import org.mycore.datamodel.metadata.MCRObjectID;
-import org.mycore.filesystem.FileSystemFromXMLProvider;
-import org.mycore.filesystem.FileSystemToXMLProvider;
-import org.mycore.filesystem.model.RootInfo;
+import org.mycore.datamodel.niofs.MCRPath;
+import org.mycore.filesystem.FileSystemFromXMLHelper;
+import org.mycore.filesystem.FileSystemToXMLHelper;
 import org.mycore.restapi.annotations.MCRRequireTransaction;
 
 @Path("fs/")
@@ -68,10 +70,10 @@ public class FileSystemResource {
     public Response add(@PathParam("objectID") String objectIDString, @PathParam("impl") String impl,
         Map<String, String> settings) {
         try {
-            if(!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_WRITE)){
+            if (!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_WRITE)) {
                 return Response.status(Response.Status.FORBIDDEN).build();
             }
-            return FileSystemToXMLProvider.addFileSystem(objectIDString, impl, settings);
+            return FileSystemToXMLHelper.addFileSystem(objectIDString, impl, settings);
         } catch (AuthenticationException e) {
             return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
         } catch (Exception e) {
@@ -85,133 +87,155 @@ public class FileSystemResource {
     @Produces(MediaType.APPLICATION_JSON)
     @MCRRequireTransaction
     public Response listInfo(@PathParam("objectID") String objectIDString) {
-        if(!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_READ)){
+        if (!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_READ)) {
             return Response.status(Response.Status.FORBIDDEN).build();
         }
-
-        Document document = getDocument(objectIDString);
-        List<Element> results = getExtensionList(document);
-
-        // TODO: decrypt here later
-
-        List<RootInfo> infoList = results.stream().map(FileSystemFromXMLProvider::getInfo)
-                .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+        MCRObject obj = getObject(objectIDString);
+        List<String> infoList = getExtensionDerivates(obj);
         return Response.ok(infoList).header("Access-Control-Allow-Origin", "*").build();
     }
 
     @GET
-    @Path("{objectID}/download/{rootID}/{filePath}")
+    @Path("{objectID}/download/{derivateID}/{filePath}")
     @Produces("*/*")
     @MCRRequireTransaction
-    public Response getFile(@PathParam("objectID") String objectIDString, @PathParam("rootID") String base64RootID,
+    public Response getFile(@PathParam("objectID") String objectIDString,
+        @PathParam("derivateID") String base64DerivateID,
         @PathParam("filePath") String base64FilePath) {
-        if(!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_READ)){
+        if (!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_READ)) {
             return Response.status(Response.Status.FORBIDDEN).build();
         }
 
-        Document document = getDocument(objectIDString);
-        List<Element> results = getExtensionList(document);
-
-        String rootID = new String(Base64.getUrlDecoder().decode(base64RootID), StandardCharsets.UTF_8);
+        String derivateID = new String(Base64.getUrlDecoder().decode(base64DerivateID), StandardCharsets.UTF_8);
         String filePath = new String(Base64.getUrlDecoder().decode(base64FilePath), StandardCharsets.UTF_8);
 
-        Optional<StreamingOutput> streamingOutputOptional = results.stream().filter(e -> {
-            RootInfo info = FileSystemFromXMLProvider.getInfo(e);
-            if (info == null) {
-                return false;
-            }
-            return Objects.equals(info.getId(), rootID);
-        }).map(e -> (StreamingOutput) (outputStream) -> {
-            FileSystemFromXMLProvider.streamFile(e, filePath, outputStream);
-        }).findFirst();
+        final List<String> extensionDerivates = getExtensionDerivates(getObject(objectIDString));
+        if (!extensionDerivates.contains(derivateID)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                .entity(derivateID + " is not a extension derivate of  " + objectIDString).build();
+        }
 
-        StreamingOutput streamingOutput = streamingOutputOptional.get();
+        final Element extension;
+        try {
+            extension = readExtensionFromDerivate(derivateID);
+        } catch (IOException | JDOMException e) {
+            LOGGER.error("Error while reading extension.xml from derivate", e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity("Error while reading extension.xml from derivate").build();
+        }
 
         String fileName = filePath.substring(filePath.lastIndexOf('/') + 1);
-        return Response.ok(streamingOutput)
+        return Response.ok(new StreamingOutput() {
+            @Override
+            public void write(OutputStream outputStream) throws IOException, WebApplicationException {
+                FileSystemFromXMLHelper.streamFile(extension, filePath, outputStream);
+            }
+        })
             .header("Content-Disposition", "attachment; filename=" + fileName)
             .header("Access-Control-Allow-Origin", "*").build();
+
     }
 
     @GET
-    @Path("{objectID}/list/{rootID}")
+    @Path("{objectID}/list/{derivateID}")
     @Produces(MediaType.APPLICATION_JSON)
     @MCRRequireTransaction
-    public Response listRoot(@PathParam("objectID") String objectIDString, @PathParam("rootID") String base64RootID) {
-        if(!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_READ)){
+    public Response listRoot(@PathParam("objectID") String objectIDString,
+        @PathParam("derivateID") String base64DerivateID) {
+        if (!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_READ)) {
             return Response.status(Response.Status.FORBIDDEN).build();
         }
 
-        Document document = getDocument(objectIDString);
-        List<Element> results = getExtensionList(document);
+        String derivateID = new String(Base64.getUrlDecoder().decode(base64DerivateID), StandardCharsets.UTF_8);
 
-        String rootID = new String(Base64.getUrlDecoder().decode(base64RootID), StandardCharsets.UTF_8);
-        return results.stream().filter(e -> {
-            RootInfo info = FileSystemFromXMLProvider.getInfo(e);
-            if (info == null) {
-                return false;
-            }
-            return Objects.equals(info.getId(), rootID);
-        }).map(e -> {
-            try {
-                return Response.ok(FileSystemFromXMLProvider.getDirectory(e)).header("Access-Control-Allow-Origin", "*")
-                    .build();
-            } catch (MCRCryptKeyNoPermissionException mcrCryptKeyNoPermissionException) {
-                return Response.status(Response.Status.FORBIDDEN).entity(mcrCryptKeyNoPermissionException.getMessage())
-                    .build();
-            } catch (IOException | JDOMException ioException) {
-                return Response.serverError().entity(ioException.getMessage()).build();
-            }
-        })
-            .findFirst().orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
+        final List<String> extensionDerivates = getExtensionDerivates(getObject(objectIDString));
+        if (!extensionDerivates.contains(derivateID)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                .entity(derivateID + " is not a extension derivate of  " + objectIDString).build();
+        }
+
+        final Element extension;
+        try {
+            extension = readExtensionFromDerivate(derivateID);
+        } catch (IOException | JDOMException e) {
+            LOGGER.error("Error while reading extension.xml from derivate", e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity("Error while reading extension.xml from derivate").build();
+        }
+
+        try {
+            return Response.ok(FileSystemFromXMLHelper.getDirectory(extension))
+                .header("Access-Control-Allow-Origin", "*")
+                .build();
+        } catch (MCRCryptKeyNoPermissionException mcrCryptKeyNoPermissionException) {
+            return Response.status(Response.Status.FORBIDDEN).entity(mcrCryptKeyNoPermissionException.getMessage())
+                .build();
+        } catch (IOException | JDOMException ioException) {
+            return Response.serverError().entity(ioException.getMessage()).build();
+        }
+
     }
 
     @GET
-    @Path("{objectID}/list/{rootID}/{directoryID}")
+    @Path("{objectID}/list/{derivateID}/{directoryID}")
     @Produces(MediaType.APPLICATION_JSON)
     @MCRRequireTransaction
-    public Response listRoot(@PathParam("objectID") String objectIDString, @PathParam("rootID") String base64RootID,
+    public Response listRoot(@PathParam("objectID") String objectIDString, @PathParam("derivateID") String base64DerivateID,
         @PathParam("directoryID") String base64DirectoryID) {
-        if(!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_READ)){
+        if (!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_READ)) {
             return Response.status(Response.Status.FORBIDDEN).build();
         }
-        Document document = getDocument(objectIDString);
-        List<Element> results = getExtensionList(document);
 
-        String rootID = new String(Base64.getUrlDecoder().decode(base64RootID), StandardCharsets.UTF_8);
+        String derivateID = new String(Base64.getUrlDecoder().decode(base64DerivateID), StandardCharsets.UTF_8);
         String directoryID = new String(Base64.getUrlDecoder().decode(base64DirectoryID), StandardCharsets.UTF_8);
 
-        return results.stream().filter(e -> {
-            RootInfo info = FileSystemFromXMLProvider.getInfo(e);
-            if (info == null) {
-                return false;
-            }
-            return Objects.equals(info.getId(), rootID);
-        }).map(e -> {
-            try {
-                return Response.ok(FileSystemFromXMLProvider.getDirectory(e, directoryID))
+        final List<String> extensionDerivates = getExtensionDerivates(getObject(objectIDString));
+        if (!extensionDerivates.contains(derivateID)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(derivateID + " is not a extension derivate of  " + objectIDString).build();
+        }
+
+        final Element extension;
+        try {
+            extension = readExtensionFromDerivate(derivateID);
+        } catch (IOException | JDOMException e) {
+            LOGGER.error("Error while reading extension.xml from derivate", e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Error while reading extension.xml from derivate").build();
+        }
+
+        try {
+            return Response.ok(FileSystemFromXMLHelper.getDirectory(extension, directoryID))
                     .header("Access-Control-Allow-Origin", "*")
                     .build();
-            } catch (MCRCryptKeyNoPermissionException mcrCryptKeyNoPermissionException) {
-                return Response.status(Response.Status.FORBIDDEN).entity(mcrCryptKeyNoPermissionException.getMessage())
+        } catch (MCRCryptKeyNoPermissionException mcrCryptKeyNoPermissionException) {
+            return Response.status(Response.Status.FORBIDDEN).entity(mcrCryptKeyNoPermissionException.getMessage())
                     .build();
-            } catch (IOException | JDOMException ioException) {
-                return Response.serverError().entity(ioException.getMessage()).build();
-            }
-        })
-            .findFirst().orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
+        } catch (IOException | JDOMException ioException) {
+            return Response.serverError().entity(ioException.getMessage()).build();
+        }
     }
 
-    private List<Element> getExtensionList(Document document) {
-        String xpath = "//folder-extension-bind[@class]";
-        XPathExpression<Element> xPathExpression = XPathFactory.instance().compile(xpath, Filters.element());
-        return xPathExpression.evaluate(document);
+    private List<String> getExtensionDerivates(MCRObject obj) {
+        return obj.getStructure().getDerivates()
+            .stream()
+            .filter(der -> der.getClassifications().stream()
+                .anyMatch(clazz -> clazz.toString().equals("derivate_types:extension")))
+            .map(MCRMetaLink::getXLinkHref)
+            .collect(Collectors.toList());
     }
 
-    private Document getDocument(String objectIDString) {
+    private Element readExtensionFromDerivate(String derivateID) throws IOException, JDOMException {
+        final MCRPath path = MCRPath.getPath(derivateID, "extension.xml");
+        try (InputStream is = Files.newInputStream(path)) {
+            final Document doc = new SAXBuilder().build(is);
+            return doc.detachRootElement();
+        }
+    }
+
+    private MCRObject getObject(String objectIDString) {
         MCRObjectID objectID = MCRObjectID.getInstance(objectIDString);
         MCRObject object = MCRMetadataManager.retrieveMCRObject(objectID);
-        return object.createXML();
+        return object;
     }
 }

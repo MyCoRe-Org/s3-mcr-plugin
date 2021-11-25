@@ -19,5 +19,5 @@
 package org.mycore.filesystem.model;
 
 public enum FileType {
-    ROOT, SUBROOT, FILE, DIRECTORY
+    ROOT, BROWSABLE_FILE, FILE, DIRECTORY
 }

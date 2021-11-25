@@ -2,8 +2,8 @@
   <div id="app">
     <div>
       <b-tabs content-class="mt-3" justified>
-        <b-tab v-for="root in rootInfos" :key="root.id" :title="root.id" active lazy>
-          <file-browser-tab :base-url="baseUrl" :object-id="objectId" :root-id="root.id" :token="token"/>
+        <b-tab v-for="derId in derivateIds" :key="derId" :title="derId" active lazy>
+          <file-browser-tab :base-url="baseUrl" :object-id="objectId" :derivate-id="derId" :token="token"/>
         </b-tab>
 
         <template #tabs-end>
@@ -25,7 +25,6 @@
 <script lang="ts">
 import {Component, Prop, Vue} from 'vue-property-decorator';
 import FileBrowserTab from "@/components/FileBrowserTab.vue";
-import {RootInfo} from "@/model/FileBase";
 import NewFileSystemForm from "@/components/NewFileSystemForm.vue";
 import {S3BucketSettings} from "@/model/S3BucketSettings";
 import {TokenResponse} from "@/model/TokenResponse";
@@ -53,7 +52,7 @@ export default class FileBrowser extends Vue {
   private showAddBucketError = false;
   private addBucketSuccess = false;
 
-  private rootInfos: RootInfo[] = [];
+  private derivateIds: string[] = [];
   private token?: TokenResponse;
 
   private i18n: Record<string, string> = {
@@ -121,13 +120,13 @@ export default class FileBrowser extends Vue {
         "Authorization": `${this.token.token_type} ${this.token.access_token}`,
       },
     });
-    const newInfos: RootInfo[] = await response.json();
+    const newInfos: string[] = await response.json();
 
-    while (this.rootInfos.length > 0) {
-      this.rootInfos.pop();
+    while (this.derivateIds.length > 0) {
+      this.derivateIds.pop();
     }
 
-    newInfos.forEach(info => this.rootInfos.push(info));
+    newInfos.forEach(info => this.derivateIds.push(info));
   }
 
 }
