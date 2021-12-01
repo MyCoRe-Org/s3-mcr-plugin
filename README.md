@@ -34,26 +34,28 @@ The users also need the right to read and write from the rest API.
 | restapi:/fs/              | write         | editor and administrator |
 | restapi:/fs/              | read          | always allowed           |
 
-## How is the Bucket stored?
-The top mods:extension is how it looks decrypted.
-```
-<mods:extension>
-    <folder-extension-bind class="org.mycore.filesystem.s3.XMLS3BucketProvider" encrypted="false">
-        <XMLS3Bucket>
-            <endpoint>s3archive.gbv.de:9003</endpoint>
-            <accessKey>05698686438511ec872adfc2556acb1e</accessKey>
-            <secretKey>xxxxxxxxxxxxxxxxxxxxxxxxxx</secretKey>
-            <protocol>http</protocol>
-            <bucket>testbucket01</bucket>
-        </XMLS3Bucket>
-    </folder-extension-bind>
-</mods:extension>
+### Derivate types
+You need to add derivate_types:extension to the derivate_types classification.
 
-<mods:extension>
-    <folder-extension-bind class="org.mycore.filesystem.s3.XMLS3BucketProvider" encrypted="true" key="bucket-crypt">KDaecE1SXn851uXbEi5DNah+fiaNyG7LAPsI3R22S0pSMYAnJoqpjOj9YY2H6RakiUaJwnOjpwheKa+TaNzYl3Ci6UcgtHy/CdiM4rgz9cWCSWjtGPPeUL2MU9CsaF8dEL4gCPOO10lBOyZzN11gVDUkMxMJGsqcy+WUcqLmJvPaudp/PSt5bMrBOijzqeuhjS2kz+2IF1p/wQfTM4TL7WlSlJEgRBJJDfIh3RBtbWxJ8F0g3iZqumzxX3ZL+dBST2F+lIZmwKDZL0taBosFIPH/rH4MbD1JcMM2iwKol76mNPIiuMDZcPZERrnz91wDlQqqI9STNOfMieTDbyH8wA==</folder-extension-bind>
-</mods:extension>
+## How is the Bucket stored?
+The Bucket Data is stored as derivate with derivate_type:extension.
 ```
-## How can i test local?
+<folder-extension-bind class="org.mycore.filesystem.s3.XMLS3BucketProvider" encrypted="false">
+    <XMLS3Bucket>
+        <endpoint>s3archive.gbv.de:9003</endpoint>
+        <accessKey>05698686438511ec872adfc2556acb1e</accessKey>
+        <secretKey>xxxxxxxxxxxxxxxxxxxxxxxxxx</secretKey>
+        <protocol>http</protocol>
+        <bucket>testbucket01</bucket>
+    </XMLS3Bucket>
+</folder-extension-bind>
+
+
+<folder-extension-bind class="org.mycore.filesystem.s3.XMLS3BucketProvider" encrypted="true" key="bucket-crypt">
+KDaecE1SXn851uXbEi5DNah+fiaNyG7LAPsI3R22S0pSMYAnJoqpjOj9YY2H6RakiUaJwnOjpwheKa+TaNzYl3Ci6UcgtHy/CdiM4rgz9cWCSWjtGPPeUL2MU9CsaF8dEL4gCPOO10lBOyZzN11gVDUkMxMJGsqcy+WUcqLmJvPaudp/PSt5bMrBOijzqeuhjS2kz+2IF1p/wQfTM4TL7WlSlJEgRBJJDfIh3RBtbWxJ8F0g3iZqumzxX3ZL+dBST2F+lIZmwKDZL0taBosFIPH/rH4MbD1JcMM2iwKol76mNPIiuMDZcPZERrnz91wDlQqqI9STNOfMieTDbyH8wA==
+</folder-extension-bind>
+```
+## How can I test local?
 You can use minio for testing s3 with docker and docker-compose.
 Copy this to a docker-compose.yml and run `docker-compose up` to start a demo s3 server.
 ```
