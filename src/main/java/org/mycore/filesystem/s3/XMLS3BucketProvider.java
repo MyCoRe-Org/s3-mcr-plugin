@@ -256,7 +256,7 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
 
     private Directory createDirectory(HashMap<String, Directory> lazyFolderMap, String path, Directory parent) {
         return lazyFolderMap.computeIfAbsent(path, (_path) -> {
-            Directory directory = new Directory();
+            Directory directory = parent == null ? new Root() : new Directory();
             directory.setPath(_path);
             directory.setName(getFileName(_path) + "/");
             directory.setChildren(new ArrayList<>());

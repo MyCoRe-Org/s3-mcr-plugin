@@ -33,6 +33,10 @@
         <span class="text-info">{{i18n.fileDate}}</span>
       </template>
 
+      <template #top-row="" v-if="fs.type==='DIRECTORY'">
+          <td role="cell" colspan="3"><a href="#" v-on:click.prevent="backButtonClicked">..</a></td>
+      </template>
+
       <template #head(size)="">
         <span class="text-info">{{i18n.fileSize}}</span>
       </template>
