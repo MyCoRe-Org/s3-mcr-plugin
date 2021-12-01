@@ -27,7 +27,7 @@ import java.io.OutputStream;
 
 public interface FileSystemFromXML {
     void streamFile(Element extensionGrandChild, String path, OutputStream os) throws IOException;
-    Directory getRootDirectory(Element extensionGrandChild);
+    Directory getRootDirectory(Element extensionGrandChild) throws IOException;
     Directory getDirectory(Element extensionGrandChild, String path) throws IOException;
     boolean test(Element extensionGrandChild) throws AuthenticationException;
 }

@@ -38,14 +38,14 @@ import java.util.function.Function;
 
 public class FileSystemValidationHelper {
 
-    public static Map<String, String> getSimpleValidationMap(FileSystemFromXML impl, Element extension) {
+    public static Map<String, String> getSimpleValidationMap(FileSystemFromXML impl, Element extension) throws IOException {
         HashMap<String, String> validation = new HashMap<>();
         Directory rootDirectory = impl.getRootDirectory(extension);
         getValidationMap(impl, extension, rootDirectory, validation, FileBase::getEtag);
         return validation;
     }
 
-    public static HashMap<String, String> getComplexValidationMap(FileSystemFromXML impl, Element extension) {
+    public static HashMap<String, String> getComplexValidationMap(FileSystemFromXML impl, Element extension) throws IOException {
         HashMap<String, String> validation = new HashMap<>();
         Directory rootDirectory = impl.getRootDirectory(extension);
         getValidationMap(impl, extension, rootDirectory, validation, (fileBase -> {

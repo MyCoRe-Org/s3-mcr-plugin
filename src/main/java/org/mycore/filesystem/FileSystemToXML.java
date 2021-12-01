@@ -22,9 +22,10 @@ import org.jdom2.Element;
 
 import javax.naming.AuthenticationException;
 import javax.xml.bind.JAXBException;
+import java.io.IOException;
 import java.util.Map;
 
 public interface FileSystemToXML {
 
-    public Element getElement(Map<String, String> settingsObject) throws JAXBException, AuthenticationException;
+    public Element getElement(Map<String, String> settingsObject) throws JAXBException, AuthenticationException, IOException;
 }

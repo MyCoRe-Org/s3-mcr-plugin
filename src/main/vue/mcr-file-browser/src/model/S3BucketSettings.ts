@@ -31,4 +31,6 @@ export interface S3BucketSettings {
     protocol: string;
 
     bucket: string;
+
+    directory?:string
 }

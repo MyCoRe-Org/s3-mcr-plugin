@@ -30,18 +30,18 @@ import org.mycore.filesystem.model.Directory;
 import org.mycore.filesystem.model.File;
 import org.mycore.filesystem.model.FileBase;
 
-public abstract class CompressedDirectoryResolver<T1, T2> {
+public abstract class CompressedDirectoryResolver<T1, T2, T3> {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
-    public Directory resolveDirectory(InputStream compressedStream, String pathToTar, String path) throws IOException {
+    public Directory resolveDirectory(T3 compressedStream, String pathToTar, String path) throws IOException {
         Objects.requireNonNull(compressedStream, "The stream needs to be not null!");
 
         T1 archiveInputStream = getCompressedStream(compressedStream, pathToTar, path);
         return resolveIntern(archiveInputStream, pathToTar, path);
     }
 
-    abstract T1 getCompressedStream(InputStream compressedStream, String pathToTar, String path) throws IOException;
+    abstract T1 getCompressedStream(T3 compressedStream, String pathToTar, String path) throws IOException;
 
     abstract T2 resolveNextEntry(T1 ais) throws IOException;
 
@@ -60,44 +60,20 @@ public abstract class CompressedDirectoryResolver<T1, T2> {
         root.setChildren(new ArrayList<>());
         root.setPath(pathToTar + "/" + parentStr);
 
+        final LazyFSBuilder lazyFSBuilder = new LazyFSBuilder(pathToTar+"/");
         while ((entry = resolveNextEntry(ais)) != null) {
             String filePathStr = getFileName(entry);
-            if (filePathStr.startsWith(parentStr)) {
-                String pathRelative = filePathStr.substring(parentStr.length());
-                if (pathRelative.equals("")) {
-                    // this is the same as root
-                    continue;
-                }
 
-                int indexOf = pathRelative.indexOf('/');
-                if (indexOf == -1 || indexOf == pathRelative.length() - 1) {
-                    // should be regular file
-                    FileBase file;
-
-                    if (indexOf == pathRelative.length() - 1) {
-                        LOGGER.debug("Create folder " + pathRelative);
-                        file = new Directory();
-                    } else {
-                        LOGGER.debug("Create file " + pathRelative);
-                        file = new File();
-                    }
-
-                    // this is a regular folder
-
-                    file.setPath(pathToTar + "/" + parentStr + pathRelative);
-                    file.setName(pathRelative);
-                    Date lastModifiedDate = getLastModifiedDate(entry);
-                    file.setLastModified(lastModifiedDate);
-                    file.setSize(getSize(entry));
-                    root.getChildren().add(file);
-                } else {
-                    // should be skipped because its subfolder or file in subfolder
-                    LOGGER.debug("Skip " + pathRelative);
-                }
+            if(filePathStr.endsWith("/")){
+                lazyFSBuilder.addDirectory(filePathStr);
+            } else {
+                final int size = getSize(entry);
+                final Date lastModifiedDate = getLastModifiedDate(entry);
+                lazyFSBuilder.add(filePathStr,size, lastModifiedDate);
             }
-
         }
-        return root;
+
+        return lazyFSBuilder.getDirectory(parentStr);
     }
 
 }

@@ -39,6 +39,8 @@ public class S3BucketSettings {
 
     private String bucket;
 
+    private String directory;
+
     public String getEndpoint() {
         return endpoint;
     }
@@ -100,5 +102,14 @@ public class S3BucketSettings {
     @XmlElement(name = "bucket", required = true)
     public void setBucket(String bucket) {
         this.bucket = bucket;
+    }
+
+    public String getDirectory() {
+        return directory;
+    }
+
+    @XmlElement(name = "directory", required = false)
+    public void setDirectory(String directory) {
+        this.directory = directory;
     }
 }

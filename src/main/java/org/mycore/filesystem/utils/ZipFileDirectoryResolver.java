@@ -18,22 +18,31 @@
 
 package org.mycore.filesystem.utils;
 
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
-
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Date;
+import java.util.Enumeration;
 
-public class ZipDirectoryResolver extends CompressedDirectoryResolver<ZipArchiveInputStream, ZipArchiveEntry> {
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+
+public class ZipFileDirectoryResolver extends CompressedDirectoryResolver<ZipFile, ZipArchiveEntry, S3SeekableFileChannel> {
+
+    Enumeration<ZipArchiveEntry> entries;
+
     @Override
-    ZipArchiveInputStream getCompressedStream(InputStream compressedStream, String pathToTar, String path) throws IOException {
-        return new ZipArchiveInputStream(compressedStream);
+    ZipFile getCompressedStream(S3SeekableFileChannel compressedStream, String pathToTar, String path) throws IOException {
+        return  new ZipFile(compressedStream, path, "UTF8", false);
     }
 
     @Override
-    ZipArchiveEntry resolveNextEntry(ZipArchiveInputStream ais) throws IOException {
-        return ais.getNextZipEntry();
+    ZipArchiveEntry resolveNextEntry(ZipFile ais) throws IOException {
+        if(entries==null){
+            entries = ais.getEntries();
+        }
+        if(!entries.hasMoreElements()){
+            return null;
+        }
+        return entries.nextElement();
     }
 
     @Override

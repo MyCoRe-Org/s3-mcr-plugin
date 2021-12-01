@@ -56,6 +56,10 @@
           {{ i18n.validationSecretKeyFail }}
         </div>
       </div>
+      <div class="form-group">
+        <label for="directory">{{ i18n.s3directory }}</label>
+        <input id="directory" v-model="bucketSettings.directory"  class="form-control" type="text">
+      </div>
       <div class="form-check">
         <input id="pathStyleAccess" v-model="bucketSettings.pathStyleAccess" class="form-check-input" type="checkbox">
         <label class="form-check-label" for="pathStyleAccess">{{ i18n.s3PathStyleAccess }}</label>
@@ -83,6 +87,7 @@ export default class NewFileSystemForm extends Vue {
     s3AccessKey: "",
     s3SecretKey: "",
     s3PathStyleAccess: "",
+    s3directory: "",
     validationOk: "",
     validationEndpointFail: "",
     validationBucketFail: "",
@@ -96,7 +101,8 @@ export default class NewFileSystemForm extends Vue {
     protocol: "",
     secretKey: "",
     accessKey: "",
-    pathStyleAccess: false
+    pathStyleAccess: false,
+    directory: ""
   }
   private isValid = {
     endpoint: {clean: true, valid: false},
@@ -139,7 +145,8 @@ export default class NewFileSystemForm extends Vue {
       protocol: "https",
       secretKey: "",
       accessKey: "",
-      pathStyleAccess: false
+      pathStyleAccess: false,
+      directory: ""
     }
   }
 }

@@ -20,7 +20,6 @@ package org.mycore.filesystem.s3;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -28,6 +27,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.naming.AuthenticationException;
@@ -50,14 +51,14 @@ import org.mycore.filesystem.model.File;
 import org.mycore.filesystem.model.FileBase;
 import org.mycore.filesystem.model.Root;
 import org.mycore.filesystem.utils.CompressedDirectoryResolver;
-import org.mycore.filesystem.utils.TarDirectoryResolver;
-import org.mycore.filesystem.utils.ZipDirectoryResolver;
+import org.mycore.filesystem.utils.S3SeekableFileChannel;
+import org.mycore.filesystem.utils.TarFileDirectoryResolver;
+import org.mycore.filesystem.utils.ZipFileDirectoryResolver;
 import org.w3c.dom.Node;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
-import com.amazonaws.SdkClientException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -69,7 +70,6 @@ import com.amazonaws.services.s3.model.HeadBucketResult;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
@@ -80,6 +80,9 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
     public static final String PATH_STYLE_ACCESS = "pathStyleAccess";
     public static final String PROTOCOL = "protocol";
     public static final String ACCESS_KEY = "accessKey";
+
+    public static final String DIRECTORY = "directory";
+
     private static final Logger LOGGER = LogManager.getLogger();
 
     public S3BucketSettings getBucketSettings(Element extensionGrandChild) {
@@ -121,38 +124,8 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
     }
 
     @Override
-    public Root getRootDirectory(Element extensionGrandChild) {
-        try {
-            S3BucketSettings bucketSettings = getBucketSettings(extensionGrandChild);
-            AmazonS3 conn = getConnection(bucketSettings);
-
-            ListObjectsV2Result lor = null;
-            Root bucketRootDirectory = null;
-            HashMap<String, Directory> lazyDirectoryMap = new HashMap<>();
-
-            do {
-                ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request();
-                listObjectsV2Request.setBucketName(bucketSettings.getBucket());
-
-                if (lor != null) {
-                    listObjectsV2Request.setContinuationToken(lor.getNextContinuationToken());
-                }
-
-                lor = conn.listObjectsV2(listObjectsV2Request);
-
-                if (bucketRootDirectory == null) {
-                    bucketRootDirectory = new Root();
-                    bucketRootDirectory.setName("" + "/");
-                    bucketRootDirectory.setChildren(new ArrayList<>());
-                    bucketRootDirectory.setPath(bucketSettings.getBucket());
-                }
-
-                processSummaries(lor, bucketRootDirectory, "", lazyDirectoryMap);
-            } while (lor.isTruncated());
-            return bucketRootDirectory;
-        } catch (SdkClientException sdkClientException) {
-            throw new UncheckedIOException("Error while accessing S3", new IOException(sdkClientException));
-        }
+    public Directory getRootDirectory(Element extensionGrandChild) throws IOException {
+        return getDirectory(extensionGrandChild, "");
     }
 
     @Override
@@ -162,26 +135,35 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
 
         ListObjectsV2Result lor = null;
 
-        String[] parts = path.split("/");
+        final Optional<String> directory = Optional.ofNullable(bucketSettings.getDirectory())
+            .filter(p -> !p.equals(""));
+        String pathToRoot = directory.map(ptr -> ptr.concat("/")).orElse("");
+
+        String partsToRoot = Optional.ofNullable(path).orElse("");
+        String[] parts = partsToRoot.split("/");
+
         boolean isCompressed = Arrays.stream(parts)
             .anyMatch(p -> p.endsWith(".zip") || p.endsWith("tar.gz") || p.endsWith(".tar"));
 
         if (!isCompressed) {
-            HashMap<String, Directory> lazyDirectoryMap = new HashMap<>();
+            HashMap<String, Directory> directoryMap = new HashMap<>();
+
+            final Directory root = buildRootDirectory(bucketSettings, directory, directoryMap);
+
             do {
                 ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request();
                 listObjectsV2Request.setBucketName(bucketSettings.getBucket());
-                //listObjectsV2Request.setDelimiter("/");
-                listObjectsV2Request.setPrefix(path);
+                listObjectsV2Request.setPrefix(pathToRoot + path);
+
                 if (lor != null) {
                     listObjectsV2Request.setContinuationToken(lor.getNextContinuationToken());
                 }
 
                 lor = conn.listObjectsV2(listObjectsV2Request);
-                processSummaries(lor, null, path, lazyDirectoryMap);
+                processSummaries(lor, pathToRoot, Objects.equals(path, "") ? root : null, path, directoryMap);
             } while (lor.isTruncated());
 
-            return lazyDirectoryMap.get(path);
+            return directoryMap.get(path);
         } else {
             // get path to tar
             StringBuilder pathToCompressedFile = new StringBuilder();
@@ -201,28 +183,43 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
                 }
             }
 
-            S3Object object = conn.getObject(bucketSettings.getBucket(),
-                pathToCompressedFile.deleteCharAt(pathToCompressedFile.length() - 1).toString());
-            try (S3ObjectInputStream s3IS = object.getObjectContent()) {
-                CompressedDirectoryResolver compressedDirectoryResolver = cfPart != null && cfPart.endsWith(".zip")
-                    ? new ZipDirectoryResolver()
-                    : new TarDirectoryResolver();
+            directory.ifPresent(dir -> pathToCompressedFile.insert(0, pathToRoot));
 
-                try {
-                    return compressedDirectoryResolver.resolveDirectory(s3IS, pathToCompressedFile.toString(),
+            final String fileInBucket = pathToCompressedFile.deleteCharAt(pathToCompressedFile.length() - 1).toString();
+
+            CompressedDirectoryResolver compressedDirectoryResolver = cfPart != null && cfPart.endsWith(".zip")
+                ? new ZipFileDirectoryResolver()
+                : new TarFileDirectoryResolver();
+
+            final S3SeekableFileChannel s3SeekableFileChannel = new S3SeekableFileChannel(conn,
+                bucketSettings.getBucket(), fileInBucket);
+            final long time = new Date().getTime();
+            final Directory dir = compressedDirectoryResolver.resolveDirectory(s3SeekableFileChannel,
+                pathToCompressedFile.substring(pathToRoot.length()),
                         pathAfterCompressedFile.toString());
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
+
+                final long time2 = new Date().getTime();
+                LOGGER.info("ZIP resolution needs {}", time2 - time);
+                return dir;
+
             }
+
         }
 
+    private Directory buildRootDirectory(S3BucketSettings bucketSettings, Optional<String> directory,
+        HashMap<String, Directory> directoryMap) {
+        final Directory root = new Root();
+        root.setName(directory.orElse(bucketSettings.getBucket()));
+        root.setPath("");
+        root.setChildren(new ArrayList<>());
+        directoryMap.put("", root);
+        return root;
     }
 
-    private void processSummaries(ListObjectsV2Result lor, Directory parent, String prefix,
+    private void processSummaries(ListObjectsV2Result lor, String pathToRoot, Directory parent, String prefix,
         HashMap<String, Directory> lazyDirectoryMap) {
         for (S3ObjectSummary summary : lor.getObjectSummaries()) {
-            String filePath = summary.getKey();
+            String filePath = summary.getKey().substring(pathToRoot.length());
             Date lastModified = summary.getLastModified();
             String eTag = summary.getETag();
 
@@ -252,12 +249,12 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
         StringBuilder pathBuilder = new StringBuilder();
         for (String pathPart : pathParts) {
             pathBuilder.append(pathPart).append('/');
-            fileParentDirectory = lazyCreateFolder(lazyDirectoryMap, pathBuilder.toString(), fileParentDirectory);
+            fileParentDirectory = createDirectory(lazyDirectoryMap, pathBuilder.toString(), fileParentDirectory);
         }
         return fileParentDirectory;
     }
 
-    private Directory lazyCreateFolder(HashMap<String, Directory> lazyFolderMap, String path, Directory parent) {
+    private Directory createDirectory(HashMap<String, Directory> lazyFolderMap, String path, Directory parent) {
         return lazyFolderMap.computeIfAbsent(path, (_path) -> {
             Directory directory = new Directory();
             directory.setPath(_path);
@@ -321,7 +318,8 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
     }
 
     @Override
-    public Element getElement(Map<String, String> settingsObject) throws JAXBException, AuthenticationException {
+    public Element getElement(Map<String, String> settingsObject)
+        throws JAXBException, AuthenticationException, IOException {
         if (settingsObject.containsKey(ENDPOINT) && settingsObject.containsKey(BUCKET)
             && settingsObject.containsKey(PROTOCOL) && settingsObject.containsKey(SECRET_KEY)
             && settingsObject.containsKey(ACCESS_KEY) && settingsObject.containsKey(PATH_STYLE_ACCESS)) {
@@ -333,6 +331,10 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
             bucketSettings.setAccessKey(settingsObject.get(ACCESS_KEY));
             bucketSettings.setSecretKey(settingsObject.get(SECRET_KEY));
             bucketSettings.setPathStyleAccess(Boolean.parseBoolean(settingsObject.get(PATH_STYLE_ACCESS)));
+
+            if (settingsObject.containsKey(DIRECTORY)) {
+                bucketSettings.setDirectory(settingsObject.get(DIRECTORY));
+            }
 
             if (test(bucketSettings)) {
                 JDOMResult result = new JDOMResult();

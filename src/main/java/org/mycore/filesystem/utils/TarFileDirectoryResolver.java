@@ -20,35 +20,40 @@ package org.mycore.filesystem.utils;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarFile;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.mycore.filesystem.model.Directory;
-import org.mycore.filesystem.model.File;
-import org.mycore.filesystem.model.FileBase;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.util.ArrayList;
+import java.nio.channels.Channels;
 import java.util.Date;
-import java.util.Objects;
+import java.util.Iterator;
 
-public class TarDirectoryResolver extends CompressedDirectoryResolver<TarArchiveInputStream, TarArchiveEntry, InputStream> {
+public class TarFileDirectoryResolver extends CompressedDirectoryResolver<Object, TarArchiveEntry, S3SeekableFileChannel> {
 
+    private Iterator<TarArchiveEntry> iterator;
 
     @Override
-    TarArchiveInputStream getCompressedStream(InputStream compressedStream, String pathToTar, String path) throws IOException {
-        if (pathToTar.endsWith(".gz")) {
-            return new TarArchiveInputStream(new GzipCompressorInputStream(compressedStream));
+    Object getCompressedStream(S3SeekableFileChannel compressedStream, String pathToTar, String path) throws IOException {
+        if(pathToTar.endsWith(".tar.gz")) {
+            // i think this has trash performance
+            return new TarArchiveInputStream(new GzipCompressorInputStream(Channels.newInputStream(compressedStream)));
         } else {
-            return new TarArchiveInputStream(compressedStream);
+            return new TarFile(compressedStream);
         }
     }
 
     @Override
-    TarArchiveEntry resolveNextEntry(TarArchiveInputStream ais) throws IOException {
-        return ais.getNextTarEntry();
+    TarArchiveEntry resolveNextEntry(Object ais) throws IOException {
+        if(ais instanceof TarFile){
+            if(iterator==null){
+                iterator = ((TarFile)ais).getEntries().iterator();
+            }
+            return iterator.hasNext() ? iterator.next() : null;
+        } else {
+            TarArchiveInputStream tais = (TarArchiveInputStream) ais;
+            return tais.getNextTarEntry();
+        }
     }
 
     @Override

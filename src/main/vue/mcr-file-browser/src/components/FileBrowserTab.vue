@@ -108,12 +108,14 @@ export default class FileBrowserTab extends Vue {
       if (this.currentDirectory != null) {
         // shortcut to disable requests to directories which are already present in json.
 
-        /*let matchingFile = this.currentDirectory.children.filter(child=>this.directoryPath==child.path && child.children.length>0);
-        if(matchingFile.length==1){
-          this.currentRequestedPath = null;
+        let matchingFile = this.currentDirectory.children
+            .filter(child => this.directoryPath == child.path && child.children != null && child.children.length > 0);
+        if (matchingFile.length == 1) {
+          this.currentRequestedPath = this.objectId + "/" + this.derivateId + "/" + this.directoryPath;
           this.currentDirectory = matchingFile[0];
+          this.loading = false;
           return;
-        }*/
+        }
       }
       if (this.directoryPath != null) {
         loadingURL = `${this.baseUrl}api/v2/fs/${this.objectId}/list/${btoa(this.derivateId)}/${btoa(this.directoryPath)}`;
