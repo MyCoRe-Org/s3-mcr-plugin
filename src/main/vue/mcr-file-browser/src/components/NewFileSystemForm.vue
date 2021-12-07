@@ -12,6 +12,9 @@
           <option>http</option>
           <option>https</option>
         </select>
+        <b-tooltip target="protocol" placement="left" triggers="hover focus">
+          {{ i18n.helpProtocol }}
+        </b-tooltip>
         <div v-if="!isValid.protocol.clean && !isValid.protocol.valid" class="invalid-feedback">
           {{ i18n.validationProtocolFail }}
         </div>
@@ -22,6 +25,9 @@
                 'is-valid' : !isValid.endpoint.clean && isValid.endpoint.valid,
                 'is-invalid' :  !isValid.endpoint.clean && !isValid.endpoint.valid
         }" class="form-control" type="text">
+        <b-tooltip target="endpoint" placement="left" triggers="hover focus">
+          {{ i18n.helpEndpoint }}
+        </b-tooltip>
         <div v-if="!isValid.endpoint.clean && !isValid.endpoint.valid" class="invalid-feedback">
           {{ i18n.validationEndpointFail }}
         </div>
@@ -32,6 +38,9 @@
                 'is-valid' : !isValid.bucket.clean && isValid.bucket.valid,
                 'is-invalid' :  !isValid.bucket.clean && !isValid.bucket.valid
         }" class="form-control" type="text">
+        <b-tooltip target="bucket" placement="left" triggers="hover focus">
+          {{ i18n.helpBucket }}
+        </b-tooltip>
         <div v-if="!isValid.bucket.clean && !isValid.bucket.valid" class="invalid-feedback">
           {{ i18n.validationBucketFail }}
         </div>
@@ -42,6 +51,9 @@
                 'is-valid' : !isValid.accessKey.clean && isValid.accessKey.valid,
                 'is-invalid' :  !isValid.accessKey.clean && !isValid.accessKey.valid
         }" class="form-control" type="text">
+        <b-tooltip target="accessKey" placement="left" triggers="hover focus">
+          {{ i18n.helpAccessKey }}
+        </b-tooltip>
         <div v-if="!isValid.accessKey.clean && !isValid.accessKey.valid" class="invalid-feedback">
           {{ i18n.validationAccesKeyFail }}
         </div>
@@ -52,6 +64,9 @@
                 'is-valid' : !isValid.secretKey.clean && isValid.secretKey.valid,
                 'is-invalid' :  !isValid.secretKey.clean && !isValid.secretKey.valid
         }" class="form-control" type="password">
+        <b-tooltip target="secretKey" placement="left" triggers="hover focus">
+          {{ i18n.helpSecretKey }}
+        </b-tooltip>
         <div v-if="!isValid.secretKey.clean && !isValid.secretKey.valid" class="invalid-feedback">
           {{ i18n.validationSecretKeyFail }}
         </div>
@@ -59,12 +74,17 @@
       <div class="form-group">
         <label for="directory">{{ i18n.s3directory }}</label>
         <input id="directory" v-model="bucketSettings.directory"  class="form-control" type="text">
+        <b-tooltip target="directory" placement="left" triggers="hover focus">
+          {{ i18n.helpDirectory }}
+        </b-tooltip>
       </div>
-      <div class="form-check">
+      <div id="pta" class="form-check">
         <input id="pathStyleAccess" v-model="bucketSettings.pathStyleAccess" class="form-check-input" type="checkbox">
         <label class="form-check-label" for="pathStyleAccess">{{ i18n.s3PathStyleAccess }}</label>
+        <b-tooltip target="pta" placement="left" triggers="focus hover">
+          {{ i18n.helpPathStyleAccess }}
+        </b-tooltip>
       </div>
-
       <button class="btn btn-primary" type="submit" v-on:click="save()">{{ i18n.save }}</button>
     </form>
   </div>
@@ -74,7 +94,8 @@
 import {Component, Prop, Vue} from 'vue-property-decorator';
 import {S3BucketSettings} from "@/model/S3BucketSettings";
 import {I18n} from "@/i18n";
-
+import { TooltipPlugin } from 'bootstrap-vue'
+Vue.use(TooltipPlugin)
 
 @Component
 export default class NewFileSystemForm extends Vue {
@@ -93,7 +114,14 @@ export default class NewFileSystemForm extends Vue {
     validationBucketFail: "",
     validationAccesKeyFail: "",
     validationSecretKeyFail: "",
-    validationProtocolFail: ""
+    validationProtocolFail: "",
+    helpEndpoint: "",
+    helpBucket: "",
+    helpAccessKey: "",
+    helpSecretKey: "",
+    helpProtocol: "",
+    helpDirectory: "",
+    helpPathStyleAccess: ""
   };
   private bucketSettings: S3BucketSettings = {
     endpoint: "",
@@ -101,7 +129,7 @@ export default class NewFileSystemForm extends Vue {
     protocol: "",
     secretKey: "",
     accessKey: "",
-    pathStyleAccess: false,
+    pathStyleAccess: true,
     directory: ""
   }
   private isValid = {
@@ -145,7 +173,7 @@ export default class NewFileSystemForm extends Vue {
       protocol: "https",
       secretKey: "",
       accessKey: "",
-      pathStyleAccess: false,
+      pathStyleAccess: true,
       directory: ""
     }
   }
@@ -157,4 +185,9 @@ export default class NewFileSystemForm extends Vue {
 .clickable {
   cursor: pointer;
 }
+
+.tooltip{
+  opacity: 1 !important;
+}
+
 </style>

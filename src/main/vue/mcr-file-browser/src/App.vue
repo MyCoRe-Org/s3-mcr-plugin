@@ -11,12 +11,13 @@
                       v-on:click.prevent=""><b>+</b></b-nav-item>
         </template>
       </b-tabs>
-      <b-modal id="modal-1" :title="i18n.addBucket" hide-footer>
+      <b-modal id="modal-1" :title="i18n.addBucket" hide-footer hide-backdrop>
         <new-file-system-form v-on:saveBucket="saveBucket">
           <b-alert v-model="showAddBucketError" dismissible variant="danger">
             {{ i18n.addBucketError }}
           </b-alert>
         </new-file-system-form>
+
       </b-modal>
     </div>
   </div>
@@ -132,6 +133,6 @@ export default class FileBrowser extends Vue {
 }
 </script>
 
-<style>
+<style scoped>
 
 </style>

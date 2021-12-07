@@ -42,7 +42,10 @@
       </template>
 
       <template #cell(name)="data">
-        <a href="#" v-on:click.prevent="childClicked(data.item)"> {{ data.item.name }}</a>
+        <a v-if="data.item.type === 'DIRECTORY' || data.item.type === 'BROWSABLE_FILE'" href="#" v-on:click.prevent="childClicked(data.item)"> {{ data.item.name }}</a>
+        <template v-else>
+          {{ data.item.name }}
+        </template>
       </template>
 
       <template #cell(lastModified)="data">
