@@ -28,7 +28,7 @@
     <artifactId>s3-mcr-plugin</artifactId>
     <version>2021.06.1-SNAPSHOT</version>
     <properties>
-        <mycore.version>2021.06.0-SNAPSHOT</mycore.version>
+        <mycore.version>2021.06.1-SNAPSHOT</mycore.version>
         <node.version>v16.0.0</node.version>
         <yarn.version>v1.22.10</yarn.version>
     </properties>
