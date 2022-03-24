@@ -23,14 +23,15 @@
       </tbody>
     </table> -->
     <b-table id="my-table" :current-page="currentPage" :fields="fields"
+             :sort-compare-options="{ numeric: true }"
              :items="fs.children"
              :per-page="perPage" hover striped>
       <template #head(name)="">
-        <span class="text-info">{{i18n.fileName}}</span>
+        <span class="text-info clickable">{{ i18n.fileName }} </span>
       </template>
 
       <template #head(lastModified)="">
-        <span class="text-info">{{i18n.fileDate}}</span>
+        <span class="text-info clickable">{{ i18n.fileDate }} </span>
       </template>
 
       <template #top-row="" v-if="fs.type==='DIRECTORY'">
@@ -38,7 +39,7 @@
       </template>
 
       <template #head(size)="">
-        <span class="text-info">{{i18n.fileSize}}</span>
+        <span class="text-info clickable">{{ i18n.fileSize }} </span>
       </template>
 
       <template #cell(name)="data">
@@ -49,8 +50,9 @@
       </template>
 
       <template #cell(lastModified)="data">
-        <template v-if="data.item.lastModified!=null">{{ new Date(data.item.lastModified).toLocaleString() }}
-        </template>
+        <span v-if="data.item.lastModified!=null" :title="new Date(data.item.lastModified).toLocaleTimeString()">
+          {{ new Date(data.item.lastModified).toLocaleDateString() }}
+        </span>
         <template v-else></template>
       </template>
 
@@ -146,5 +148,23 @@ export default class FileTableView extends Vue {
 <style scoped>
 .clickable {
   cursor: pointer;
+}
+
+[aria-sort=ascending] span.text-info:after {
+  font-family: "Font Awesome 5 Free";
+  content: '\f0de';
+  font-weight: 900;
+}
+
+[aria-sort=descending] span.text-info:after {
+  font-family: "Font Awesome 5 Free";
+  content: '\f0dd';
+  font-weight: 900;
+}
+
+[aria-sort=none] span.text-info:after {
+  font-family: "Font Awesome 5 Free";
+  content: '\f0dc';
+  font-weight: 900;
 }
 </style>

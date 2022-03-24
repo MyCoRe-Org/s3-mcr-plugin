@@ -29,5 +29,5 @@ public interface FileSystemFromXML {
     void streamFile(Element extensionGrandChild, String path, OutputStream os) throws IOException;
     Directory getRootDirectory(Element extensionGrandChild) throws IOException;
     Directory getDirectory(Element extensionGrandChild, String path) throws IOException;
-    boolean test(Element extensionGrandChild) throws AuthenticationException;
+    boolean test(Element extensionGrandChild) throws AuthenticationException, IOException;
 }

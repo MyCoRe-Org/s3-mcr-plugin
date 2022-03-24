@@ -53,6 +53,8 @@ import org.mycore.datamodel.niofs.MCRPath;
 
 public class FileSystemToXMLHelper {
 
+    public static final String EXTENSION_XML_NAME = "extension.xml";
+
     public static Response addFileSystem(String id, String impl, Map<String, String> settings)
         throws AuthenticationException {
         FileSystemToXML fs = MCRConfiguration2.<FileSystemToXML>getInstanceOf("MCR.FS.Impl." + impl).orElseThrow();
@@ -78,11 +80,15 @@ public class FileSystemToXMLHelper {
 
             Document extensionFile = new Document(fileSystemExtension);
 
-            MCRPath extensionXML = MCRPath.getPath(derivate.getId().toString(), "extension.xml");
+            MCRPath extensionXML = MCRPath.getPath(derivate.getId().toString(), EXTENSION_XML_NAME);
 
             try (OutputStream outputStream = Files.newOutputStream(extensionXML)) {
                 new MCRJDOMContent(extensionFile).sendTo(outputStream, true);
             }
+
+            derivate.getDerivate().getInternals().setMainDoc(EXTENSION_XML_NAME);
+            MCRMetadataManager.update(derivate);
+
             return Response.ok().header("Access-Control-Allow-Origin", "*").build();
         } catch (JAXBException | IOException e) {
             return Response.serverError().entity(e.getMessage()).build();

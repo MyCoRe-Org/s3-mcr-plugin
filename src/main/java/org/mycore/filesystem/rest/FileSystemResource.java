@@ -26,7 +26,6 @@ import java.nio.file.Files;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.naming.AuthenticationException;
@@ -49,19 +48,22 @@ import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 import org.mycore.access.MCRAccessManager;
 import org.mycore.crypt.MCRCryptKeyNoPermissionException;
-import org.mycore.datamodel.metadata.MCRMetaLink;
-import org.mycore.datamodel.metadata.MCRMetadataManager;
-import org.mycore.datamodel.metadata.MCRObject;
-import org.mycore.datamodel.metadata.MCRObjectID;
+import org.mycore.datamodel.metadata.*;
 import org.mycore.datamodel.niofs.MCRPath;
 import org.mycore.filesystem.FileSystemFromXMLHelper;
 import org.mycore.filesystem.FileSystemToXMLHelper;
+import org.mycore.filesystem.model.DerivateInfo;
+import org.mycore.filesystem.model.DerivateTitle;
+import org.mycore.filesystem.model.DerivateInformations;
 import org.mycore.restapi.annotations.MCRRequireTransaction;
+import org.mycore.services.i18n.MCRTranslation;
 
 @Path("fs/")
 public class FileSystemResource {
 
     private static final Logger LOGGER = LogManager.getLogger();
+
+    public static final String CREATE_DERIVATE_PERMISSION = "create-derivate";
 
     @POST
     @Path("{objectID}/add/{impl}/")
@@ -70,7 +72,8 @@ public class FileSystemResource {
     public Response add(@PathParam("objectID") String objectIDString, @PathParam("impl") String impl,
         Map<String, String> settings) {
         try {
-            if (!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_WRITE)) {
+            if (!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_WRITE)
+                || !MCRAccessManager.checkPermission(CREATE_DERIVATE_PERMISSION)) {
                 return Response.status(Response.Status.FORBIDDEN).build();
             }
             return FileSystemToXMLHelper.addFileSystem(objectIDString, impl, settings);
@@ -91,8 +94,7 @@ public class FileSystemResource {
             return Response.status(Response.Status.FORBIDDEN).build();
         }
         MCRObject obj = getObject(objectIDString);
-        List<String> infoList = getExtensionDerivates(obj);
-        return Response.ok(infoList).header("Access-Control-Allow-Origin", "*").build();
+        return Response.ok(getDerivateInformations(obj)).header("Access-Control-Allow-Origin", "*").build();
     }
 
     @GET
@@ -102,12 +104,12 @@ public class FileSystemResource {
     public Response getFile(@PathParam("objectID") String objectIDString,
         @PathParam("derivateID") String base64DerivateID,
         @PathParam("filePath") String base64FilePath) {
-        if (!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_READ)) {
-            return Response.status(Response.Status.FORBIDDEN).build();
-        }
-
         String derivateID = new String(Base64.getUrlDecoder().decode(base64DerivateID), StandardCharsets.UTF_8);
         String filePath = new String(Base64.getUrlDecoder().decode(base64FilePath), StandardCharsets.UTF_8);
+
+        if (!MCRAccessManager.checkPermission(derivateID, MCRAccessManager.PERMISSION_READ)) {
+            return Response.status(Response.Status.FORBIDDEN).build();
+        }
 
         final List<String> extensionDerivates = getExtensionDerivates(getObject(objectIDString));
         if (!extensionDerivates.contains(derivateID)) {
@@ -142,11 +144,12 @@ public class FileSystemResource {
     @MCRRequireTransaction
     public Response listRoot(@PathParam("objectID") String objectIDString,
         @PathParam("derivateID") String base64DerivateID) {
-        if (!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_READ)) {
+        String derivateID = new String(Base64.getUrlDecoder().decode(base64DerivateID), StandardCharsets.UTF_8);
+
+        if (!MCRAccessManager.checkPermission(derivateID, MCRAccessManager.PERMISSION_READ)
+            && !MCRAccessManager.checkPermission(derivateID, MCRAccessManager.PERMISSION_VIEW)) {
             return Response.status(Response.Status.FORBIDDEN).build();
         }
-
-        String derivateID = new String(Base64.getUrlDecoder().decode(base64DerivateID), StandardCharsets.UTF_8);
 
         final List<String> extensionDerivates = getExtensionDerivates(getObject(objectIDString));
         if (!extensionDerivates.contains(derivateID)) {
@@ -182,12 +185,13 @@ public class FileSystemResource {
     @MCRRequireTransaction
     public Response listRoot(@PathParam("objectID") String objectIDString, @PathParam("derivateID") String base64DerivateID,
         @PathParam("directoryID") String base64DirectoryID) {
-        if (!MCRAccessManager.checkPermission(objectIDString, MCRAccessManager.PERMISSION_READ)) {
-            return Response.status(Response.Status.FORBIDDEN).build();
-        }
-
         String derivateID = new String(Base64.getUrlDecoder().decode(base64DerivateID), StandardCharsets.UTF_8);
         String directoryID = new String(Base64.getUrlDecoder().decode(base64DirectoryID), StandardCharsets.UTF_8);
+
+        if (!MCRAccessManager.checkPermission(derivateID, MCRAccessManager.PERMISSION_READ)
+            && !MCRAccessManager.checkPermission(derivateID, MCRAccessManager.PERMISSION_VIEW)) {
+            return Response.status(Response.Status.FORBIDDEN).build();
+        }
 
         final List<String> extensionDerivates = getExtensionDerivates(getObject(objectIDString));
         if (!extensionDerivates.contains(derivateID)) {
@@ -225,6 +229,34 @@ public class FileSystemResource {
             .collect(Collectors.toList());
     }
 
+    private DerivateInformations getDerivateInformations(MCRObject obj) {
+        List<DerivateInfo> derivateInfos = getExtensionDerivates(obj).stream()
+            .map(MCRObjectID::getInstance)
+            .map(MCRMetadataManager::retrieveMCRDerivate)
+            .map(der -> {
+
+                List<DerivateTitle> titles = der.getDerivate().getTitles().stream()
+                    .sorted((t1, t2) -> getLanguageValue(t2) - getLanguageValue(t1))
+                    .map(title -> new DerivateTitle(title.getText(),
+                        title.getLang(),
+                        title.getForm()))
+                    .collect(Collectors.toList());
+
+                boolean view = MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_VIEW)
+                    || MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_READ);
+                boolean delete = MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_DELETE);
+                boolean edit = MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_WRITE);
+                return new DerivateInfo(der.getId().toString(), titles, view, delete, edit);
+            }).collect(Collectors.toList());
+        return new DerivateInformations(derivateInfos, MCRAccessManager.checkPermission(CREATE_DERIVATE_PERMISSION)
+            && MCRAccessManager.checkPermission(obj.getId(), MCRAccessManager.PERMISSION_WRITE));
+
+    }
+
+    private int getLanguageValue(MCRMetaLangText t1) {
+        return t1.getLang().equals(MCRTranslation.getCurrentLocale().getLanguage()) ? 1 : 0;
+    }
+
     private Element readExtensionFromDerivate(String derivateID) throws IOException, JDOMException {
         final MCRPath path = MCRPath.getPath(derivateID, "extension.xml");
         try (InputStream is = Files.newInputStream(path)) {
@@ -235,7 +267,6 @@ public class FileSystemResource {
 
     private MCRObject getObject(String objectIDString) {
         MCRObjectID objectID = MCRObjectID.getInstance(objectIDString);
-        MCRObject object = MCRMetadataManager.retrieveMCRObject(objectID);
-        return object;
+        return MCRMetadataManager.retrieveMCRObject(objectID);
     }
 }

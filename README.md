@@ -10,6 +10,7 @@ MCR.FS.Impl.S3.Key=bucket-crypt
 
 MCR.Crypt.Cipher.bucket-crypt.class=org.mycore.crypt.MCRAESCipher
 MCR.Crypt.Cipher.bucket-crypt.KeyFile=%MCR.datadir%/bucket.key
+MCR.Crypt.Cipher.bucket-crypt.EnableACL=false
 ```
 ### Create key file
 You need to create the bucket-crypt key with the CLI command:
@@ -23,16 +24,6 @@ MIR.Layout.Start=mir-abstract-badges,mir-workflow,mir-abstract-title,mir-abstrac
 ```
 If not you can take a look at the file **src/main/resources/xsl/metadata/extended-file-browser.xsl** to see how it is done.
 
-### ACL
-The user which read or write the encrypted data from the object need to have the permission for that.
-The users also need the right to read and write from the rest API.
-
-| Objekt ID                 | Zugriffsrecht | Regel                    |
-|---------------------------|---------------|--------------------------|
-| crypt:cipher:bucket-crypt | crypt         | editor and administrator |
-| crypt:cipher:bucket-crypt | decrypt       | always allowed           |
-| restapi:/fs/              | write         | editor and administrator |
-| restapi:/fs/              | read          | always allowed           |
 
 ### Derivate types
 You need to add derivate_types:extension to the derivate_types classification.

@@ -295,12 +295,12 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
     }
 
     @Override
-    public boolean test(Element extensionGrandChild) throws AuthenticationException {
+    public boolean test(Element extensionGrandChild) throws AuthenticationException, IOException {
         S3BucketSettings bucketSettings = getBucketSettings(extensionGrandChild);
         return test(bucketSettings);
     }
 
-    private boolean test(S3BucketSettings bucketSettings) throws AuthenticationException {
+    private boolean test(S3BucketSettings bucketSettings) throws AuthenticationException, AmazonServiceException, IOException {
         AmazonS3 conn = getConnection(bucketSettings);
         try {
             HeadBucketResult headBucketResult = conn.headBucket(new HeadBucketRequest(bucketSettings.getBucket()));
@@ -311,7 +311,7 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
                 throw new AuthenticationException(ase.getErrorMessage());
             }
 
-            return false; // bucket does not exist or authentication is wrong
+          throw new IOException("Error while adding bucket", ase);
         }
 
         return true;

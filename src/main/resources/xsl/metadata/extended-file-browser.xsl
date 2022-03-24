@@ -21,24 +21,25 @@
                 xmlns:i18n="xalan://org.mycore.services.i18n.MCRTranslation" xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink"
                 xmlns:acl="xalan://org.mycore.access.MCRAccessManager"
 
-                exclude-result-prefixes="i18n mcr mods xlink">
+                exclude-result-prefixes="i18n mcr mods xlink acl">
     <xsl:import href="xslImport:modsmeta:metadata/extended-file-browser.xsl" />
     <xsl:template match="/">
         <div id="mir-extended-file-browser">
-            <script src="{$WebApplicationBaseURL}webjars/vue/2.6.14/vue.min.js" />
-            <script src="{$WebApplicationBaseURL}vue/file-browser/fileBrowser.umd.min.js" />
-            <link href="{$WebApplicationBaseURL}vue/file-browser/fileBrowser.css" rel="stylesheet"/>
-            <div id="mir-extended-file-browser-mount">
-                <fb base-url="{$WebApplicationBaseURL}" object-id="{mycoreobject/@ID}" can-write="{acl:checkPermission(mycoreobject/@ID,'writedb')}"
-                ></fb>
+            <div class="mir_extended_file_browser">
+                <script src="{$WebApplicationBaseURL}webjars/vue/2.6.14/vue.min.js" />
+                <script src="{$WebApplicationBaseURL}vue/file-browser/fileBrowser.umd.min.js" />
+                <link href="{$WebApplicationBaseURL}vue/file-browser/fileBrowser.css" rel="stylesheet"/>
+                <div id="mir-extended-file-browser-mount">
+                    <fb base-url="{$WebApplicationBaseURL}" object-id="{mycoreobject/@ID}"></fb>
+                </div>
+                <script>
+                    new Vue({
+                    components: {
+                    fb: fileBrowser
+                    }
+                    }).$mount('#mir-extended-file-browser-mount');
+                </script>
             </div>
-            <script>
-                new Vue({
-                components: {
-                fb: fileBrowser
-                }
-                }).$mount('#mir-extended-file-browser-mount');
-            </script>
         </div>
         <xsl:apply-imports />
     </xsl:template>

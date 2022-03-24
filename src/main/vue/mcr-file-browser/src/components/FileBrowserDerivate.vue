@@ -18,17 +18,17 @@
 
 <template>
   <div>
-    <section v-if="this.currentRequestedPath">
+    <div v-if="this.currentRequestedPath">
       <BreadcrumbView :path="this.currentRequestedPath" v-on:crumbClicked="crumbClickedBreadCrumbView"/>
-    </section>
-    <section v-if="loading" class="text-center">
+    </div>
+    <div v-if="loading" class="text-center">
       <b-spinner label="Spinning"></b-spinner>
-    </section>
-    <section v-if="currentDirectory!=null && !loading">
+    </div>
+    <div v-if="currentDirectory!=null && !loading">
       <FileTableView :fs="currentDirectory"
                      v-on:backButtonClicked="backButtonClickedFileTableView"
                      v-on:childClicked="childClickedFileTableView"/>
-    </section>
+    </div>
   </div>
 </template>
 
@@ -45,7 +45,7 @@ import {TokenResponse} from "@/model/TokenResponse";
     FileTableView
   },
 })
-export default class FileBrowserTab extends Vue {
+export default class FileBrowserDerivate extends Vue {
 
   @Prop() private objectId?: string;
   @Prop() private baseUrl?: string;
@@ -95,6 +95,13 @@ export default class FileBrowserTab extends Vue {
   @Watch('baseUrl')
   @Watch('rootId')
   onPropChange() {
+    this.onDirectoryChange();
+  }
+
+  @Watch("derivateId")
+  onDerivateChange() {
+    this.currentDirectory = null;
+    this.directoryPath = "";
     this.onDirectoryChange();
   }
 
