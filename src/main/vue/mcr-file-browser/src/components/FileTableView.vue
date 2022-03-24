@@ -79,7 +79,6 @@
 <script lang="ts">
 import {Component, Prop, Vue} from 'vue-property-decorator';
 import {FileBase} from "@/model/FileBase";
-import {default as filesize} from "filesize.js"
 import {I18n} from "@/i18n";
 import {PaginationPlugin, TablePlugin} from "bootstrap-vue";
 
@@ -125,8 +124,20 @@ export default class FileTableView extends Vue {
     this.$emit("backButtonClicked");
   }
 
-  public size(fileSizeBytes: number) {
-    return filesize(fileSizeBytes);
+  public size(bytes: number) {
+    // Values used in MIR
+    const { radix, unit } = { radix: 1e3, unit: ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] };
+    bytes = Math.abs(bytes);
+
+
+    let loop = 0;
+
+    // calculate
+    while (bytes >= radix) {
+      bytes /= radix;
+      ++loop;
+    }
+    return `${bytes.toFixed(1)} ${unit[loop]}`;
   }
 }
 </script>
