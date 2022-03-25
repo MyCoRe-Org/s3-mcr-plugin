@@ -21,42 +21,11 @@ import {Component, Prop, Vue, Watch} from 'vue-property-decorator';
 
 @Component
 export default class BreadcrumbView extends Vue {
-  @Prop() private path!: string;
-
-  created() {
-    this.calculateCrumbs(this.path);
-  }
-
-  @Watch("path")
-  public pathChanged(_new: string, old: string) {
-    this.calculateCrumbs(_new);
-  }
-
-  private calculateCrumbs(path: string) {
-
-    while (this.crumbs.length > 0) {
-      this.crumbs.pop();
-    }
-
-    let until = [];
-    for (const crumbLabel of path.split("/")) {
-      if (crumbLabel !== "") {
-        until.push(crumbLabel);
-        this.crumbs.push({
-          id: until.join("/") + "/",
-          label: crumbLabel
-        })
-      }
-    }
-
-  }
+  @Prop() private crumbs!: Crumb[];
 
   private crumbClicked(crumb: Crumb) {
     this.$emit("crumbClicked", crumb);
   }
-
-  private crumbs: Crumb[] = [];
-
 }
 
 export interface Crumb {

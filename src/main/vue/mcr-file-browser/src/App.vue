@@ -18,8 +18,8 @@
                   </option>
                 </select>
               </div>
-              <div class="col-auto options">
-                <b-dropdown v-if="canWrite || (current!=null && current.delete)" variant="link"
+              <div class="col-auto options" v-if="canWrite || (current!=null && current.delete)">
+                <b-dropdown variant="link"
                             toggle-class="text-decoration-none">
                   <template #button-content>
                     <span class="fas fa-cog"></span><span> Aktionen</span>
@@ -41,7 +41,9 @@
           <div class="card-body p-0">
             <file-browser-derivate v-if="current!==null" :base-url="baseUrl" :object-id="objectId"
                                    :derivate-id="current.id"
-                                   :token="token"/>
+                                   :token="token"
+                                   :title="getTitle(current)"
+            />
           </div>
         </div>
       </div>

@@ -19,7 +19,7 @@
 <template>
   <div>
     <div v-if="this.currentRequestedPath">
-      <BreadcrumbView :path="this.currentRequestedPath" v-on:crumbClicked="crumbClickedBreadCrumbView"/>
+      <BreadcrumbView :crumbs="this.crumbs" v-on:crumbClicked="crumbClickedBreadCrumbView"/>
     </div>
     <div v-if="loading" class="text-center">
       <b-spinner label="Spinning"></b-spinner>
@@ -51,11 +51,37 @@ export default class FileBrowserDerivate extends Vue {
   @Prop() private baseUrl?: string;
   @Prop() private derivateId?: string;
   @Prop() private token?: TokenResponse;
+  @Prop() private title?: string;
+
+  private breadcrumbChange() {
+    while (this.crumbs.length > 0) {
+      this.crumbs.pop();
+    }
+
+    console.log("title is " + this.title)
+
+    if (this.currentRequestedPath == null) {
+      return;
+    }
+
+    let until = [];
+    for (const crumbLabel of this.currentRequestedPath.split("/")) {
+      if (crumbLabel !== "") {
+        until.push(crumbLabel);
+        this.crumbs.push({
+          id: until.join("/") + "/",
+          label: until.length == 1 && this.title != undefined ? this.title : crumbLabel
+        })
+      }
+    }
+  }
+
   private directoryPath?: string | null = "";
   private url: string | null = null;
   private loading = false;
   private currentDirectory: FileBase | null = null;
   private currentRequestedPath: string | null = null;
+  private crumbs: Crumb[] = [];
 
   childClickedFileTableView(child: FileBase) {
     if (child.type == "DIRECTORY" || child.type == "BROWSABLE_FILE") {
@@ -73,7 +99,7 @@ export default class FileBrowserDerivate extends Vue {
   }
 
   crumbClickedBreadCrumbView(crumb: Crumb) {
-    this.directoryPath = crumb.id.substr((this.objectId + "/" + this.derivateId + "/").length);
+    this.directoryPath = crumb.id.substr((this.derivateId + "/").length);
     this.onDirectoryChange();
   }
 
@@ -118,7 +144,8 @@ export default class FileBrowserDerivate extends Vue {
         let matchingFile = this.currentDirectory.children
             .filter(child => this.directoryPath == child.path && child.children != null && child.children.length > 0);
         if (matchingFile.length == 1) {
-          this.currentRequestedPath = this.objectId + "/" + this.derivateId + "/" + this.directoryPath;
+          this.currentRequestedPath = this.derivateId + "/" + this.directoryPath;
+          this.breadcrumbChange();
           this.currentDirectory = matchingFile[0];
           this.loading = false;
           return;
@@ -126,10 +153,12 @@ export default class FileBrowserDerivate extends Vue {
       }
       if (this.directoryPath != null) {
         loadingURL = `${this.baseUrl}api/v2/fs/${this.objectId}/list/${btoa(this.derivateId)}/${btoa(this.directoryPath)}`;
-        this.currentRequestedPath = this.objectId + "/" + this.derivateId + "/" + this.directoryPath;
+        this.currentRequestedPath = this.derivateId + "/" + this.directoryPath;
+        this.breadcrumbChange();
       } else {
         loadingURL = `${this.baseUrl}api/v2/fs/${this.objectId}/list/${btoa(this.derivateId)}`;
-        this.currentRequestedPath = this.objectId + "/" + this.derivateId + "/";
+        this.currentRequestedPath = this.derivateId + "/";
+        this.breadcrumbChange();
       }
 
 
