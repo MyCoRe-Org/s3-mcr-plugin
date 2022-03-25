@@ -12,11 +12,12 @@
           <div class="card-header">
             <div class="row">
               <div class="col">
-                <select class="form-control" v-model="current" v-on:change="derivateChanged()">
+                <select v-if="derivateInfo.length>1" class="form-control" v-model="current" v-on:change="derivateChanged()">
                   <option v-for="derivateInfo in derivateInfo" :value="derivateInfo" :key="derivateInfo">
                     {{ getTitle(derivateInfo) }}
                   </option>
                 </select>
+                <span v-else class="title">{{getTitle(derivateInfo[0])}}</span>
               </div>
               <div class="col-auto options" v-if="canWrite || (current!=null && current.delete)">
                 <b-dropdown variant="link"
@@ -259,5 +260,12 @@ export default class FileBrowser extends Vue {
 .jumbotron {
   padding: 1.25rem;
   border: 1px solid rgba(0,0,0,0.125);
+}
+
+.card-header span.title {
+  display: flex;
+  align-items: center;
+  justify-content: left;
+  height: 100%;
 }
 </style>
