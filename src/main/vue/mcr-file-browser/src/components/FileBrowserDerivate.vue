@@ -38,11 +38,13 @@ import FileTableView from "@/components/FileTableView.vue";
 import {FileBase} from "@/model/FileBase";
 import BreadcrumbView, {Crumb} from "@/components/BreadcrumbView.vue";
 import {TokenResponse} from "@/model/TokenResponse";
+import {BSpinner} from "bootstrap-vue";
 
 @Component({
   components: {
     BreadcrumbView,
-    FileTableView
+    FileTableView,
+    BSpinner
   },
 })
 export default class FileBrowserDerivate extends Vue {
@@ -57,8 +59,6 @@ export default class FileBrowserDerivate extends Vue {
     while (this.crumbs.length > 0) {
       this.crumbs.pop();
     }
-
-    console.log("title is " + this.title)
 
     if (this.currentRequestedPath == null) {
       return;
@@ -83,27 +83,23 @@ export default class FileBrowserDerivate extends Vue {
   private currentRequestedPath: string | null = null;
   private crumbs: Crumb[] = [];
 
-  childClickedFileTableView(child: FileBase) {
+  childClickedFileTableView(child: FileBase): void {
     if (child.type == "DIRECTORY" || child.type == "BROWSABLE_FILE") {
       this.directoryPath = child.path;
       this.onDirectoryChange();
     } else if (child.type == "FILE") {
-      this.openFile(child.path);
+      if (this.derivateId != null) {
+        //window.open(`${this.baseUrl}api/v2/fs/${this.objectId}/download/${btoa(this.rootId)}/${btoa(path)}`);
+      }
     }
   }
 
-  openFile(path: string) {
-    if (this.derivateId != null) {
-      //window.open(`${this.baseUrl}api/v2/fs/${this.objectId}/download/${btoa(this.rootId)}/${btoa(path)}`);
-    }
-  }
-
-  crumbClickedBreadCrumbView(crumb: Crumb) {
+  crumbClickedBreadCrumbView(crumb: Crumb): void {
     this.directoryPath = crumb.id.substr((this.derivateId + "/").length);
     this.onDirectoryChange();
   }
 
-  backButtonClickedFileTableView() {
+  backButtonClickedFileTableView(): void {
     if (this.directoryPath != null) {
       let parts = this.directoryPath.split("/");
       parts.pop();
@@ -113,19 +109,19 @@ export default class FileBrowserDerivate extends Vue {
     }
   }
 
-  created() {
+  created(): void {
     this.onDirectoryChange();
   }
 
   @Watch('objectId')
   @Watch('baseUrl')
   @Watch('rootId')
-  onPropChange() {
+  onPropChange(): void {
     this.onDirectoryChange();
   }
 
   @Watch("derivateId")
-  onDerivateChange() {
+  onDerivateChange(): void {
     this.currentDirectory = null;
     this.directoryPath = "";
     this.onDirectoryChange();

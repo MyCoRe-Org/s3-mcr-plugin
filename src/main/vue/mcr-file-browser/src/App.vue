@@ -12,7 +12,7 @@
           <div class="card-header">
             <div class="row">
               <div class="col">
-                <select v-if="derivateInfo.length>1" class="form-control" v-model="current" v-on:change="derivateChanged()">
+                <select v-if="derivateInfo.length>1" class="form-control" v-model="current">
                   <option v-for="derivateInfo in derivateInfo" :value="derivateInfo" :key="derivateInfo">
                     {{ getTitle(derivateInfo) }}
                   </option>
@@ -25,14 +25,14 @@
                   <template #button-content>
                     <span class="fas fa-cog"></span><span> Aktionen</span>
                   </template>
-                  <b-dropdown-item v-b-modal="'modal-1'" href="#" v-if="canCreate" v-on:click.prevent="">
+                  <b-dropdown-item v-b-modal.modal-1 v-if="canCreate">
                     {{ i18n.addBucket }}
                   </b-dropdown-item>
                   <b-dropdown-item v-if="current.write"
                                    :href="baseUrl + 'editor/editor-derivate.xed?derivateid='+current.id">
                     {{ i18n.manageDerivate }}
                   </b-dropdown-item>
-                  <b-dropdown-item v-b-modal="'modal-2'" href="#" v-if="current.delete" v-on:click.prevent="">
+                  <b-dropdown-item v-b-modal.modal-2 v-if="current.delete">
                     {{ i18n.deleteBucket }}
                   </b-dropdown-item>
                 </b-dropdown>
@@ -52,7 +52,7 @@
       <div v-else-if="derivateInfo.length==0 && canCreate">
         <h3>{{ i18n.headline }}</h3>
         <div class="jumbotron text-center">
-          <a v-b-modal="'modal-1'" href="#" v-if="canCreate" v-on:click.prevent="">{{ i18n.addBucket }}</a>
+          <a v-b-modal.modal-1  v-if="canCreate">{{ i18n.addBucket }}</a>
         </div>
       </div>
       <b-modal id="modal-1" :title="i18n.addBucket" hide-footer hide-backdrop>
@@ -84,7 +84,6 @@ import {TokenResponse} from "@/model/TokenResponse";
 import {
   BNavItem,
   BSpinner,
-  TabsPlugin,
   ModalPlugin,
   AlertPlugin,
   BDropdown,
@@ -95,20 +94,19 @@ import {I18n} from "@/i18n";
 import {DerivateInformations} from "@/model/DerivateInformations";
 import {DerivateInfo} from "@/model/DerivateInfo";
 
-Vue.component('b-spinner', BSpinner);
-Vue.component('b-nav-item', BNavItem);
-Vue.component('b-dropdown', BDropdown);
-Vue.component('b-dropdown-item', BDropdownItem);
-Vue.component('b-button', BButton);
 Vue.use(ModalPlugin);
-Vue.use(TabsPlugin);
 Vue.use(AlertPlugin);
 
 @Component({
   components: {
     NewFileSystemForm,
     FileBrowserDerivate,
-  },
+    BSpinner,
+    BNavItem,
+    BDropdown,
+    BDropdownItem,
+    BButton
+  }
 })
 export default class FileBrowser extends Vue {
 
@@ -119,7 +117,6 @@ export default class FileBrowser extends Vue {
   private current: DerivateInfo | null = null;
   private showAddBucketError = false;
   private showDeleteBucketError = false;
-  private addBucketSuccess = false;
   private deleteErrorMessage = "";
   private addBucketErrorMessage = "";
 
@@ -135,14 +132,10 @@ export default class FileBrowser extends Vue {
     headline: ""
   };
 
-  async created() {
+  async created(): Promise<void> {
     await I18n.loadToObject(this.i18n);
     await this.loadToken();
     await this.loadContents();
-  }
-
-  derivateChanged() {
-    console.log(this.current)
   }
 
   private getTitle(info: DerivateInfo) {

@@ -82,12 +82,14 @@
 import {Component, Prop, Vue} from 'vue-property-decorator';
 import {FileBase} from "@/model/FileBase";
 import {I18n} from "@/i18n";
-import {PaginationPlugin, TablePlugin} from "bootstrap-vue";
+import {BPagination, BTable} from "bootstrap-vue";
 
-Vue.use(PaginationPlugin)
-Vue.use(TablePlugin)
-
-@Component
+@Component({
+  components: {
+    BPagination,
+    BTable
+  }
+})
 export default class FileTableView extends Vue {
   @Prop() private fs!: FileBase;
 

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build --target lib --name fileBrowser --dist --dest ../../../../target/classes/META-INF/resources/vue/file-browser/",
+    "build": "vue-cli-service build --target lib --name fileBrowser --formats umd-min --mode production --dest ../../../../target/classes/META-INF/resources/vue/file-browser/",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {

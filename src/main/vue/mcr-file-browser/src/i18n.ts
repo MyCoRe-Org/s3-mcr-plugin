@@ -24,7 +24,7 @@ export class I18n {
     private static dict: Record<string, string>;
     private static fill: Record<string, string>[] = [];
 
-    public static async loadToObject(i18n: Record<string, string>) {
+    public static async loadToObject(i18n: Record<string, string>):Promise<void> {
         if(!I18n.complete){
             this.fill.push(i18n);
 

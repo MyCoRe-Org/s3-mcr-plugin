@@ -91,13 +91,17 @@
 </template>
 
 <script lang="ts">
-import {Component, Prop, Vue} from 'vue-property-decorator';
+import {Component, Vue} from 'vue-property-decorator';
 import {S3BucketSettings} from "@/model/S3BucketSettings";
 import {I18n} from "@/i18n";
-import { TooltipPlugin } from 'bootstrap-vue'
-Vue.use(TooltipPlugin)
+import {BTooltip} from "bootstrap-vue";
 
-@Component
+
+@Component({
+  components: {
+    BTooltip
+  }
+})
 export default class NewFileSystemForm extends Vue {
 
   private i18n: Record<string, string> = {
