@@ -20,8 +20,10 @@ package org.mycore.filesystem.model;
 
 import org.mycore.filesystem.capability.FileCapability;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.List;
 
 public class FileBase {
 
@@ -37,7 +39,9 @@ public class FileBase {
 
     protected String etag;
 
-    protected EnumSet<FileCapability> capabilities;
+    protected String storedEtag;
+
+    protected List<FileCapability> capabilities = new ArrayList<>();
 
     protected Date lastModified;
 
@@ -69,11 +73,11 @@ public class FileBase {
         this.iconURI = iconURI;
     }
 
-    public EnumSet<FileCapability> getCapabilities() {
+    public List<FileCapability> getCapabilities() {
         return capabilities;
     }
 
-    public void setCapabilities(EnumSet<FileCapability> capabilities) {
+    public void setCapabilities(List<FileCapability> capabilities) {
         this.capabilities = capabilities;
     }
 
@@ -103,5 +107,13 @@ public class FileBase {
 
     public FileType getType() {
         return type;
+    }
+
+    public String getStoredEtag() {
+        return storedEtag;
+    }
+
+    public void setStoredEtag(String storedEtag) {
+        this.storedEtag = storedEtag;
     }
 }

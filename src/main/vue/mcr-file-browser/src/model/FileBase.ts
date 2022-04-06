@@ -21,9 +21,11 @@ export interface FileBase {
     iconURI: string | null;
     name: string;
     etag: string | null;
+    storedEtag: string | null;
     lastModified: number | null;
     size: number;
     children: FileBase[];
     type:"ROOT"|"DIRECTORY"|"FILE"|"BROWSABLE_FILE";
+    capabilities: string[]
 }
 

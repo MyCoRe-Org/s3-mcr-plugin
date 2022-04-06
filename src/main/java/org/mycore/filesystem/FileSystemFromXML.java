@@ -24,10 +24,12 @@ import org.mycore.filesystem.model.Directory;
 import javax.naming.AuthenticationException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Map;
 
 public interface FileSystemFromXML {
     void streamFile(Element extensionGrandChild, String path, OutputStream os) throws IOException;
     Directory getRootDirectory(Element extensionGrandChild) throws IOException;
     Directory getDirectory(Element extensionGrandChild, String path) throws IOException;
     boolean test(Element extensionGrandChild) throws AuthenticationException, IOException;
+    Map<String, Object> getMetadata(Element element, boolean canWrite);
 }

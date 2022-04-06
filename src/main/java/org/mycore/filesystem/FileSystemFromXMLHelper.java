@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -53,6 +54,13 @@ public class FileSystemFromXMLHelper {
         FileSystemFromXML fsProvider = MCRConfiguration2.instantiateClass(clazz);
         Element element = processBindElement(extensionElement);
         return  fsProvider.getDirectory(element, path);
+    }
+
+    public static Map<String, Object> getMetadata(Element extensionElement, boolean canWrite) throws MCRCryptKeyNoPermissionException, IOException, JDOMException {
+        String clazz = extensionElement.getAttributeValue("class");
+        FileSystemFromXML fsProvider = MCRConfiguration2.instantiateClass(clazz);
+        Element element = processBindElement(extensionElement);
+        return  fsProvider.getMetadata(element, canWrite);
     }
 
     private static Element processBindElement(Element extensionElement) throws IOException, MCRCryptKeyNoPermissionException, JDOMException {
@@ -78,16 +86,12 @@ public class FileSystemFromXMLHelper {
         return element;
     }
 
-    public static void streamFile(Element extensionElement, String path, OutputStream os) throws IOException {
+    public static void streamFile(Element extensionElement, String path, OutputStream os) throws IOException, MCRCryptKeyNoPermissionException, JDOMException {
         String clazz = extensionElement.getAttributeValue("class");
 
         FileSystemFromXML fsProvider = MCRConfiguration2.instantiateClass(clazz);
-
-        List<Element> children = extensionElement.getChildren();
-        if (children.size() == 0) {
-            throw new IOException("Data seems to be invalid, because no child present in extension element");
-        }
-        fsProvider.streamFile(children.get(0), path, os);
+        Element element = processBindElement(extensionElement);
+        fsProvider.streamFile(element, path, os);
     }
 
 }

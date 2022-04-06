@@ -18,13 +18,27 @@
 
 package org.mycore.filesystem.capability;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 /**
- * Describing the tecnical limits of a File or Folder
+ * Describing the technical limits of a File or Folder
  */
+@JsonFormat(shape = JsonFormat.Shape.STRING)
 public enum FileCapability {
-    DOWNLOAD,
-    WRITE,
-    VIEW,
-    MOVE,
-    DELETE
+    DOWNLOAD("Download");
+
+    private String name;
+
+    FileCapability(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String toString() {
+        return getName();
+    }
 }

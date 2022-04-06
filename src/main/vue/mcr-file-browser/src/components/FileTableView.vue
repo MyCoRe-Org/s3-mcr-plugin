@@ -26,6 +26,14 @@
              :sort-compare-options="{ numeric: true }"
              :items="fs.children"
              :per-page="perPage" hover striped>
+      <template #head(download)="">
+        <span> </span>
+      </template>
+
+      <template #head(valid)="">
+        <span> </span>
+      </template>
+
       <template #head(name)="">
         <span class="text-info clickable">{{ i18n.fileName }} </span>
       </template>
@@ -35,15 +43,54 @@
       </template>
 
       <template #top-row="" v-if="fs.type==='DIRECTORY'">
-          <td role="cell" colspan="3"><a href="#" v-on:click.prevent="backButtonClicked">..</a></td>
+        <td role="cell"></td>
+        <td role="cell" colspan="4"><a href="#" v-on:click.prevent="backButtonClicked">..</a></td>
       </template>
 
       <template #head(size)="">
         <span class="text-info clickable">{{ i18n.fileSize }} </span>
       </template>
 
+      <template #cell(download)="data">
+        <span>
+          <a v-if="data.item.capabilities.indexOf('DOWNLOAD')!==-1" href="#"
+             v-on:click.prevent="childDownloadClicke(data.item)">
+            <span class="fa fa-download"> </span>
+          </a>
+        </span>
+      </template>
+
+      <template #cell(valid)="data">
+        <span>
+          <span v-if="data.item.etag !== null && (data.item.type === 'BROWSABLE_FILE' || data.item.type === 'FILE')">
+            <span :id="generateId(data.item)" v-if="data.item.storedEtag == data.item.etag"
+                  class="fa fa-check clickable text-success"> </span>
+            <span :id="generateId(data.item)" v-else class="fa fa-exclamation-triangle clickable text-danger"> </span>
+            <b-tooltip :target="generateId(data.item)" placement="left" triggers="click">
+              <template v-if="data.item.storedEtag != data.item.etag">
+                <p>{{ i18n.etagMissmatch }}</p>
+                <dl>
+                  <dt>{{ i18n.etagS3 }}</dt>
+                  <dd>{{ data.item.etag }}</dd>
+                  <dt>{{ i18n.etagMCR }}</dt>
+                  <dd>{{ data.item.storedEtag }}</dd>
+                </dl>
+              </template>
+              <template v-else>
+                <p>{{ i18n.etagMatch }}</p>
+                <dl>
+                  <dt>{{ i18n.etagS3 }}</dt>
+                  <dd>{{ data.item.storedEtag }}</dd>
+                </dl>
+              </template>
+            </b-tooltip>
+          </span>
+        </span>
+      </template>
+
       <template #cell(name)="data">
-        <a v-if="data.item.type === 'DIRECTORY' || data.item.type === 'BROWSABLE_FILE'" href="#" v-on:click.prevent="childClicked(data.item)"> {{ data.item.name }}</a>
+        <a v-if="data.item.type === 'DIRECTORY' || data.item.type === 'BROWSABLE_FILE'" href="#"
+           v-on:click.prevent="childClicked(data.item)"> {{ data.item.name }}</a>
         <template v-else>
           {{ data.item.name }}
         </template>
@@ -82,12 +129,13 @@
 import {Component, Prop, Vue} from 'vue-property-decorator';
 import {FileBase} from "@/model/FileBase";
 import {I18n} from "@/i18n";
-import {BPagination, BTable} from "bootstrap-vue";
+import {BPagination, BTable, BTooltip} from "bootstrap-vue";
 
 @Component({
   components: {
     BPagination,
-    BTable
+    BTable,
+    BTooltip
   }
 })
 export default class FileTableView extends Vue {
@@ -99,13 +147,26 @@ export default class FileTableView extends Vue {
   private i18n: Record<string, string> = {
     fileSize: "",
     fileDate: "",
-    fileName: ""
+    fileName: "",
+    etagMCR: "",
+    etagS3: "",
+    etagMissmatch: "",
+    etagMatch: ""
   };
 
-  private fields = [{
-    key: 'name',
-    sortable: true
-  },
+  private fields = [
+    {
+      key: 'download',
+      sortable: false
+    },
+    {
+      key: 'name',
+      sortable: true
+    },
+    {
+      key: 'valid',
+      sortable: false
+    },
     {
       key: 'lastModified',
       sortable: true
@@ -124,13 +185,21 @@ export default class FileTableView extends Vue {
     this.$emit("childClicked", file);
   }
 
+  public childDownloadClicke(file: FileBase): void {
+    this.$emit("childDownloadClicked", file);
+  }
+
   public backButtonClicked() {
     this.$emit("backButtonClicked");
   }
 
+  public generateId(file: FileBase) {
+    return 'validation' + btoa(file.path);
+  }
+
   public size(bytes: number) {
     // Values used in MIR
-    const { radix, unit } = { radix: 1e3, unit: ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] };
+    const {radix, unit} = {radix: 1e3, unit: ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']};
     bytes = Math.abs(bytes);
 
 
@@ -168,5 +237,9 @@ export default class FileTableView extends Vue {
   font-family: "Font Awesome 5 Free";
   content: '\f0dc';
   font-weight: 900;
+}
+
+.tooltip {
+  opacity: 1 !important;
 }
 </style>

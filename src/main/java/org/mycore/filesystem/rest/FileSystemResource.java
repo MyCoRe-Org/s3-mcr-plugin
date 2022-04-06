@@ -23,9 +23,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.naming.AuthenticationException;
@@ -40,6 +38,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTCreator;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Document;
@@ -47,6 +48,8 @@ import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 import org.mycore.access.MCRAccessManager;
+import org.mycore.common.MCRException;
+import org.mycore.common.config.MCRConfiguration2;
 import org.mycore.crypt.MCRCryptKeyNoPermissionException;
 import org.mycore.datamodel.metadata.*;
 import org.mycore.datamodel.niofs.MCRPath;
@@ -55,6 +58,7 @@ import org.mycore.filesystem.FileSystemToXMLHelper;
 import org.mycore.filesystem.model.DerivateInfo;
 import org.mycore.filesystem.model.DerivateTitle;
 import org.mycore.filesystem.model.DerivateInformations;
+import org.mycore.frontend.jersey.MCRJWTUtil;
 import org.mycore.restapi.annotations.MCRRequireTransaction;
 import org.mycore.services.i18n.MCRTranslation;
 
@@ -64,6 +68,7 @@ public class FileSystemResource {
     private static final Logger LOGGER = LogManager.getLogger();
 
     public static final String CREATE_DERIVATE_PERMISSION = "create-derivate";
+    public static final String TOKEN_DOWNLOAD_AUDIENCE = "mcr:fs:download";
 
     @POST
     @Path("{objectID}/add/{impl}/")
@@ -99,17 +104,50 @@ public class FileSystemResource {
 
     @GET
     @Path("{objectID}/download/{derivateID}/{filePath}")
-    @Produces("*/*")
     @MCRRequireTransaction
+    @Produces("text/plain")
     public Response getFile(@PathParam("objectID") String objectIDString,
-        @PathParam("derivateID") String base64DerivateID,
-        @PathParam("filePath") String base64FilePath) {
+                            @PathParam("derivateID") String base64DerivateID,
+                            @PathParam("filePath") String base64FilePath) {
+
+
         String derivateID = new String(Base64.getUrlDecoder().decode(base64DerivateID), StandardCharsets.UTF_8);
-        String filePath = new String(Base64.getUrlDecoder().decode(base64FilePath), StandardCharsets.UTF_8);
 
         if (!MCRAccessManager.checkPermission(derivateID, MCRAccessManager.PERMISSION_READ)) {
             return Response.status(Response.Status.FORBIDDEN).build();
         }
+
+        String token = JWT.create()
+                .withIssuedAt(new Date())
+                .withAudience(TOKEN_DOWNLOAD_AUDIENCE)
+                .withSubject(objectIDString + "/" + base64DerivateID + "/" + base64FilePath)
+                .sign(MCRJWTUtil.getJWTAlgorithm());
+
+        return Response.ok(token).build();
+    }
+    
+    @GET
+    @Path("download/{token}")
+    @Produces("*/*")
+    @MCRRequireTransaction
+    public Response getFile(@PathParam("token") String token) {
+        DecodedJWT jwt = JWT.require(MCRJWTUtil.getJWTAlgorithm())
+                .acceptLeeway(0)
+                .build()
+                .verify(token);
+
+        if(!jwt.getAudience().contains(TOKEN_DOWNLOAD_AUDIENCE)){
+            return Response.status(Response.Status.FORBIDDEN).entity("Audience of token must be " + TOKEN_DOWNLOAD_AUDIENCE).build();
+        }
+
+        String[] split = jwt.getSubject().split("/");
+        if(split.length != 3){
+            return Response.status(Response.Status.BAD_REQUEST).entity("Token subject is invalid!").build();
+        }
+
+        String objectIDString = split[0];
+        String derivateID = new String(Base64.getUrlDecoder().decode(split[1]), StandardCharsets.UTF_8);
+        String filePath = new String(Base64.getUrlDecoder().decode(split[2]), StandardCharsets.UTF_8);
 
         final List<String> extensionDerivates = getExtensionDerivates(getObject(objectIDString));
         if (!extensionDerivates.contains(derivateID)) {
@@ -130,12 +168,17 @@ public class FileSystemResource {
         return Response.ok(new StreamingOutput() {
             @Override
             public void write(OutputStream outputStream) throws IOException, WebApplicationException {
-                FileSystemFromXMLHelper.streamFile(extension, filePath, outputStream);
+                try {
+                    FileSystemFromXMLHelper.streamFile(extension, filePath, outputStream);
+                } catch (MCRCryptKeyNoPermissionException e) {
+                    // this is impossible
+                } catch (JDOMException e) {
+                    throw new MCRException("Invalid data found in " + derivateID.toString());
+                }
             }
         })
             .header("Content-Disposition", "attachment; filename=" + fileName)
             .header("Access-Control-Allow-Origin", "*").build();
-
     }
 
     @GET
@@ -234,6 +277,10 @@ public class FileSystemResource {
             .map(MCRObjectID::getInstance)
             .map(MCRMetadataManager::retrieveMCRDerivate)
             .map(der -> {
+                boolean view = MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_VIEW)
+                        || MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_READ);
+                boolean delete = MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_DELETE);
+                boolean edit = MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_WRITE);
 
                 List<DerivateTitle> titles = der.getDerivate().getTitles().stream()
                     .sorted((t1, t2) -> getLanguageValue(t2) - getLanguageValue(t1))
@@ -242,14 +289,22 @@ public class FileSystemResource {
                         title.getForm()))
                     .collect(Collectors.toList());
 
-                boolean view = MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_VIEW)
-                    || MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_READ);
-                boolean delete = MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_DELETE);
-                boolean edit = MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_WRITE);
-                return new DerivateInfo(der.getId().toString(), titles, view, delete, edit);
-            }).collect(Collectors.toList());
-        return new DerivateInformations(derivateInfos, MCRAccessManager.checkPermission(CREATE_DERIVATE_PERMISSION)
-            && MCRAccessManager.checkPermission(obj.getId(), MCRAccessManager.PERMISSION_WRITE));
+                final Element extension;
+                DerivateInfo derivateInfo = new DerivateInfo(der.getId().toString(), titles, view, delete, edit);
+
+                try {
+                    extension = readExtensionFromDerivate(der.getId().toString());
+                    derivateInfo.setMetadata(FileSystemFromXMLHelper.getMetadata(extension, edit));
+                } catch (IOException | JDOMException | MCRCryptKeyNoPermissionException e) {
+                    throw new MCRException("Error while reading extension.xml from derivate", e);
+                }
+
+                return derivateInfo;
+            })
+                .collect(Collectors.toList());
+        return new DerivateInformations(derivateInfos,
+                MCRAccessManager.checkPermission(CREATE_DERIVATE_PERMISSION)
+                && MCRAccessManager.checkPermission(obj.getId(), MCRAccessManager.PERMISSION_WRITE));
 
     }
 

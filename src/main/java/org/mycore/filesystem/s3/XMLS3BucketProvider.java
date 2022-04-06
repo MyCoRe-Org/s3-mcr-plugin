@@ -20,15 +20,7 @@ package org.mycore.filesystem.s3;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.naming.AuthenticationException;
@@ -42,14 +34,12 @@ import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.output.DOMOutputter;
 import org.jdom2.transform.JDOMResult;
+import org.mycore.common.config.MCRConfiguration2;
 import org.mycore.filesystem.FileSystemFromXML;
 import org.mycore.filesystem.FileSystemToXML;
 import org.mycore.filesystem.FileSystemValidationHelper;
-import org.mycore.filesystem.model.BrowsableFile;
-import org.mycore.filesystem.model.Directory;
-import org.mycore.filesystem.model.File;
-import org.mycore.filesystem.model.FileBase;
-import org.mycore.filesystem.model.Root;
+import org.mycore.filesystem.capability.FileCapability;
+import org.mycore.filesystem.model.*;
 import org.mycore.filesystem.utils.CompressedDirectoryResolver;
 import org.mycore.filesystem.utils.S3SeekableFileChannel;
 import org.mycore.filesystem.utils.TarFileDirectoryResolver;
@@ -65,12 +55,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.HeadBucketRequest;
-import com.amazonaws.services.s3.model.HeadBucketResult;
-import com.amazonaws.services.s3.model.ListObjectsV2Request;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.services.s3.model.*;
 
 public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
 
@@ -84,6 +69,12 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
     public static final String DIRECTORY = "directory";
 
     private static final Logger LOGGER = LogManager.getLogger();
+
+    public static final String FILE_ELEMENT_NAME = "file";
+
+    public static final String PATH_ATTRIBUTE_NAME = "path";
+
+    public static final String CHECKSUM_ATTRIBUTE_NAME = "checksum";
 
     public S3BucketSettings getBucketSettings(Element extensionGrandChild) {
         Node bucketSettingsNode;
@@ -120,7 +111,20 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
         S3BucketSettings bucketSettings = getBucketSettings(extensionGrandChild);
         AmazonS3 conn = getConnection(bucketSettings);
         S3Object object = conn.getObject(bucketSettings.getBucket(), path);
+        Integer maxSize = getMaxSize();
+        if (maxSize < object.getObjectMetadata().getContentLength()) {
+            throw new IOException("Object exceeds max size!");
+        }
         object.getObjectContent().transferTo(os);
+    }
+
+    private Integer getMaxSize() {
+        Integer maxSize = MCRConfiguration2.getInt("MCR.FS.Max.Download.Size")
+            .orElseThrow(() -> MCRConfiguration2.createConfigurationException("MCR.FS.Max.Download.Size"));
+        if (maxSize == -1) {
+            return Integer.MAX_VALUE;
+        }
+        return maxSize;
     }
 
     @Override
@@ -132,7 +136,7 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
     public Directory getDirectory(Element extensionGrandChild, String path) throws IOException {
         S3BucketSettings bucketSettings = getBucketSettings(extensionGrandChild);
         AmazonS3 conn = getConnection(bucketSettings);
-
+        Map<String, String> pathSumMap = getPathSumMap(extensionGrandChild);
         ListObjectsV2Result lor = null;
 
         final Optional<String> directory = Optional.ofNullable(bucketSettings.getDirectory())
@@ -160,7 +164,7 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
                 }
 
                 lor = conn.listObjectsV2(listObjectsV2Request);
-                processSummaries(lor, pathToRoot, Objects.equals(path, "") ? root : null, path, directoryMap);
+                processSummaries(lor, pathToRoot, Objects.equals(path, "") ? root : null, path, directoryMap, pathSumMap);
             } while (lor.isTruncated());
 
             return directoryMap.get(path);
@@ -206,6 +210,13 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
 
         }
 
+    private Map<String, String> getPathSumMap(Element extensionGrandChild) {
+        return extensionGrandChild.getChild("validation")
+                .getChildren(FILE_ELEMENT_NAME)
+                .stream().collect(Collectors.toMap(k -> k.getAttributeValue(PATH_ATTRIBUTE_NAME),
+                        v -> v.getAttributeValue(CHECKSUM_ATTRIBUTE_NAME)));
+    }
+
     private Directory buildRootDirectory(S3BucketSettings bucketSettings, Optional<String> directory,
         HashMap<String, Directory> directoryMap) {
         final Directory root = new Root();
@@ -217,7 +228,7 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
     }
 
     private void processSummaries(ListObjectsV2Result lor, String pathToRoot, Directory parent, String prefix,
-        HashMap<String, Directory> lazyDirectoryMap) {
+        HashMap<String, Directory> lazyDirectoryMap, Map<String, String> sumMap) {
         for (S3ObjectSummary summary : lor.getObjectSummaries()) {
             String filePath = summary.getKey().substring(pathToRoot.length());
             Date lastModified = summary.getLastModified();
@@ -230,11 +241,19 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
 
             FileBase file = fn.endsWith(".tar") || fn.endsWith(".tar.gz") || fn.endsWith(".zip") ? new BrowsableFile()
                 : new File();
+
+            Integer maxSize = getMaxSize();
+            if (file.getSize() <= maxSize) {
+                file.setCapabilities(Collections.singletonList(FileCapability.DOWNLOAD));
+            }
+
             file.setPath(filePath);
             file.setName(fn);
             file.setSize((int) summary.getSize());
             file.setLastModified(lastModified);
             file.setEtag(eTag);
+            file.setStoredEtag(sumMap.get(filePath));
+
             fileParentDirectory.getChildren().add(file);
         }
     }
@@ -300,6 +319,26 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
         return test(bucketSettings);
     }
 
+    @Override
+    public Map<String, Object> getMetadata(Element element, boolean canWrite) {
+        S3BucketSettings bucketSettings = getBucketSettings(element);
+
+        HashMap<String, Object> metadata = new HashMap<>();
+
+        if(canWrite) {
+            metadata.put(BUCKET, bucketSettings.getBucket());
+            metadata.put(PROTOCOL, bucketSettings.getProtocol());
+            metadata.put(ENDPOINT, bucketSettings.getEndpoint());
+            if(bucketSettings.getDirectory()!=null){
+                metadata.put(DIRECTORY, bucketSettings.getDirectory());
+            }
+            metadata.put(PATH_STYLE_ACCESS, bucketSettings.isPathStyleAccess());
+            metadata.put(ACCESS_KEY, bucketSettings.getAccessKey());
+        }
+
+        return metadata;
+    }
+
     private boolean test(S3BucketSettings bucketSettings) throws AuthenticationException, AmazonServiceException, IOException {
         AmazonS3 conn = getConnection(bucketSettings);
         try {
@@ -346,11 +385,11 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
                 extension.addContent(validation);
 
                 map.forEach((key,val )-> {
-                    final Element file = new Element("file");
+                    final Element file = new Element(FILE_ELEMENT_NAME);
                     validation.addContent(file);
 
-                    file.setAttribute("path", key);
-                    file.setAttribute("checksum", val);
+                    file.setAttribute(PATH_ATTRIBUTE_NAME, key);
+                    file.setAttribute(CHECKSUM_ATTRIBUTE_NAME, val);
                 });
 
                 return extension;

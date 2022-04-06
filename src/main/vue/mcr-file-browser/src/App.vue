@@ -28,6 +28,9 @@
                   <b-dropdown-item v-b-modal.modal-1 v-if="canCreate">
                     {{ i18n.addBucket }}
                   </b-dropdown-item>
+                  <b-dropdown-item v-b-modal.modal-3 v-if="current.write">
+                    {{ i18n.displayInfo }}
+                  </b-dropdown-item>
                   <b-dropdown-item v-if="current.write"
                                    :href="baseUrl + 'editor/editor-derivate.xed?derivateid='+current.id">
                     {{ i18n.manageDerivate }}
@@ -55,6 +58,15 @@
           <a v-b-modal.modal-1  v-if="canCreate">{{ i18n.addBucket }}</a>
         </div>
       </div>
+
+
+      <b-modal id="modal-3" :title="i18n.displayInfo" hide-footer hide-backdrop>
+        <dl v-for="(value,name) in current.metadata" :key="name">
+          <dt>{{i18n[name]}}</dt>
+          <dd>{{value}}</dd>
+        </dl>
+      </b-modal>
+
       <b-modal id="modal-1" :title="i18n.addBucket" hide-footer hide-backdrop>
         <new-file-system-form v-on:saveBucket="saveBucket">
           <b-alert v-model="showAddBucketError" dismissible variant="danger">
@@ -63,6 +75,7 @@
           </b-alert>
         </new-file-system-form>
       </b-modal>
+
       <b-modal id="modal-2" :title="i18n.deleteBucket" hide-footer hide-backdrop>
         <b-alert v-model="showDeleteBucketError" dismissible variant="danger">
           {{ i18n.deleteBucketError }}
@@ -129,7 +142,15 @@ export default class FileBrowser extends Vue {
     addBucket: "",
     deleteBucket: "",
     deleteBucketModal: "",
-    headline: ""
+    headline: "",
+    displayInfo: "",
+    endpoint: "",
+    bucket: "",
+    accessKey: "",
+    scretKey: "",
+    pathStyleAccess: "",
+    directory: "",
+    protocol: ""
   };
 
   async created(): Promise<void> {

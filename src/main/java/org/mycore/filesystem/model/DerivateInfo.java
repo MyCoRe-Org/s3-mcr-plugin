@@ -2,6 +2,7 @@ package org.mycore.filesystem.model;
 
 
 import java.util.List;
+import java.util.Map;
 
 public class DerivateInfo {
 
@@ -9,6 +10,7 @@ public class DerivateInfo {
     protected List<DerivateTitle> titles;
     protected boolean view;
     protected boolean delete;
+    protected Map<String, Object> metadata;
 
     public boolean isWrite() {
         return write;
@@ -58,5 +60,13 @@ public class DerivateInfo {
 
     public void setDelete(boolean delete) {
         this.delete = delete;
+    }
+
+    public Map<String, Object> getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Map<String, Object> metadata) {
+        this.metadata = metadata;
     }
 }

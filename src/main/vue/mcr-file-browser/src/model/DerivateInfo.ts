@@ -6,4 +6,5 @@ export interface DerivateInfo {
     write:boolean;
     delete:boolean;
     titles: DerivateTitle[];
+    metadata: Record<string, any>
 }

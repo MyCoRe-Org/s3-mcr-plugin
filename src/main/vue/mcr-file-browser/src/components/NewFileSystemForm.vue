@@ -20,7 +20,7 @@
         </div>
       </div>
       <div class="form-group">
-        <label for="endpoint">{{ i18n.s3Endpoint }}</label>
+        <label for="endpoint">{{ i18n.endpoint }}</label>
         <input id="endpoint" v-model="bucketSettings.endpoint" :class="{
                 'is-valid' : !isValid.endpoint.clean && isValid.endpoint.valid,
                 'is-invalid' :  !isValid.endpoint.clean && !isValid.endpoint.valid
@@ -33,7 +33,7 @@
         </div>
       </div>
       <div class="form-group">
-        <label for="bucket">{{ i18n.s3BucketName }}</label>
+        <label for="bucket">{{ i18n.bucket }}</label>
         <input id="bucket" v-model="bucketSettings.bucket" :class="{
                 'is-valid' : !isValid.bucket.clean && isValid.bucket.valid,
                 'is-invalid' :  !isValid.bucket.clean && !isValid.bucket.valid
@@ -46,7 +46,7 @@
         </div>
       </div>
       <div class="form-group">
-        <label for="accessKey">{{ i18n.s3AccessKey }}</label>
+        <label for="accessKey">{{ i18n.accessKey }}</label>
         <input id="accessKey" v-model="bucketSettings.accessKey" :class="{
                 'is-valid' : !isValid.accessKey.clean && isValid.accessKey.valid,
                 'is-invalid' :  !isValid.accessKey.clean && !isValid.accessKey.valid
@@ -59,7 +59,7 @@
         </div>
       </div>
       <div class="form-group">
-        <label for="secretKey">{{ i18n.s3SecretKey }}</label>
+        <label for="secretKey">{{ i18n.secretKey }}</label>
         <input id="secretKey" v-model="bucketSettings.secretKey" :class="{
                 'is-valid' : !isValid.secretKey.clean && isValid.secretKey.valid,
                 'is-invalid' :  !isValid.secretKey.clean && !isValid.secretKey.valid
@@ -72,7 +72,7 @@
         </div>
       </div>
       <div class="form-group">
-        <label for="directory">{{ i18n.s3directory }}</label>
+        <label for="directory">{{ i18n.directory }}</label>
         <input id="directory" v-model="bucketSettings.directory"  class="form-control" type="text">
         <b-tooltip target="directory" placement="left" triggers="hover focus">
           {{ i18n.helpDirectory }}
@@ -80,7 +80,7 @@
       </div>
       <div id="pta" class="form-check">
         <input id="pathStyleAccess" v-model="bucketSettings.pathStyleAccess" class="form-check-input" type="checkbox">
-        <label class="form-check-label" for="pathStyleAccess">{{ i18n.s3PathStyleAccess }}</label>
+        <label class="form-check-label" for="pathStyleAccess">{{ i18n.pathStyleAccess }}</label>
         <b-tooltip target="pta" placement="left" triggers="focus hover">
           {{ i18n.helpPathStyleAccess }}
         </b-tooltip>
@@ -107,12 +107,12 @@ export default class NewFileSystemForm extends Vue {
   private i18n: Record<string, string> = {
     save: "",
     chooseProtocol: "",
-    s3Endpoint: "",
-    s3BucketName: "",
-    s3AccessKey: "",
-    s3SecretKey: "",
-    s3PathStyleAccess: "",
-    s3directory: "",
+    endpoint: "",
+    bucket: "",
+    accessKey: "",
+    scretKey: "",
+    pathStyleAccess: "",
+    directory: "",
     validationOk: "",
     validationEndpointFail: "",
     validationBucketFail: "",
@@ -190,8 +190,10 @@ export default class NewFileSystemForm extends Vue {
   cursor: pointer;
 }
 
-.tooltip{
+</style>
+
+<style>
+.b-tooltip{
   opacity: 1 !important;
 }
-
 </style>

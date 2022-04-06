@@ -18,7 +18,7 @@
 
 <template>
   <div>
-    <div v-if="this.currentRequestedPath">
+    <div v-if="this.currentDirectory!=null && this.currentDirectory.path!=='/' && this.currentDirectory.path!==''">
       <BreadcrumbView :crumbs="this.crumbs" v-on:crumbClicked="crumbClickedBreadCrumbView"/>
     </div>
     <div v-if="loading" class="text-center">
@@ -27,7 +27,10 @@
     <div v-if="currentDirectory!=null && !loading">
       <FileTableView :fs="currentDirectory"
                      v-on:backButtonClicked="backButtonClickedFileTableView"
-                     v-on:childClicked="childClickedFileTableView"/>
+                     v-on:childClicked="childClickedFileTableView"
+                     v-on:childDownloadClicked="childDownloadClickedFileTableView"
+
+      />
     </div>
   </div>
 </template>
@@ -82,6 +85,22 @@ export default class FileBrowserDerivate extends Vue {
   private currentDirectory: FileBase | null = null;
   private currentRequestedPath: string | null = null;
   private crumbs: Crumb[] = [];
+
+  childDownloadClickedFileTableView(child: FileBase): void {
+    if(child.capabilities.indexOf("DOWNLOAD")!==-1 && this.derivateId!=undefined && this.token!=undefined){
+      const resp = fetch(`${this.baseUrl}api/v2/fs/${this.objectId}/download/${btoa(this.derivateId)}/${btoa(child.path)}`, {
+        headers: {
+          "Authorization": `${this.token.token_type} ${this.token.access_token}`,
+        }
+      });
+
+      resp.then((result)=> {
+        result.text().then((dlToken)=>{
+          window.open(`${this.baseUrl}api/v2/fs/download/${dlToken}`);
+        });
+      });
+    }
+  }
 
   childClickedFileTableView(child: FileBase): void {
     if (child.type == "DIRECTORY" || child.type == "BROWSABLE_FILE") {
