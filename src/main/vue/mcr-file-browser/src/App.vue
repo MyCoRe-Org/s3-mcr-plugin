@@ -60,7 +60,7 @@
       </div>
 
 
-      <b-modal id="modal-3" :title="i18n.displayInfo" hide-footer hide-backdrop>
+      <b-modal v-if="current!==null" id="modal-3" :title="i18n.displayInfo" hide-footer hide-backdrop>
         <dl v-for="(value,name) in current.metadata" :key="name">
           <dt>{{i18n[name]}}</dt>
           <dd>{{value}}</dd>
