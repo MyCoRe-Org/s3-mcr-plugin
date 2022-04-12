@@ -211,9 +211,11 @@ public class XMLS3BucketProvider implements FileSystemFromXML, FileSystemToXML {
         }
 
     private Map<String, String> getPathSumMap(Element extensionGrandChild) {
-        return extensionGrandChild.getChild("validation")
-                .getChildren(FILE_ELEMENT_NAME)
-                .stream().collect(Collectors.toMap(k -> k.getAttributeValue(PATH_ATTRIBUTE_NAME),
+        return Optional.ofNullable(extensionGrandChild.getChild("validation"))
+                .map(Element::getChildren)
+                .stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.toMap(k -> k.getAttributeValue(PATH_ATTRIBUTE_NAME),
                         v -> v.getAttributeValue(CHECKSUM_ATTRIBUTE_NAME)));
     }
 
