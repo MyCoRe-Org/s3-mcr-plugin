@@ -1,99 +1,116 @@
+<!--
+  - This file is part of ***  M y C o R e  ***
+  - See http://www.mycore.de/ for details.
+  -
+  - MyCoRe is free software: you can redistribute it and/or modify
+  - it under the terms of the GNU General Public License as published by
+  - the Free Software Foundation, either version 3 of the License, or
+  - (at your option) any later version.
+  -
+  - MyCoRe is distributed in the hope that it will be useful,
+  - but WITHOUT ANY WARRANTY; without even the implied warranty of
+  - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  - GNU General Public License for more details.
+  -
+  - You should have received a copy of the GNU General Public License
+  - along with MyCoRe.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
 <template>
   <div id="app">
-    <div>
-      <!-- Loading bar -->
-      <div class="mb-3" v-if="!loaded">
-        <b-spinner label="Spinning"></b-spinner>
-      </div>
-      <!-- Normal viewer-->
-      <div class="mb-3" v-else-if="derivateInfo.length>0">
-        <h3> {{ i18n.headline }}</h3>
-        <div class="card">
-          <div class="card-header">
-            <div class="row">
-              <div class="col">
-                <select v-if="derivateInfo.length>1" class="form-control" v-model="current">
-                  <option v-for="derivateInfo in derivateInfo" :value="derivateInfo" :key="derivateInfo">
-                    {{ getTitle(derivateInfo) }}
-                  </option>
-                </select>
-                <span v-else class="title">{{getTitle(derivateInfo[0])}}</span>
-              </div>
-              <div class="col-auto options" v-if="canWrite || (current!=null && current.delete)">
-                <b-dropdown variant="link"
-                            toggle-class="text-decoration-none">
-                  <template #button-content>
-                    <span class="fas fa-cog"></span><span> Aktionen</span>
-                  </template>
-                  <b-dropdown-item v-b-modal.modal-1 v-if="canCreate">
-                    {{ i18n.addBucket }}
-                  </b-dropdown-item>
-                  <b-dropdown-item v-b-modal.modal-3 v-if="current.write">
-                    {{ i18n.displayInfo }}
-                  </b-dropdown-item>
-                  <b-dropdown-item v-if="current.write"
-                                   :href="baseUrl + 'editor/editor-derivate.xed?derivateid='+current.id">
-                    {{ i18n.manageDerivate }}
-                  </b-dropdown-item>
-                  <b-dropdown-item v-b-modal.modal-2 v-if="current.delete">
-                    {{ i18n.deleteBucket }}
-                  </b-dropdown-item>
-                </b-dropdown>
-              </div>
+    <!-- Loading bar -->
+    <div class="mb-3" v-if="!loaded">
+      <b-spinner label="Spinning"></b-spinner>
+    </div>
+    <!-- Normal viewer-->
+    <div class="mb-3" v-else-if="derivateInfos.length > 0">
+      <h3> {{ i18n.headline }}</h3>
+      <div class="card">
+        <div class="card-header">
+          <div class="row">
+            <div class="col">
+              <select v-if="derivateInfos.length > 1" class="form-control" v-model="current">
+                <option v-for="info in derivateInfos" :value="info" :key="info.id">
+                  {{ getTitle(info) }}
+                </option>
+              </select>
+              <span v-else class="title">{{getTitle(derivateInfos[0])}}</span>
+            </div>
+            <div class="col-auto options" v-if="current?.write || current?.delete">
+              <b-dropdown variant="link"
+                          toggle-class="text-decoration-none">
+                <template #button-content>
+                  <span class="fas fa-cog"></span><span> Aktionen</span>
+                </template>
+                <b-dropdown-item v-b-modal.modal-1 v-if="canCreate">
+                  {{ i18n.addBucket }}
+                </b-dropdown-item>
+                <b-dropdown-item v-b-modal.modal-3 v-if="current.write">
+                  {{ i18n.displayInfo }}
+                </b-dropdown-item>
+                <b-dropdown-item v-if="current.write"
+                  :href="baseUrl + 'editor/editor-derivate.xed?derivateid='+current.id">
+                  {{ i18n.manageDerivate }}
+                </b-dropdown-item>
+                <b-dropdown-item v-b-modal.modal-2 v-if="current.delete">
+                  {{ i18n.deleteBucket }}
+                </b-dropdown-item>
+              </b-dropdown>
             </div>
           </div>
-          <div class="card-body p-0">
-            <file-browser-derivate v-if="current!==null" :base-url="baseUrl" :object-id="objectId"
-                                   :derivate-id="current.id"
-                                   :token="token"
-                                   :title="getTitle(current)"
-            />
-          </div>
+        </div>
+        <div class="card-body p-0">
+          <file-browser-derivate v-if="current !== null" :base-url="baseUrl"
+                                  :object-id="objectId"
+                                  :derivate-id="current.id"
+                                  :token="token"
+                                  :title="getTitle(current)"
+          />
         </div>
       </div>
-      <!-- creation dialog, without viewer -->
-      <div v-else-if="derivateInfo.length==0 && canCreate">
-        <h3>{{ i18n.headline }}</h3>
-        <div class="jumbotron text-center">
-          <a v-b-modal.modal-1  v-if="canCreate">{{ i18n.addBucket }}</a>
-        </div>
-      </div>
-
-
-      <b-modal v-if="current!==null" id="modal-3" :title="i18n.displayInfo" hide-footer hide-backdrop>
-        <dl v-for="(value,name) in current.metadata" :key="name">
-          <dt>{{i18n[name]}}</dt>
-          <dd>{{value}}</dd>
-        </dl>
-      </b-modal>
-
-      <b-modal id="modal-1" :title="i18n.addBucket" hide-footer hide-backdrop>
-        <new-file-system-form v-on:saveBucket="saveBucket">
-          <b-alert v-model="showAddBucketError" dismissible variant="danger">
-            {{ i18n.addBucketError }}
-            {{ addBucketErrorMessage }}
-          </b-alert>
-        </new-file-system-form>
-      </b-modal>
-
-      <b-modal id="modal-2" :title="i18n.deleteBucket" hide-footer hide-backdrop>
-        <b-alert v-model="showDeleteBucketError" dismissible variant="danger">
-          {{ i18n.deleteBucketError }}
-          {{ deleteErrorMessage }}
-        </b-alert>
-        <p>{{ i18n.deleteBucketModal }}</p>
-        <b-button variant="danger" v-on:click="removeBucket(current)">{{ i18n.deleteBucket }}</b-button>
-      </b-modal>
     </div>
+    <!-- creation dialog, without viewer -->
+    <div v-else-if="derivateInfos.length == 0 && canCreate">
+      <h3>{{ i18n.headline }}</h3>
+      <div class="jumbotron text-center">
+        <a v-b-modal.modal-1  v-if="canCreate">{{ i18n.addBucket }}</a>
+      </div>
+    </div>
+
+    <b-modal v-if="current !== null" id="modal-3" :title="i18n.displayInfo"
+      hide-footer hide-backdrop>
+      <dl v-for="(value,name) in current.metadata" :key="name">
+        <dt>{{ i18n[name] }}</dt>
+        <dd>{{ value }}</dd>
+      </dl>
+    </b-modal>
+
+    <b-modal id="modal-1" :title="i18n.addBucket" hide-footer hide-backdrop>
+      <new-s3-file-system-form v-on:saveBucket="saveBucket">
+        <b-alert v-model="showAddBucketError" dismissible variant="danger">
+          {{ i18n.addBucketError }}
+          {{ addBucketErrorMessage }}
+        </b-alert>
+      </new-s3-file-system-form>
+    </b-modal>
+
+    <b-modal id="modal-2" :title="i18n.deleteBucket" hide-footer hide-backdrop>
+      <b-alert v-model="showDeleteBucketError" dismissible variant="danger">
+        {{ i18n.deleteBucketError }}
+        {{ deleteErrorMessage }}
+      </b-alert>
+      <p>{{ i18n.deleteBucketModal }}</p>
+      <b-button v-if="current" variant="danger" v-on:click="removeBucket(current)">
+        {{ i18n.deleteBucket }}
+      </b-button>
+    </b-modal>
   </div>
 </template>
 
 <script lang="ts">
-import {Component, Prop, Vue} from 'vue-property-decorator';
-import FileBrowserDerivate from "@/components/FileBrowserDerivate.vue";
-import NewFileSystemForm from "@/components/NewFileSystemForm.vue";
-import {S3BucketSettings} from "@/model/S3BucketSettings";
-import {TokenResponse} from "@/model/TokenResponse";
+import { Component, Prop, Vue } from 'vue-property-decorator';
+import FileBrowserDerivate from '@/components/FileBrowserDerivate.vue';
+import NewS3FileSystemForm from '@/components/NewS3FileSystemForm.vue';
 import {
   BNavItem,
   BSpinner,
@@ -101,82 +118,149 @@ import {
   AlertPlugin,
   BDropdown,
   BDropdownItem,
-  BButton
-} from 'bootstrap-vue'
-import {I18n} from "@/i18n";
-import {DerivateInformations} from "@/model/DerivateInformations";
-import {DerivateInfo} from "@/model/DerivateInfo";
+  BButton,
+} from 'bootstrap-vue';
+import I18n from '@/i18n';
+import {
+  S3BucketSettings,
+  Token,
+  TokenResponse,
+  DerivateInformations,
+  DerivateInfo,
+} from '@/model';
+import {
+  getInfo,
+  saveS3Bucket,
+  removeStore,
+  getJWT,
+} from '@/api/Client';
 
 Vue.use(ModalPlugin);
 Vue.use(AlertPlugin);
 
 @Component({
   components: {
-    NewFileSystemForm,
+    NewS3FileSystemForm,
     FileBrowserDerivate,
     BSpinner,
     BNavItem,
     BDropdown,
     BDropdownItem,
-    BButton
-  }
+    BButton,
+  },
 })
 export default class FileBrowser extends Vue {
+  @Prop({
+    default: 'http://localhost:8291/mir/',
+  })
+  baseUrl!: string;
 
-  @Prop() private baseUrl?: string; // = "http://paschty.de:8080/mir/";
-  @Prop() private objectId?: string; // = "odb_mods_00000006";
+  @Prop({
+    default: 'mir_mods_00000028',
+  })
+  objectId!: string;
 
-  private canCreate?: boolean = false;
-  private current: DerivateInfo | null = null;
-  private showAddBucketError = false;
-  private showDeleteBucketError = false;
-  private deleteErrorMessage = "";
-  private addBucketErrorMessage = "";
+  canCreate?: boolean = false;
 
-  private derivateInfo: DerivateInfo[] = [];
-  private token?: TokenResponse;
-  private loaded = false;
+  current: DerivateInfo | null = null;
 
-  private i18n: Record<string, string> = {
-    addBucketError: "",
-    addBucket: "",
-    deleteBucket: "",
-    deleteBucketModal: "",
-    headline: "",
-    displayInfo: "",
-    endpoint: "",
-    bucket: "",
-    accessKey: "",
-    scretKey: "",
-    pathStyleAccess: "",
-    directory: "",
-    protocol: ""
+  showAddBucketError = false;
+
+  showDeleteBucketError = false;
+
+  deleteErrorMessage = '';
+
+  addBucketErrorMessage = '';
+
+  derivateInfos: DerivateInfo[] = [];
+
+  token?: Token;
+
+  loaded = false;
+
+  i18n: Record<string, string> = {
+    addBucketError: '',
+    addBucket: '',
+    deleteBucket: '',
+    deleteBucketModal: '',
+    headline: '',
+    displayInfo: '',
+    endpoint: '',
+    bucket: '',
+    accessKey: '',
+    scretKey: '',
+    pathStyleAccess: '',
+    directory: '',
+    protocol: '',
   };
+
+  async loadContents(): Promise<void> {
+    this.loaded = false;
+    const response = await getInfo(this.baseUrl, this.objectId, this.token);
+    if (!response.ok) {
+      console.error('Error while loading contents');
+      return;
+    }
+    const newInfos: DerivateInformations = await response.json();
+
+    while (this.derivateInfos.length > 0) {
+      this.derivateInfos.pop();
+    }
+
+    this.canCreate = newInfos.create;
+
+    newInfos.derivates.filter((info) => info.view).forEach((info) => {
+      this.derivateInfos.push(info);
+    });
+
+    if (this.derivateInfos.length > 0) {
+      const [derivateInfo] = this.derivateInfos;
+      this.current = derivateInfo;
+    }
+    this.loaded = true;
+  }
+
+  async loadToken(): Promise<void> {
+    const resp = await getJWT(this.baseUrl);
+    if (resp.ok) {
+      const tokenResponse: TokenResponse = await resp.json();
+      if (tokenResponse.login_success) {
+        this.token = {
+          tokenType: tokenResponse.token_type,
+          accessToken: tokenResponse.access_token,
+        };
+      } else {
+        console.error('Error while fetching JWT');
+      }
+    } else {
+      console.error('Error while fetching JWT');
+    }
+  }
 
   async created(): Promise<void> {
     await I18n.loadToObject(this.i18n);
-    await this.loadToken();
+    if (process.env.NODE_ENV === 'production') {
+      await this.loadToken();
+    } else {
+      this.token = {
+        tokenType: 'Basic',
+        accessToken: 'YWRtaW5pc3RyYXRvcjphbGxlc3dpcmRndXQ=',
+      };
+    }
     await this.loadContents();
   }
 
-  private getTitle(info: DerivateInfo) {
+  getTitle(info: DerivateInfo): string {
     if (info.titles.length > 0) {
       return info.titles[0].text;
     }
     return info.id;
   }
 
-  private async removeBucket(info: DerivateInfo) {
+  async removeBucket(info: DerivateInfo): Promise<void> {
     this.showDeleteBucketError = false;
-    const token = await this.loadToken();
     try {
-      let resp = await fetch(`${this.baseUrl}api/v2/objects/${this.objectId}/derivates/${info.id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `${token.token_type} ${token.access_token}`,
-        }
-      });
+      const resp = await removeStore(this.baseUrl, this.objectId, info.id, this.token);
       if (resp.ok) {
         this.loadContents();
         this.$bvModal.hide('modal-2');
@@ -186,24 +270,14 @@ export default class FileBrowser extends Vue {
       }
     } catch (e) {
       this.showDeleteBucketError = true;
-      this.deleteErrorMessage = e;
+      this.deleteErrorMessage = 'Error while removing bucket';
     }
   }
 
-  private async saveBucket(bucketSettings: S3BucketSettings) {
-    const token = await this.loadToken();
-
+  async saveBucket(bucketSettings: S3BucketSettings): Promise<void> {
     this.showAddBucketError = false;
     try {
-      let resp = await fetch(`${this.baseUrl}api/v2/fs/${this.objectId}/add/S3/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `${token.token_type} ${token.access_token}`,
-        },
-        body: JSON.stringify(bucketSettings)
-      });
-
+      const resp = await saveS3Bucket(this.baseUrl, this.objectId, bucketSettings, this.token);
       if (resp.ok) {
         this.$bvModal.hide('modal-1');
         this.loadContents();
@@ -213,58 +287,11 @@ export default class FileBrowser extends Vue {
       }
     } catch (e) {
       this.showAddBucketError = true;
-      this.addBucketErrorMessage = e;
+      this.addBucketErrorMessage = 'Error while saving bucket';
     }
   }
-
-
-  private async loadToken(): Promise<TokenResponse> {
-    if (this.token !== undefined) {
-      return this.token;
-    }
-    let tokenResp = await fetch(`${this.baseUrl}rsc/jwt`, {
-      credentials: "include"
-    });
-    return this.token = await tokenResp.json();
-  }
-
-  private async loadContents() {
-    this.loaded = false;
-    if (this.token == undefined) {
-      await this.loadToken();
-      await this.loadContents();
-      return;
-    }
-    const reqUrl = `${this.baseUrl}api/v2/fs/${this.objectId}/info/`;
-    let response = await fetch(reqUrl, {
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `${this.token.token_type} ${this.token.access_token}`,
-      },
-    });
-    const newInfos: DerivateInformations = await response.json();
-
-    while (this.derivateInfo.length > 0) {
-      this.derivateInfo.pop();
-    }
-
-    this.canCreate = newInfos.create;
-
-    newInfos.derivates
-        .filter(info => info.view)
-        .forEach(info => {
-          this.derivateInfo.push(info);
-        });
-
-    if (this.derivateInfo.length > 0) {
-      this.current = this.derivateInfo[0];
-    }
-    this.loaded=true;
-  }
-
 }
 </script>
-
 <style scoped>
 .options button * {
   color: #2c3e50;
