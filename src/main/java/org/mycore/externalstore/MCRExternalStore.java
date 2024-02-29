@@ -35,7 +35,7 @@ public class MCRExternalStore {
 
     private final Map<String, String> storeProviderSettings;
 
-    private MCRExternalStoreProvider storeProvider;
+    private volatile MCRExternalStoreProvider storeProvider;
 
     /**
      * Constructs a new {@link MCRExternalStore}.
@@ -46,6 +46,34 @@ public class MCRExternalStore {
     public MCRExternalStore(String storeType, Map<String, String> storeProviderSettings) {
         this.storeType = storeType;
         this.storeProviderSettings = storeProviderSettings;
+    }
+
+    /**
+     * Returns all store provider settings.
+     *
+     * @return store provider settings
+     */
+    public Map<String, String> getStoreProviderSettings() {
+        return storeProviderSettings;
+    }
+
+    /**
+     * Returns the {@link MCRExternalStoreProvider}.
+     *
+     * @return store provider
+     */
+    public MCRExternalStoreProvider getStoreProvider() {
+        MCRExternalStoreProvider provider = storeProvider;
+        if (provider == null) {
+            synchronized (this) {
+                provider = storeProvider;
+                if (provider == null) {
+                    storeProvider
+                        = MCRExternalStoreProviderFactory.createStoreProvider(storeType, storeProviderSettings);
+                }
+            }
+        }
+        return storeProvider;
     }
 
     /**
@@ -91,35 +119,13 @@ public class MCRExternalStore {
         return getStoreProvider().newByteChannel(path);
     }
 
-    /**
-     * Returns all store provider settings.
-     *
-     * @return store provider settings
-     */
-    public Map<String, String> getStoreProviderSettings() {
-        return storeProviderSettings;
-    }
-
     private void checkFile(String path) throws IOException {
         final MCRExternalStoreFileInfo fileInfo = getStoreProvider().getFileInfo(path);
         if (fileInfo.isDirectory()) {
             throw new MCRExternalStoreException("Object is a directory");
         }
         if (fileInfo.getSize() > MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
-            throw new MCRExternalStoreException("Object exceeds max size!");
+            throw new MCRExternalStoreException("Object exceeds max size");
         }
     }
-
-    /**
-     * Returns the {@link MCRExternalStoreProvider}.
-     *
-     * @return store provider
-     */
-    public MCRExternalStoreProvider getStoreProvider() {
-        if (storeProvider == null) {
-            storeProvider = MCRExternalStoreProviderFactory.createStoreProvider(storeType, storeProviderSettings);
-        }
-        return storeProvider;
-    }
-
 }

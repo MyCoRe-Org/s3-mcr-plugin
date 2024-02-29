@@ -207,10 +207,22 @@ public class MCRExternalStoreService {
         MCRExternalStoreServiceHelper.saveArchiveInfos(path, archiveInfos);
     }
 
+    /**
+     * Creates and returns {@link MCRExternalStore} from derivate.
+     *
+     * @param derivateId derivate id
+     * @return the store
+     */
     public MCRExternalStore getStore(MCRObjectID derivateId) {
         MCRExternalStore store = STORE_CACHE.get(derivateId.toString());
         if (store == null) {
-            store = loadStore(derivateId);
+            synchronized (STORE_CACHE) {
+                store = STORE_CACHE.get(derivateId.toString());
+                if (store == null) {
+                    store = loadStore(derivateId);
+                    STORE_CACHE.put(derivateId.toString(), store);
+                }
+            }
         }
         return store;
     }

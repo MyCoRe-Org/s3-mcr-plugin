@@ -35,28 +35,28 @@ import org.mycore.externalstore.util.MCRExternalStoreUtils;
  */
 public class MCRExternalStoreDbStoreInfoIndex implements MCRExternalStoreInfoIndex {
 
-    private MCRExternalStoreInfoRepository storeInfoRepository = new MCRExternalStoreInfoRepositoryImpl();
+    private final MCRExternalStoreInfoRepository storeInfoRepository = new MCRExternalStoreInfoRepositoryImpl();
 
     @Override
-    public void addFileInfos(MCRObjectID derivateId, List<MCRExternalStoreFileInfo> fileInfos) {
+    public synchronized void addFileInfos(MCRObjectID derivateId, List<MCRExternalStoreFileInfo> fileInfos) {
         final MCRExternalStoreInfoData storeInfoData = getOrCreateStoreInfoData(derivateId);
         fileInfos.stream().map(MCRExternalStoreDbMapper::toData).forEach(storeInfoData::addFileInfo);
         storeInfoRepository.insert(storeInfoData);
     }
 
     @Override
-    public List<MCRExternalStoreFileInfo> listFileInfos(MCRObjectID derivateId, String path) {
+    public synchronized List<MCRExternalStoreFileInfo> listFileInfos(MCRObjectID derivateId, String path) {
         return storeInfoRepository.findFileInfos(derivateId, path).stream().map(MCRExternalStoreDbMapper::toDomain)
             .toList();
     }
 
     @Override
-    public void deleteFileInfos(MCRObjectID derivateId) {
+    public synchronized void deleteFileInfos(MCRObjectID derivateId) {
         storeInfoRepository.cleanByDerivateId(derivateId);
     }
 
     @Override
-    public Optional<MCRExternalStoreFileInfo> findFileInfo(MCRObjectID derivateId, String path) {
+    public synchronized Optional<MCRExternalStoreFileInfo> findFileInfo(MCRObjectID derivateId, String path) {
         final String name = MCRExternalStoreUtils.getFileName(path);
         final String parentPath = MCRExternalStoreUtils.getParentPath(path);
         return storeInfoRepository.findFileInfo(derivateId, name, parentPath)
@@ -64,7 +64,7 @@ public class MCRExternalStoreDbStoreInfoIndex implements MCRExternalStoreInfoInd
     }
 
     @Override
-    public void addFileInfo(MCRObjectID derivateId, MCRExternalStoreFileInfo fileInfo) {
+    public synchronized void addFileInfo(MCRObjectID derivateId, MCRExternalStoreFileInfo fileInfo) {
         final MCRExternalStoreInfoData storeInfoData = getOrCreateStoreInfoData(derivateId);
         if (findFileInfo(derivateId, fileInfo.getAbsolutePath()).isPresent()) {
             throw new MCRExternalStoreFileNameCollisionException();
@@ -74,7 +74,7 @@ public class MCRExternalStoreDbStoreInfoIndex implements MCRExternalStoreInfoInd
     }
 
     @Override
-    public void updateFileInfo(MCRObjectID derivateId, MCRExternalStoreFileInfo fileInfo) {
+    public synchronized void updateFileInfo(MCRObjectID derivateId, MCRExternalStoreFileInfo fileInfo) {
         final MCRExternalStoreFileInfoData fileInfoData = MCRExternalStoreDbMapper.toData(fileInfo);
         final Optional<MCRExternalStoreFileInfoData> currentFileInfoData
             = storeInfoRepository.findFileInfo(derivateId, fileInfo.getName(), fileInfo.getParentPath());
@@ -91,5 +91,6 @@ public class MCRExternalStoreDbStoreInfoIndex implements MCRExternalStoreInfoInd
             storeInfoRepository.insert(storeInfoData);
             return storeInfoData;
         });
+
     }
 }
