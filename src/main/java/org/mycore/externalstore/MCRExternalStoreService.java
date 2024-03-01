@@ -48,12 +48,12 @@ import org.mycore.externalstore.exception.MCRExternalStoreException;
 import org.mycore.externalstore.model.MCRExternalStoreArchiveInfo;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.model.MCRExternalStoreRawSettingsWrapper;
-import org.mycore.externalstore.util.MCRExternalStoreUtils;
 import org.mycore.services.queuedjob.MCRJob;
 import org.mycore.services.queuedjob.MCRJobQueue;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
+/**
+ * This service manages stores and can store and provide info about anyone.
+ */
 public class MCRExternalStoreService {
 
     private static final Logger LOGGER = LogManager.getLogger();
@@ -76,7 +76,6 @@ public class MCRExternalStoreService {
         = MCRJobQueue.getInstance(MCRExternalStoreCreateInfoJobAction.class);
 
     private MCRExternalStoreService() {
-
     }
 
     public static MCRExternalStoreService getInstance() {
@@ -84,27 +83,11 @@ public class MCRExternalStoreService {
     }
 
     /**
-     * Loads provider settings from {@link MCRDerivate}.
+     * Creates and saves info over an {@link MCRExternlStore} to an object.
      *
-     * @param derivateId derivate id
-     * @throws MCRExternalStoreException cannot load settings
-     */
-    protected static Map<String, String> loadStoreProviderSettings(MCRObjectID derivateId) {
-        final MCRExternalStoreRawSettingsWrapper settingsWrapper = loadSettingsWrapper(derivateId);
-        try {
-            final String settingsMapString = decryptString(settingsWrapper.getRawContent());
-            return MCRExternalStoreUtils.getMap(settingsMapString);
-        } catch (IOException | MCRCryptKeyNoPermissionException e) {
-            throw new MCRExternalStoreException("Error while processing settings wrapper", e);
-        }
-    }
-
-    /**
-     * Creates new external store.
-     *
-     * @param objectId the associated object id
-     * @param storeSettings store settings
-     * @throws MCRExternalStoreException if cannot create store
+     * @param objectId object id
+     * @param storeSettings map over provider store setting elements
+     * @throws MCRExternalStoreException if an error while creating store info occurs
      */
     public static void createStore(MCRObjectID objectId, String storeType, Map<String, String> storeProviderSettings) {
         testStoreProviderSettings(storeType, storeProviderSettings);
@@ -114,12 +97,16 @@ public class MCRExternalStoreService {
         } catch (MCRAccessException | MCRException e) {
             throw new MCRExternalStoreException("Error while creating store", e);
         }
-        saveStoreProviderSettings(derivateId, storeProviderSettings);
+        try {
+            saveStoreProviderSettings(derivateId, storeProviderSettings);
+        } catch (IOException e) {
+            throw new MCRExternalStoreException("Error while saving store provider settings", e);
+        }
         enqueueCreateStoreJob(derivateId);
     }
 
     private static void testStoreProviderSettings(String storeType, Map<String, String> storeProviderSettings) {
-        MCRExternalStoreProviderFactory.createStoreProvider(storeType, storeProviderSettings).checkReadAccess();
+        MCRExternalStoreProviderFactory.createStoreProvider(storeType, storeProviderSettings).ensureReadAccess();
     }
 
     private static MCRObjectID createStoreDerivate(MCRObjectID objectId, String storeType)
@@ -135,14 +122,22 @@ public class MCRExternalStoreService {
         return derivate.getId();
     }
 
-    protected static void saveStoreProviderSettings(MCRObjectID derivateId, Map<String, String> storeProviderSettings) {
+    /**
+     * Encrypts and saves a map over store provider setting elements to derivate.
+     *
+     * @param derivateId the derivate id
+     * @param storeProviderSettings map over store provider setting elements
+     * @throws IOException if an I/O error occurs
+     */
+    protected static void saveStoreProviderSettings(MCRObjectID derivateId, Map<String, String> storeProviderSettings)
+        throws IOException {
         final MCRExternalStoreRawSettingsWrapper wrapper = new MCRExternalStoreRawSettingsWrapper();
         try {
-            final String settingsMapString = MCRExternalStoreUtils.getMapString(storeProviderSettings);
+            final String settingsMapString = MCRExternalStoreServiceHelper.getMapString(storeProviderSettings);
             final String encryptedSettings = encryptString(settingsMapString);
             wrapper.setRawContent(encryptedSettings);
-        } catch (MCRCryptKeyFileNotFoundException | MCRCryptKeyNoPermissionException | JsonProcessingException e) {
-            throw new MCRExternalStoreException("Error while processing settings", e);
+        } catch (MCRCryptKeyFileNotFoundException | MCRCryptKeyNoPermissionException | IllegalArgumentException e) {
+            throw new IOException("Error while processing settings", e);
         }
         final MCRPath path = MCRPath.getPath(derivateId.toString(), STORE_PROVIDER_SETTINGS_FILENAME);
         MCRExternalStoreServiceHelper.saveRawSettingsWrapper(path, wrapper);
@@ -153,6 +148,12 @@ public class MCRExternalStoreService {
         CREATE_STORE_INFO_QUEUE.add(addJob);
     }
 
+    /**
+     * Creates and saves info over an {@link MCRExternalStore} to derivate.
+     *
+     * @param derivateId derivate id
+     * @throws IOException if an I/O error occurs
+     */
     protected static void createStoreInfo(MCRObjectID derivateId) throws IOException {
         final MCRExternalStoreProvider storeProvider = loadStoreProvider(derivateId);
         final List<MCRExternalStoreFileInfo> fileInfos = storeProvider.listFileInfosRecursive("");
@@ -184,34 +185,37 @@ public class MCRExternalStoreService {
     }
 
     /**
-     * Saves {@link MCRExternalStoreInfo} to derivate.
+     * Saves a list of {@link MCRExternalStoreFileInfo} elements to derivate.
      *
-     * @param derivateId the derivate id
-     * @param storeInfo the store info
-     * @throws MCRExternalStoreException cannot store info
+     * @param derivateId derivate id
+     * @param storeInfo list of file info elements
+     * @throws IOException if an I/O error occurs
      */
-    protected static void saveFileInfos(MCRObjectID derivateId, List<MCRExternalStoreFileInfo> fileInfos) {
+    protected static void saveFileInfos(MCRObjectID derivateId, List<MCRExternalStoreFileInfo> fileInfos)
+        throws IOException {
         final MCRPath path = MCRPath.getPath(derivateId.toString(), FILE_INFOS_FILENAME);
         MCRExternalStoreServiceHelper.saveFileInfos(path, fileInfos);
     }
 
     /**
-     * Stores archives to derivate.
+     * Saves a list of {@link MCRExternalStoreArchiveInfo} elements to derivate.
      *
-     * @param derivateId the derivate
-     * @param archiveInfos archive list
-     * @throws MCRExternalStoreException cannot store archives
+     * @param derivateId derivate id
+     * @param archiveInfos list over archive info elements
+     * @throws IOException if an I/O error occurs
      */
-    protected static void saveArchiveInfos(MCRObjectID derivateId, List<MCRExternalStoreArchiveInfo> archiveInfos) {
+    protected static void saveArchiveInfos(MCRObjectID derivateId, List<MCRExternalStoreArchiveInfo> archiveInfos)
+        throws IOException {
         final MCRPath path = MCRPath.getPath(derivateId.toString(), ARCHIVE_INFOS_FILENAME);
         MCRExternalStoreServiceHelper.saveArchiveInfos(path, archiveInfos);
     }
 
     /**
-     * Creates and returns {@link MCRExternalStore} from derivate.
+     * Returns an {@link MCRExternalStore} by derivate id.
      *
      * @param derivateId derivate id
-     * @return the store
+     * @return external store
+     * @throws MCRExternalStoreException if an error occurs while loading store
      */
     public MCRExternalStore getStore(MCRObjectID derivateId) {
         MCRExternalStore store = STORE_CACHE.get(derivateId.toString());
@@ -234,6 +238,16 @@ public class MCRExternalStoreService {
         final String storeType = MCRExternalStoreServiceUtils.getStoreType(derivateId);
         final Map<String, String> storeProviderSettings = loadStoreProviderSettings(derivateId);
         return new MCRExternalStore(storeType, storeProviderSettings);
+    }
+
+    private static Map<String, String> loadStoreProviderSettings(MCRObjectID derivateId) {
+        final MCRExternalStoreRawSettingsWrapper settingsWrapper = loadSettingsWrapper(derivateId);
+        try {
+            final String settingsMapString = decryptString(settingsWrapper.getRawContent());
+            return MCRExternalStoreServiceHelper.getMap(settingsMapString);
+        } catch (IOException | MCRCryptKeyNoPermissionException | IllegalArgumentException e) {
+            throw new MCRExternalStoreException("Error while processing settings wrapper", e);
+        }
     }
 
     private static MCRExternalStoreRawSettingsWrapper loadSettingsWrapper(MCRObjectID derivateId) {

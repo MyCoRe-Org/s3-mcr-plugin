@@ -23,16 +23,16 @@ import java.util.Map;
 import org.mycore.common.config.MCRConfiguration2;
 
 /**
- * The class constructs a {@link MCRExternalStoreProvider} by type and settings map.
+ * This class provides factory methods for {@link MCRExternalStoreProvider}.
  */
 public class MCRExternalStoreProviderFactory {
 
     /**
-     * Constructs a {@link MCRExternalStoreProvider} for given id and settings map.
+     * Constructs an {@link MCRExternalStoreProvider} for given store type and provider settings.
      *
-     * @param storeType the store id
-     * @param storeProviderSettings the settings map
-     * @return the instance
+     * @param storeType store type
+     * @param storeProviderSettings provider settings
+     * @return store provider
      */
     public static MCRExternalStoreProvider createStoreProvider(String storeType,
         Map<String, String> storeProviderSettings) {

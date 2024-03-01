@@ -18,6 +18,8 @@
 
 package org.mycore.externalstore.model;
 
+import java.util.Objects;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -75,8 +77,28 @@ public class MCRExternalStoreRawSettingsWrapper {
     }
 
     @Override
-    public String toString() {
-        String result = "Content: " + content + "\nEncrypted: " + encryptedContent + "\n";
-        return result;
+    public int hashCode() {
+        return Objects.hash(content, encryptedContent);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        MCRExternalStoreRawSettingsWrapper other = (MCRExternalStoreRawSettingsWrapper) obj;
+        return Objects.equals(content, other.content) && encryptedContent == other.encryptedContent;
+    }
+
+    @Override
+    public String toString() {
+        return "Content: " + content + "\nEncrypted: " + encryptedContent + "\n";
+    }
+
 }

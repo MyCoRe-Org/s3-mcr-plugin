@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Dto for derivate information.
+ * Dto for derivate info.
  */
 public class MCRDerivateInfoDto {
 

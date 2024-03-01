@@ -43,9 +43,8 @@ public class MCRExternalStoreInfoRepositoryImpl extends MCRExternalStoreInfoRepo
     @Override
     public Optional<MCRExternalStoreInfoData> findByDerivateId(MCRObjectID derivateId) {
         try {
-            final TypedQuery<MCRExternalStoreInfoData> query
-                = getEntityManager().createNamedQuery("MCRExternalStoreInfo.findByDerivateId",
-                    MCRExternalStoreInfoData.class);
+            final TypedQuery<MCRExternalStoreInfoData> query = getEntityManager()
+                .createNamedQuery("MCRExternalStoreInfo.findByDerivateId", MCRExternalStoreInfoData.class);
             query.setParameter("derivateId", derivateId);
             return Optional.of(query.getSingleResult());
         } catch (NoResultException e) {
@@ -82,9 +81,8 @@ public class MCRExternalStoreInfoRepositoryImpl extends MCRExternalStoreInfoRepo
     @Override
     public Optional<MCRExternalStoreFileInfoData> findFileInfo(MCRObjectID derivateId, String name, String parentPath) {
         try {
-            final TypedQuery<MCRExternalStoreFileInfoData> query
-                = getEntityManager().createNamedQuery("MCRExternalStoreInfo.findFileInfoByDerivateIdAndPath",
-                    MCRExternalStoreFileInfoData.class);
+            final TypedQuery<MCRExternalStoreFileInfoData> query = getEntityManager().createNamedQuery(
+                "MCRExternalStoreInfo.findFileInfoByDerivateIdAndPath", MCRExternalStoreFileInfoData.class);
             query.setParameter("derivateId", derivateId);
             query.setParameter("name", name);
             query.setParameter("parentPath", parentPath);
@@ -96,9 +94,8 @@ public class MCRExternalStoreInfoRepositoryImpl extends MCRExternalStoreInfoRepo
 
     @Override
     public List<MCRExternalStoreFileInfoData> findFileInfos(MCRObjectID derivateId, String parentPath) {
-        final TypedQuery<MCRExternalStoreFileInfoData> query
-            = getEntityManager().createNamedQuery("MCRExternalStoreInfo.findFileInfosByDerivateIdAndParenthPath",
-                MCRExternalStoreFileInfoData.class);
+        final TypedQuery<MCRExternalStoreFileInfoData> query = getEntityManager().createNamedQuery(
+            "MCRExternalStoreInfo.findFileInfosByDerivateIdAndParenthPath", MCRExternalStoreFileInfoData.class);
         query.setParameter("derivateId", derivateId);
         query.setParameter("parentPath", parentPath);
         return query.getResultList();

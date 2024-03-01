@@ -24,6 +24,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.mycore.access.MCRAccessException;
@@ -47,6 +48,7 @@ import org.mycore.externalstore.util.MCRExternalStoreUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -60,13 +62,13 @@ public class MCRExternalStoreServiceHelper {
     private static final ObjectMapper mapper = createMapper();
 
     /**
-     * Creates {@link MCRDerivate} with given classifications and links it to specified {@link MCRObjectID}.
+     * Creates and returns an {@link MCRDerivate} with given classifications for {@link MCRObjectID}.
      *
      * @param objectID object id
-     * @param classifications classification list
+     * @param classifications list of classification elements
      * @return derivate
-     * @throws MCRPersistenceException if there was an persistence problem
-     * @throws MCRAccessException if there was an access problem
+     * @throws MCRPersistenceException if a persistence error occurs
+     * @throws MCRAccessException if an access error occurs
      */
     protected static MCRDerivate createDerivate(MCRObjectID objectID, List<MCRMetaClassification> classifications)
         throws MCRPersistenceException, MCRAccessException {
@@ -74,9 +76,8 @@ public class MCRExternalStoreServiceHelper {
         derivate.setId(MCRObjectID.getNextFreeId(objectID.getProjectId() + "_derivate"));
         derivate.getDerivate().getClassifications().addAll(classifications);
 
-        final String schema
-            = MCRConfiguration2.getString("MCR.Metadata.Config.derivate").orElse("datamodel-derivate.xml")
-                .replaceAll(".xml", ".xsd");
+        final String schema = MCRConfiguration2.getString("MCR.Metadata.Config.derivate")
+            .orElse("datamodel-derivate.xml").replaceAll(".xml", ".xsd");
         derivate.setSchema(schema);
 
         final MCRMetaLinkID linkId = new MCRMetaLinkID();
@@ -92,12 +93,12 @@ public class MCRExternalStoreServiceHelper {
     }
 
     /**
-     * Resolves and creates {@link MCRExternalStoreArchiveInfo} by provider and file info.
+     * Creates and returns a {@link MCRExternalStoreArchiveInfo} by provider and file info.
      *
      * @param provider provider
      * @param fileInfo file info
      * @return archive info
-     * @throws MCRExternalStoreException if error occurs while resolving
+     * @throws MCRExternalStoreException if an error occurs while resolving
      */
     protected static MCRExternalStoreArchiveInfo createArchive(MCRExternalStoreProvider provider,
         MCRExternalStoreFileInfo fileInfo) {
@@ -131,7 +132,7 @@ public class MCRExternalStoreServiceHelper {
     }
 
     /**
-     * Sets default permissions to derivate by given id.
+     * Sets default permissions to a derivate.
      *
      * @param derivateId derivate id
      */
@@ -146,17 +147,16 @@ public class MCRExternalStoreServiceHelper {
     }
 
     /**
-     * Stores {@link MCRExternalStoreRawSettingsWrapper} to given {@link MCRPath}.
+     * Saves a {@link MCRExternalStoreRawSettingsWrapper} to given {@link MCRPath}.
      *
      * @param path path
      * @param wrapper wrapper
-     * @throws MCRExternalStoreException if cannot store
+     * @throws IOException if an I/O error occurs
      */
-    protected static void saveRawSettingsWrapper(MCRPath path, MCRExternalStoreRawSettingsWrapper wrapper) {
+    protected static void saveRawSettingsWrapper(MCRPath path, MCRExternalStoreRawSettingsWrapper wrapper)
+        throws IOException {
         try (OutputStream outputStream = Files.newOutputStream(path)) {
             mapper.writeValue(outputStream, wrapper);
-        } catch (Exception e) {
-            throw new MCRExternalStoreException("Error while saving settings", e);
         }
     }
 
@@ -165,12 +165,12 @@ public class MCRExternalStoreServiceHelper {
      *
      * @param path the path
      * @param archives the list
+     * @throws IOException if an I/O error occurs
      */
-    protected static void saveArchiveInfos(MCRPath path, List<MCRExternalStoreArchiveInfo> archiveInfos) {
+    protected static void saveArchiveInfos(MCRPath path, List<MCRExternalStoreArchiveInfo> archiveInfos)
+        throws IOException {
         try (OutputStream outputStream = Files.newOutputStream(path)) {
             mapper.writeValue(outputStream, archiveInfos);
-        } catch (Exception e) {
-            throw new MCRExternalStoreException("Error while saving settings", e);
         }
     }
 
@@ -179,50 +179,42 @@ public class MCRExternalStoreServiceHelper {
      *
      * @param path path
      * @param fileInfos file infos
-     * @throws MCRExternalStoreException error while saving
+     * @throws IOException if an I/O error occurs
      */
-    protected static void saveFileInfos(MCRPath path, List<MCRExternalStoreFileInfo> fileInfos) {
+    protected static void saveFileInfos(MCRPath path, List<MCRExternalStoreFileInfo> fileInfos) throws IOException {
         try (OutputStream outputStream = Files.newOutputStream(path)) {
             mapper.writeValue(outputStream, fileInfos);
-        } catch (Exception e) {
-            throw new MCRExternalStoreException("Error while saving file infos", e);
         }
     }
 
     /**
-     * Returns {@link MCRExternalStoreFileInfo} from {@link InputStream}
+     * Returns a list of {@link MCRExternalStoreFileInfo} elements from {@link InputStream}
      *
      * @param inputStream input stream
-     * @return file infos
+     * @return list of file info elements
+     * @throws IOException if an I/O error occurs
      */
-    protected static List<MCRExternalStoreFileInfo> getFileInfos(InputStream inputStream) {
-        try {
-            return Arrays.asList(mapper.readerFor(MCRExternalStoreFileInfo[].class).readValue(inputStream));
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Cannot map to file infos", e);
-        }
+    protected static List<MCRExternalStoreFileInfo> getFileInfos(InputStream inputStream) throws IOException {
+        return Arrays.asList(mapper.readerFor(MCRExternalStoreFileInfo[].class).readValue(inputStream));
     }
 
     /**
-     * Returns {@link MCRExternalStoreArchiveInfo} from {@link InputStream}
+     * Returns a list of {@link MCRExternalStoreArchiveInfo} elements from {@link InputStream}
      *
      * @param inputStream input stream
-     * @return archive infos
+     * @return list of archive info elements
+     * @throws IOException if an I/O error occurs
      */
-    protected static List<MCRExternalStoreArchiveInfo> getArchiveInfos(InputStream inputStream) {
-        try {
-            return Arrays.asList(mapper.readerFor(MCRExternalStoreArchiveInfo[].class).readValue(inputStream));
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Cannot map to archive info", e);
-        }
+    protected static List<MCRExternalStoreArchiveInfo> getArchiveInfos(InputStream inputStream) throws IOException {
+        return Arrays.asList(mapper.readerFor(MCRExternalStoreArchiveInfo[].class).readValue(inputStream));
     }
 
     /**
-     * Gets {@link MCRExternalStoreRawSettingsWrapper} from given {@link InputStream}.
+     * Returns a {@link MCRExternalStoreRawSettingsWrapper} from given {@link InputStream}.
      *
      * @param inputStream input stream
      * @return wrapper
-     * @throws IOException if cannot read or wrap
+     * @throws IOException if an I/O error occurs
      */
     protected static MCRExternalStoreRawSettingsWrapper getRawSettingsWrapper(InputStream inputStream)
         throws IOException {
@@ -231,24 +223,51 @@ public class MCRExternalStoreServiceHelper {
     }
 
     /**
-     * Creates {@link InputStream} for file in derivate specified by id and file name.
+     * Returns an {@link InputStream} for file in derivate specified by file name.
      *
      * @param derivateId derivate id
      * @param fileName file name
      * @return input stream
-     * @throws IOException cannot read
+     * @throws IOException if an I/O error occurs
      */
     protected static InputStream readFile(MCRObjectID derivateId, String fileName) throws IOException {
         final MCRPath path = MCRPath.getPath(derivateId.toString(), fileName);
         return Files.newInputStream(path);
     }
 
+    /**
+     * Returns map from string.
+     *
+     * @param mapString map as string string
+     * @return map
+     * @throws IllegalArgumentException if input is invalid
+     */
+    protected static Map<String, String> getMap(String mapString) {
+        final ObjectReader reader = new ObjectMapper().readerFor(Map.class);
+        try {
+            return reader.readValue(mapString);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    /**
+     * Returns a map as string.
+     * @param map map
+     * @return map as string
+     * @throws IllegalArgumentException if map is invalid
+     */
+    protected static String getMapString(Map<String, String> map) {
+        try {
+            return new ObjectMapper().writeValueAsString(map);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
     private static ObjectMapper createMapper() {
-        return JsonMapper.builder()
-            .addModule(new JavaTimeModule())
-            .serializationInclusion(Include.NON_NULL)
-            .addMixIn(MCRExternalStoreFileInfo.class, MCRExternalStoreFileInfoMinxIn.class)
-            .build();
+        return JsonMapper.builder().addModule(new JavaTimeModule()).serializationInclusion(Include.NON_NULL)
+            .addMixIn(MCRExternalStoreFileInfo.class, MCRExternalStoreFileInfoMinxIn.class).build();
     }
 
     abstract class MCRExternalStoreFileInfoMinxIn {

@@ -31,7 +31,7 @@ import org.mycore.externalstore.exception.MCRExternalStoreException;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 
 /**
- * A {@link MCRExternalStoreArchiveResolver} for tar file.
+ * An {@link MCRExternalStoreArchiveResolver} implementation for tar file.
  */
 public class MCRExternalStoreTarArchiveResolver extends MCRExternalStoreArchiveResolver {
 
@@ -51,7 +51,7 @@ public class MCRExternalStoreTarArchiveResolver extends MCRExternalStoreArchiveR
         return getInputStream(getContent().getSeekableByteChannel(), path);
     }
 
-    public InputStream getInputStream(SeekableByteChannel channel, String path) throws IOException {
+    protected InputStream getInputStream(SeekableByteChannel channel, String path) throws IOException {
         try (TarFile tarFile = new TarFile(channel)) {
             final TarArchiveEntry entry
                 = tarFile.getEntries().stream().filter(t -> Objects.equals(path, t.getName())).findAny()

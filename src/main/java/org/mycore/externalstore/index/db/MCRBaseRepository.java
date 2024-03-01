@@ -26,54 +26,54 @@ import org.mycore.backend.jpa.MCREntityManagerProvider;
 import jakarta.persistence.EntityManager;
 
 /**
- * Base class for repository.
+ * Abstract base class for a repository.
  *
- * @param <T> repository entry
+ * @param <T> repository entity
  */
 public abstract class MCRBaseRepository<T> {
 
     /**
      * Returns {@link EntityManager}.
      *
-     * @return the entity manager
+     * @return entity manager
      */
     protected EntityManager getEntityManager() {
         return MCREntityManagerProvider.getCurrentEntityManager();
     }
 
     /**
-     * Returns {@link Optional} by id.
+     * Returns {@code Optional} with entity by id.
      *
-     * @param id the id
-     * @return optional
+     * @param id id
+     * @return optional with entity
      */
     public abstract Optional<T> find(long id);
 
     /**
-     * Lists all entries.
+     * Returns a list of all entity elements.
      *
      * @return the list
      */
     public abstract List<T> listAll();
 
     /**
-     * Inserts object.
+     * Inserts an object.
      *
-     * @param object the object.
+     * @param object object.
      */
     public abstract void insert(T object);
 
     /**
-     * Updates object.
+     * Saves an object.
      *
-     * @param object the object
+     * @param object object
      */
     public abstract void save(T object);
 
     /**
-     * Deletes object.
+     * Deletes an object.
      *
-     * @param object the object
+     * @param object object
      */
     public abstract void delete(T object);
 

@@ -33,6 +33,7 @@ import org.mycore.datamodel.metadata.MCRObjectID;
 import org.mycore.externalstore.MCRExternalStoreConstants;
 import org.mycore.externalstore.MCRExternalStoreService;
 import org.mycore.externalstore.archive.MCRExternalStoreArchiveResolverFactory;
+import org.mycore.externalstore.exception.MCRExternalStoreException;
 import org.mycore.externalstore.exception.MCRExternalStoreIndexInconsistentException;
 import org.mycore.externalstore.index.MCRExternalStoreInfoIndex;
 import org.mycore.externalstore.index.MCRExternalStoreInfoIndexManager;
@@ -108,7 +109,11 @@ public class MCRExternalStoreResource {
         if (!checkCreateStorePermission(objectId.toString())) {
             throw new ForbiddenException();
         }
-        MCRExternalStoreService.createStore(objectId, storeType, storeProviderSettings);
+        try {
+            MCRExternalStoreService.createStore(objectId, storeType, storeProviderSettings);
+        } catch (MCRExternalStoreException e) {
+            throw new BadRequestException(e);
+        }
         return Response.ok().header("Access-Control-Allow-Origin", "*").build();
     }
 
@@ -206,7 +211,7 @@ public class MCRExternalStoreResource {
     @GET
     @Path("download/{" + PARAM_DOWNLOAD_TOKEN + "}")
     @Produces("*/*")
-    public Response getFile(@PathParam(PARAM_DOWNLOAD_TOKEN) String token) throws IOException {
+    public Response getFile(@PathParam(PARAM_DOWNLOAD_TOKEN) String token) {
         final DecodedJWT jwt = JWT.require(MCRJWTUtil.getJWTAlgorithm()).acceptLeeway(0).build().verify(token);
         if (!jwt.getAudience().contains(TOKEN_DOWNLOAD_AUDIENCE)) {
             throw new ForbiddenException("Audience of token must be " + TOKEN_DOWNLOAD_AUDIENCE);
@@ -232,11 +237,16 @@ public class MCRExternalStoreResource {
         return MCRExternalStoreResourceHelper.getFile(derivateId, path);
     }
 
-    private void ensureFileIntegrity(MCRObjectID derivateId, MCRExternalStoreFileInfo fileInfo) throws IOException {
-        final String storeArchiveChecksum = MCRExternalStoreService.getInstance().getStore(derivateId)
-            .getFileInfo(fileInfo.getAbsolutePath()).getChecksum();
+    private void ensureFileIntegrity(MCRObjectID derivateId, MCRExternalStoreFileInfo fileInfo) {
+        String storeArchiveChecksum;
+        try {
+            storeArchiveChecksum = MCRExternalStoreService.getInstance().getStore(derivateId)
+                .getFileInfo(fileInfo.getAbsolutePath()).getChecksum();
+        } catch (IOException e) {
+            throw new InternalServerErrorException("Detected integrity violation");
+        }
         if (!Objects.equals(fileInfo.getChecksum(), storeArchiveChecksum)) {
-            throw new BadRequestException("Detected integrity violation");
+            throw new InternalServerErrorException("Detected integrity violation");
         }
     }
 

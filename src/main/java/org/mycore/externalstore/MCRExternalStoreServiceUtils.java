@@ -36,10 +36,11 @@ import org.mycore.externalstore.exception.MCRExternalStoreException;
  * This class provides utility methods for {@link MCRExternalStoreService}.
  */
 public class MCRExternalStoreServiceUtils {
+
     /**
      * Checks if {@link MCRMetaClassification} is a store service classification.
      *
-     * @param clazz the classification
+     * @param clazz classification
      * @return true if classification is a store service classification
      */
     public static boolean checkExternalStoreClassification(MCRMetaClassification clazz) {
@@ -50,7 +51,7 @@ public class MCRExternalStoreServiceUtils {
     /**
      * Checks if {@link MCRCategoryID} is a store service category.
      *
-     * @param categoryId the classification
+     * @param categoryId classification
      * @return true if category is a store service category
      */
     public static boolean checkExternalStoreClassification(MCRCategoryID categoryId) {
@@ -58,26 +59,28 @@ public class MCRExternalStoreServiceUtils {
             && categoryId.getID().startsWith(MCRExternalStoreService.CLASSIFICATION_CATEGORY_ID_PREFIX);
     }
 
-    public static List<String> listExternalStoreDerivateIds(MCRObject obj) {
-        return obj.getStructure().getDerivates()
-            .stream()
-            .filter(der -> der.getClassifications().stream()
-                .anyMatch(clazz -> checkExternalStoreClassification(clazz)))
-            .map(MCRMetaLink::getXLinkHref)
-            .toList();
+    /**
+     * Returns a list of derivate id elements which are external store classified for an object.
+     *
+     * @param object object
+     * @return list of derivate id elements
+     */
+    public static List<String> listExternalStoreDerivateIds(MCRObject object) {
+        return object.getStructure().getDerivates().stream()
+            .filter(der -> der.getClassifications().stream().anyMatch(clazz -> checkExternalStoreClassification(clazz)))
+            .map(MCRMetaLink::getXLinkHref).toList();
     }
 
     /**
-     * Returns the store type of a {@link MCRDerivate}.
+     * Returns the store type of an {@link MCRDerivate}.
      *
-     * @param derivate the derivate
-     * @return the store type
+     * @param derivate derivate
+     * @return store type
+     * @throws MCRExternalStoreException if store type cannot be determined
      */
     public static String getStoreType(MCRDerivate derivate) {
-        List<String> types = derivate.getDerivate().getClassifications().stream()
-            .filter(c -> checkExternalStoreClassification(c))
-            .map(MCRMetaClassification::getCategId)
-            .toList();
+        List<String> types
+            = derivate.getDerivate().getClassifications().stream().map(MCRMetaClassification::getCategId).toList();
         if (types.size() == 1) {
             return types.get(0).substring(MCRExternalStoreService.CLASSIFICATION_CATEGORY_ID_PREFIX.length());
         } else if (types.size() == 0) {
@@ -87,10 +90,11 @@ public class MCRExternalStoreServiceUtils {
     }
 
     /**
-     * Returns the store type of a {@link MCRDerivate} by {@link MCRObjectID}.
+     * Returns the store type of a {@link MCRDerivate}.
      *
-     * @param derivate the derivate
-     * @return the store type
+     * @param derivateId derivate id
+     * @return store type
+     * @throws MCRExternalStoreException if store type cannot be determined
      */
     public static String getStoreType(MCRObjectID derivateId) {
         if (!MCRMetadataManager.exists(derivateId)) {
@@ -103,7 +107,7 @@ public class MCRExternalStoreServiceUtils {
      * Checks if file is file infos file.
      *
      * @param file the file
-     * @return true if file is store info file
+     * @return true if file is info file
      */
     public static boolean checkPathIsFileInfosFile(Path file) {
         return checkFileName(file, MCRExternalStoreService.FILE_INFOS_FILENAME);

@@ -17,10 +17,10 @@ public class MCRExternalStoreFileContent extends MCRContent implements MCRSeekab
     private final String path;
 
     /**
-     * Creates new {@link MCRExternalStoreFileContent} by given provider and path.
+     * Constructs content with {@link MCRExternalStoreProvider} and path.
      *
-     * @param provider the provider
-     * @param path the path
+     * @param provider provider
+     * @param path path
      */
     public MCRExternalStoreFileContent(MCRExternalStoreProvider provider, String path) {
         this.provider = provider;

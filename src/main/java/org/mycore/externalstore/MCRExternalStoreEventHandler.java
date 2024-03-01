@@ -84,7 +84,7 @@ public class MCRExternalStoreEventHandler extends MCREventHandlerBase {
             throw new MCRExternalStoreException("Error while reading info", e);
         }
         archiveInfos.forEach(a -> {
-            a.getFiles().forEach(f -> STORE_INFO_INDEX.addFileInfo(derivateId, f));
+            a.getFileInfos().forEach(f -> STORE_INFO_INDEX.addFileInfo(derivateId, f));
             final Optional<MCRExternalStoreFileInfo> entry = STORE_INFO_INDEX.findFileInfo(derivateId, a.getPath());
             if (entry.isEmpty()) {
                 throw new MCRExternalStoreException("Found missmatch");

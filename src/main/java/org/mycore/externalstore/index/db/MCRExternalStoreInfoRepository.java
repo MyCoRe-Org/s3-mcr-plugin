@@ -26,15 +26,15 @@ import org.mycore.externalstore.index.db.model.MCRExternalStoreFileInfoData;
 import org.mycore.externalstore.index.db.model.MCRExternalStoreInfoData;
 
 /**
- * Class for {@link MCRExternalStoreInfoRepository}.
+ * Abstract {@link MCRExternalStoreInfoData} repository.
  */
 public abstract class MCRExternalStoreInfoRepository extends MCRBaseRepository<MCRExternalStoreInfoData> {
 
     /**
-     * Returns {@link Optional} of {@link MCRExternalStoreInfoData} for derivate id.
+     * Returns {@code Optional} with {@link MCRExternalStoreInfoData} for derivate id.
      *
-     * @param derivateId the id
-     * @return the optional
+     * @param derivateId id
+     * @return optional with store info data
      */
     public abstract Optional<MCRExternalStoreInfoData> findByDerivateId(MCRObjectID derivateId);
 
@@ -46,23 +46,22 @@ public abstract class MCRExternalStoreInfoRepository extends MCRBaseRepository<M
     public abstract void cleanByDerivateId(MCRObjectID derivateId);
 
     /**
-     * Returns {@link MCRExternalStoreFileInfoData} for derivate id and path.
+     * Returns {@code Optional} with {@link MCRExternalStoreFileInfoData} for derivate id and path.
      *
-     * @param derivateId the derivate id
-     * @param name the name
-     * @param parentPath the parent path
-     * @return file info
+     * @param derivateId derivate id
+     * @param name name
+     * @param parentPath parent path
+     * @return optional with file info data
      */
     public abstract Optional<MCRExternalStoreFileInfoData> findFileInfo(MCRObjectID derivateId, String name,
         String parentPath);
 
     /**
-     * Returns {@link MCRExternalStoreFileInfoData} for derivate id and path.
+     * Returns a list of {@link MCRExternalStoreFileInfoData} elements for derivate id and parent path.
      *
-     * @param derivateId the derivate id
-     * @param name the name
+     * @param derivateId derivate id
      * @param parentPath the parent path
-     * @return file infos
+     * @return list of file info elements
      */
     public abstract List<MCRExternalStoreFileInfoData> findFileInfos(MCRObjectID derivateId, String parentPath);
 

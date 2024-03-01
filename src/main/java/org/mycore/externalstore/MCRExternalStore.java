@@ -24,37 +24,37 @@ import java.nio.channels.SeekableByteChannel;
 import java.util.List;
 import java.util.Map;
 
-import org.mycore.externalstore.exception.MCRExternalStoreException;
-import org.mycore.externalstore.exception.MCRExternalStoreIntegrityViolationException;
-import org.mycore.externalstore.exception.MCRExternalStoreNotFoundException;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 
+/**
+ * An external store offers functionalities for reading content or providing files.
+ */
 public class MCRExternalStore {
 
     private final String storeType;
 
-    private final Map<String, String> storeProviderSettings;
+    private final Map<String, String> storeSettings;
 
     private volatile MCRExternalStoreProvider storeProvider;
 
     /**
-     * Constructs a new {@link MCRExternalStore}.
+     * Constructs external store with store type and store settings.
      *
      * @param storeType store type
-     * @param storeProviderSettings store provider settings
+     * @param storeSettings store settings including provider settings
      */
-    public MCRExternalStore(String storeType, Map<String, String> storeProviderSettings) {
+    public MCRExternalStore(String storeType, Map<String, String> storeSettings) {
         this.storeType = storeType;
-        this.storeProviderSettings = storeProviderSettings;
+        this.storeSettings = storeSettings;
     }
 
     /**
-     * Returns all store provider settings.
+     * Returns the store settings.
      *
-     * @return store provider settings
+     * @return store settings
      */
-    public Map<String, String> getStoreProviderSettings() {
-        return storeProviderSettings;
+    public Map<String, String> getStoreSettings() {
+        return storeSettings;
     }
 
     /**
@@ -69,7 +69,7 @@ public class MCRExternalStore {
                 provider = storeProvider;
                 if (provider == null) {
                     storeProvider
-                        = MCRExternalStoreProviderFactory.createStoreProvider(storeType, storeProviderSettings);
+                        = MCRExternalStoreProviderFactory.createStoreProvider(storeType, storeSettings);
                 }
             }
         }
@@ -77,28 +77,33 @@ public class MCRExternalStore {
     }
 
     /**
-     * Lists {@link MCRExternalStoreFileInfo} for given path.
+     * Returns a list over {@link MCRExternalStoreFileInfo} elements for given path.
      *
      * @param path path
-     * @return file infos
-     * @throws IOException
+     * @return list over file info elements
+     * @throws IOException if an I/O error occurs
      */
     public List<MCRExternalStoreFileInfo> listFileInfos(String path) throws IOException {
         return getStoreProvider().listFileInfos(path);
     }
 
+    /**
+     * Returns {@link MCRExternalStoreFileInfo} for given path.
+     *
+     * @param path path
+     * @return file info
+     * @throws IOException if an I/O error occurs
+     */
     public MCRExternalStoreFileInfo getFileInfo(String path) throws IOException {
         return getStoreProvider().getFileInfo(path);
     }
 
     /**
-     * Creates new {@link InputStream} for given path.
+     * Opens and returns {@link InputStream} for given path.
      *
      * @param path path
      * @return input stream
-     * @throws IOException
-     * @throws MCRExternalStoreNotFoundException if cannot find file
-     * @throws MCRExternalStoreIntegrityViolationException if local checksum does not match
+     * @throws IOException if an I/O error occurs
      */
     public InputStream newInputStream(String path) throws IOException {
         checkFile(path);
@@ -106,13 +111,11 @@ public class MCRExternalStore {
     }
 
     /**
-     * Creates new {@link SeekableByteChannel} for given path.
+     * Opens and returns {@link SeekableByteChannel} for given path.
      *
      * @param path path
      * @return input stream
-     * @throws IOException
-     * @throws MCRExternalStoreNotFoundException if cannot find file
-     * @throws MCRExternalStoreIntegrityViolationException if local checksum does not match
+     * @throws IOException if an I/O error occurs
      */
     public SeekableByteChannel newByteChannel(String path) throws IOException {
         checkFile(path);
@@ -122,10 +125,10 @@ public class MCRExternalStore {
     private void checkFile(String path) throws IOException {
         final MCRExternalStoreFileInfo fileInfo = getStoreProvider().getFileInfo(path);
         if (fileInfo.isDirectory()) {
-            throw new MCRExternalStoreException("Object is a directory");
+            throw new IOException("Object is a directory");
         }
         if (fileInfo.getSize() > MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
-            throw new MCRExternalStoreException("Object exceeds max size");
+            throw new IOException("Object exceeds max size");
         }
     }
 }

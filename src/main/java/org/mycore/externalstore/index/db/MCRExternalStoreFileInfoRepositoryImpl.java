@@ -20,8 +20,7 @@ public class MCRExternalStoreFileInfoRepositoryImpl extends MCRExternalStoreFile
     @Override
     public List<MCRExternalStoreFileInfoData> listAll() {
         return getEntityManager()
-            .createNamedQuery("MCRExternalFileStoreInfo.findAll", MCRExternalStoreFileInfoData.class)
-            .getResultList();
+            .createNamedQuery("MCRExternalFileStoreInfo.findAll", MCRExternalStoreFileInfoData.class).getResultList();
     }
 
     @Override

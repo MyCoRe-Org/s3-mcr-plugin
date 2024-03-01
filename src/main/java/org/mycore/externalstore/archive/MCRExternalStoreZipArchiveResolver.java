@@ -31,7 +31,7 @@ import org.mycore.externalstore.exception.MCRExternalStoreException;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 
 /**
- * A {@link MCRExternalStoreArchiveResolver} for zip file.
+ * An {@link MCRExternalStoreArchiveResolver} implementation for zip file.
  */
 public class MCRExternalStoreZipArchiveResolver extends MCRExternalStoreArchiveResolver {
 

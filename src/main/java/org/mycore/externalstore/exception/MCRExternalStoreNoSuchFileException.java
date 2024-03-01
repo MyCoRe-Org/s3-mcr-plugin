@@ -19,29 +19,19 @@
 package org.mycore.externalstore.exception;
 
 /**
- * Indicates a file name collision.
+ * Indicates that a file does not exist.
  */
-public class MCRExternalStoreFileNameCollisionException extends MCRExternalStoreException {
+public class MCRExternalStoreNoSuchFileException extends MCRExternalStoreException {
 
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L;
 
     /**
      * Constructs an exception with message.
      *
-     * @param message message
+     * @param message the message
      */
-    public MCRExternalStoreFileNameCollisionException(String message) {
+    public MCRExternalStoreNoSuchFileException(String message) {
         super(message);
-    }
-
-    /**
-     * Constructs an exception.
-     */
-    public MCRExternalStoreFileNameCollisionException() {
-        this("file name collision");
     }
 
 }

@@ -26,7 +26,7 @@ import java.util.Objects;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * An {@link MCRExternalStoreFileInfo} describes a info of a file.
+ * An {@link MCRExternalStoreFileInfo} describes a file.
  * Also, a file can be a directory.
  */
 public class MCRExternalStoreFileInfo {
@@ -198,12 +198,15 @@ public class MCRExternalStoreFileInfo {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         MCRExternalStoreFileInfo other = (MCRExternalStoreFileInfo) obj;
         return Objects.equals(checksum, other.checksum) && isDirectory == other.isDirectory
             && Objects.equals(lastModified, other.lastModified) && Objects.equals(name, other.name)

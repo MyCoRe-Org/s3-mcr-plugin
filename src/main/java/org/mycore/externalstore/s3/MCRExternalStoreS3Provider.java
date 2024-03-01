@@ -31,7 +31,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mycore.externalstore.MCRExternalStoreProvider;
-import org.mycore.externalstore.exception.MCRExternalStoreException;
+import org.mycore.externalstore.exception.MCRExternalStoreNoAccessException;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.util.MCRExternalStoreUtils;
 
@@ -56,11 +56,11 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
     private Optional<String> directory;
 
     @Override
-    public void init(Map<String, String> configuration) {
-        final MCRS3Settings settings = MCRExternalStoreS3ProviderUtils.mapToS3Settings(configuration);
-        this.client = MCRExternalStoreS3ProviderHelper.createClient(settings);
-        this.bucket = settings.getBucket();
-        directory = Optional.ofNullable(settings.getDirectory());
+    public void init(Map<String, String> settings) {
+        final MCRS3Settings s3Settings = MCRExternalStoreS3ProviderUtils.mapToS3Settings(settings);
+        this.client = MCRExternalStoreS3ProviderHelper.createClient(s3Settings);
+        this.bucket = s3Settings.getBucket();
+        directory = Optional.ofNullable(s3Settings.getDirectory());
     }
 
     @Override
@@ -111,15 +111,15 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
     }
 
     @Override
-    public void checkReadAccess() {
+    public void ensureReadAccess() {
         try {
             client.headBucket(new HeadBucketRequest(bucket));
         } catch (AmazonServiceException amazonServiceException) {
             LOGGER.warn("Bucket head request failed", amazonServiceException);
             if (amazonServiceException.getStatusCode() == 403) {
-                throw new MCRExternalStoreException(amazonServiceException.getErrorMessage());
+                throw new MCRExternalStoreNoAccessException(amazonServiceException.getErrorMessage());
             }
-            throw new MCRExternalStoreException("Test failed.");
+            throw new MCRExternalStoreNoAccessException("Test failed.");
         }
     }
 

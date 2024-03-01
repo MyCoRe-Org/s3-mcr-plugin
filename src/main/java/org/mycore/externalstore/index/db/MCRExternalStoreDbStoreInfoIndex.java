@@ -23,7 +23,7 @@ import java.util.Optional;
 
 import org.mycore.datamodel.metadata.MCRObjectID;
 import org.mycore.externalstore.exception.MCRExternalStoreFileNameCollisionException;
-import org.mycore.externalstore.exception.MCRExternalStoreNotFoundException;
+import org.mycore.externalstore.exception.MCRExternalStoreNoSuchFileException;
 import org.mycore.externalstore.index.MCRExternalStoreInfoIndex;
 import org.mycore.externalstore.index.db.model.MCRExternalStoreFileInfoData;
 import org.mycore.externalstore.index.db.model.MCRExternalStoreInfoData;
@@ -31,7 +31,7 @@ import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.util.MCRExternalStoreUtils;
 
 /**
- * Service that manages all {@link MCRExternalStoreInfo} via a database.
+ * Implements {@link MCRExternalStoreInfoIndex} using db as backend.
  */
 public class MCRExternalStoreDbStoreInfoIndex implements MCRExternalStoreInfoIndex {
 
@@ -59,8 +59,7 @@ public class MCRExternalStoreDbStoreInfoIndex implements MCRExternalStoreInfoInd
     public synchronized Optional<MCRExternalStoreFileInfo> findFileInfo(MCRObjectID derivateId, String path) {
         final String name = MCRExternalStoreUtils.getFileName(path);
         final String parentPath = MCRExternalStoreUtils.getParentPath(path);
-        return storeInfoRepository.findFileInfo(derivateId, name, parentPath)
-            .map(MCRExternalStoreDbMapper::toDomain);
+        return storeInfoRepository.findFileInfo(derivateId, name, parentPath).map(MCRExternalStoreDbMapper::toDomain);
     }
 
     @Override
@@ -79,7 +78,7 @@ public class MCRExternalStoreDbStoreInfoIndex implements MCRExternalStoreInfoInd
         final Optional<MCRExternalStoreFileInfoData> currentFileInfoData
             = storeInfoRepository.findFileInfo(derivateId, fileInfo.getName(), fileInfo.getParentPath());
         if (currentFileInfoData.isEmpty()) {
-            throw new MCRExternalStoreNotFoundException("There is no matching file info to update");
+            throw new MCRExternalStoreNoSuchFileException("There is no matching file info to update");
         }
         currentFileInfoData.get().setFlags(fileInfoData.getFlags());
     }

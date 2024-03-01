@@ -26,7 +26,7 @@ import org.mycore.common.content.MCRSeekableChannelContent;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 
 /**
- * Resolves an archive as {@link MCRSeekableChannelContent}.
+ * An archive resolver obtains information about archives and provides files.
  */
 public abstract class MCRExternalStoreArchiveResolver {
 
@@ -35,7 +35,7 @@ public abstract class MCRExternalStoreArchiveResolver {
     /**
      * Sets {@link MCRSeekableChannelContent} to resolver.
      *
-     * @param content the content
+     * @param content content
      */
     public void setContent(MCRSeekableChannelContent content) {
         this.content = content;
@@ -44,28 +44,26 @@ public abstract class MCRExternalStoreArchiveResolver {
     /**
      * Returns the {@link MCRSeekableChannelContent} content.
      *
-     * @return the content
+     * @return content
      */
     protected MCRSeekableChannelContent getContent() {
         return content;
     }
 
     /**
-     * Lists all {@link MCRExternalStoreFileInfo} in given {@link MCRSeekableChannelContent}.
+     * Resolves and returns a list of {@link MCRExternalStoreFileInfo} elements.
      *
-     * @param content the content
-     * @return the infos
+     * @return a list of file info
      * @throws IOException if there is an exception while reading
      */
     public abstract List<MCRExternalStoreFileInfo> listFileInfos() throws IOException;
 
     /**
-     * Creates {@link InputStream} for entity specified by path in {@link MCRSeekableChannelContent}.
+     * Opens and returns an {@link InputStream} for file specified by path.
      *
-     * @param content the content
      * @param path the path
      * @return input stream
-     * @throws IOException if cannot create input stream
+     * @throws IOException if an I/O error occurs
      */
     public abstract InputStream getInputStream(String path) throws IOException;
 

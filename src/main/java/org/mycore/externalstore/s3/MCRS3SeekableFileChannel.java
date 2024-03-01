@@ -31,7 +31,7 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 
 /**
- * Creates {@link SeekableByteChannel} instance for s3 object.
+ * {@link SeekableByteChannel} implementation for s3 object.
  */
 public class MCRS3SeekableFileChannel implements SeekableByteChannel {
 

@@ -21,17 +21,11 @@ package org.mycore.externalstore.util;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.io.FilenameUtils;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo.MCRExternalStoreFileInfoBuilder;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
 
 /**
  * Provides general utility methods.
@@ -39,10 +33,10 @@ import com.fasterxml.jackson.databind.ObjectReader;
 public class MCRExternalStoreUtils {
 
     /**
-     * Extracts path of the parent of given path.
+     * Returns path of the parent of given path.
      *
-     * @param path the path
-     * @return the path of the parent
+     * @param path path
+     * @return path of the parent
      */
     public static String getParentPath(String path) {
         final String fixedPath = path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
@@ -50,10 +44,10 @@ public class MCRExternalStoreUtils {
     }
 
     /**
-     * Extracts file name of of given path.
+     * Returns file name of of given path.
      *
-     * @param path the path
-     * @return the file name
+     * @param path path
+     * @return file name
      */
     public static String getFileName(String path) {
         return FilenameUtils.getName(path);
@@ -62,8 +56,8 @@ public class MCRExternalStoreUtils {
     /**
      * Adds parent path to {@link MCRExternalStoreFileInfo} parent path.
      *
-     * @param fileInfo the file info
-     * @param path the path
+     * @param fileInfo file info
+     * @param path path
      */
     public static void addParentPath(MCRExternalStoreFileInfo fileInfo, String path) {
         Optional.of(fileInfo).filter(f -> f.getParentPath().isEmpty()).ifPresentOrElse(f -> f.setParentPath(path),
@@ -71,11 +65,11 @@ public class MCRExternalStoreUtils {
     }
 
     /**
-     * Concatenates two paths.
+     * Returns concatenation of two paths.
      *
-     * @param pathOne the first path
-     * @param pathTwo the seconds path
-     * @return the result path
+     * @param pathOne first path
+     * @param pathTwo seconds path
+     * @return path
      */
     public static String concatPaths(String pathOne, String pathTwo) {
         if (!pathOne.isEmpty() && !pathTwo.isEmpty()) {
@@ -87,43 +81,29 @@ public class MCRExternalStoreUtils {
     }
 
     /**
-     * Creates file instance with path of parent and file name by given path.
+     * Creates and returns {@link MCRExternalStoreFileInfo} with path of parent and file name.
      *
-     * @param path the path
-     * @return the file as {@link MCRExternalStoreFileInfo} instance
+     * @param path path
+     * @return file info
      */
     public static MCRExternalStoreFileInfo createBaseFile(String path) {
         return buildBaseFile(path).build();
     }
 
     /**
-     * Creates directory instance with path of parent and file name by given path.
+     * Creates and returns {@link MCRExternalStoreFileInfo} as directory with path of parent and file name.
      *
-     * @param path the path
-     * @return the file as {@link MCRExternalStoreFileInfo} instance
+     * @param path path
+     * @return file info
      */
     public static MCRExternalStoreFileInfo createDirectory(String path) {
         return buildBaseFile(path).directory(true).build();
     }
 
     /**
-     * Generates {@link Map} instance from string.
-     *
-     * @param mapString the string
-     * @return the {@link Map}
-     * @throws JsonMappingException if input is invalid
-     * @throws JsonProcessingException if input is invalid
-     */
-    public static Map<String, String> getMap(String mapString)
-        throws JsonMappingException, JsonProcessingException {
-        final ObjectReader reader = new ObjectMapper().readerFor(Map.class);
-        return reader.readValue(mapString);
-    }
-
-    /**
      * Returns a list of parents for path.
      *
-     * @param path the path
+     * @param path path
      * @return the list
      */
     public static List<String> getPaths(String path) {
@@ -132,10 +112,10 @@ public class MCRExternalStoreUtils {
     }
 
     /**
-     * Returns a list of {@link MCRExternalStoreFileInfo} with all parent directories.
+     * Returns a list of {@link MCRExternalStoreFileInfo} elements with parent directories.
      *
-     * @param path the path
-     * @return the list
+     * @param path path
+     * @return list
      */
     public static List<MCRExternalStoreFileInfo> getDirectories(String path) {
         if (path.isEmpty()) {
@@ -150,16 +130,6 @@ public class MCRExternalStoreUtils {
             result.add(createDirectory(currentPath));
         }
         return result;
-    }
-
-    /**
-     * Generates string of {@link Map} instance.
-     * @param map the map
-     * @return the map as string
-     * @throws JsonProcessingException if map is invalid
-     */
-    public static String getMapString(Map<String, String> map) throws JsonProcessingException {
-        return new ObjectMapper().writeValueAsString(map);
     }
 
     private static MCRExternalStoreFileInfoBuilder buildBaseFile(String path) {

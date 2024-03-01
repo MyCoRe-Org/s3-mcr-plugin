@@ -155,13 +155,21 @@ public class MCRExternalStoreInfoData {
     }
 
     @Override
+    public int hashCode() {
+        return Objects.hash(derivateId, fileInfos, id);
+    }
+
+    @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         MCRExternalStoreInfoData other = (MCRExternalStoreInfoData) obj;
         return Objects.equals(derivateId, other.derivateId) && Objects.equals(fileInfos, other.fileInfos)
             && Objects.equals(id, other.id);

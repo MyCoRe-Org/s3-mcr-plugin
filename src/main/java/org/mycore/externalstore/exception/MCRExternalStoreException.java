@@ -28,19 +28,19 @@ public class MCRExternalStoreException extends MCRException {
     private static final long serialVersionUID = 1L;
 
     /**
-     * Constructs a {@link MCRExternalStoreException} with message.
+     * Constructs an exception with message.
      *
-     * @param message the message
+     * @param message message
      */
     public MCRExternalStoreException(String message) {
         super(message);
     }
 
     /**
-     * Constructs {@link MCRExternalStoreException} with message and cause.
+     * Constructs an exception with message and cause.
      *
-     * @param message the message
-     * @param cause the cause
+     * @param message message
+     * @param cause cause
      */
     public MCRExternalStoreException(String message, Throwable cause) {
         super(message, cause);

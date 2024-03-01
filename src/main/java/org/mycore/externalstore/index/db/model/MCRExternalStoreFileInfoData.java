@@ -266,24 +266,26 @@ public class MCRExternalStoreFileInfoData {
 
     @Override
     public int hashCode() {
-        return Objects.hash(checksum, id, isDirectory, lastModified, name, parentPath, flags, storeInfo,
-            size);
+        return Objects.hash(checksum, flags, id, isDirectory, lastModified, name, parentPath, size, storeInfo);
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         MCRExternalStoreFileInfoData other = (MCRExternalStoreFileInfoData) obj;
-        return Objects.equals(checksum, other.checksum) && Objects.equals(id, other.id)
-            && isDirectory == other.isDirectory && Objects.equals(lastModified, other.lastModified)
-            && Objects.equals(name, other.name) && Objects.equals(parentPath, other.parentPath)
-            && Objects.equals(storeInfo, other.storeInfo)
-            && Objects.equals(size, other.size) && Objects.equals(flags, other.flags);
+        return Objects.equals(checksum, other.checksum) && Objects.equals(flags, other.flags)
+            && Objects.equals(id, other.id) && isDirectory == other.isDirectory
+            && Objects.equals(lastModified, other.lastModified) && Objects.equals(name, other.name)
+            && Objects.equals(parentPath, other.parentPath) && Objects.equals(size, other.size)
+            && Objects.equals(storeInfo, other.storeInfo);
     }
 
 }

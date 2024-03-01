@@ -25,45 +25,45 @@ import org.mycore.datamodel.metadata.MCRObjectID;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 
 /**
- * A {@link MCRExternalStoreInfoIndex} manages {@link MCRExternalStoreInfo}.
+ * Manages an index that refers to information about a store or file info.
  */
 public interface MCRExternalStoreInfoIndex {
 
     /**
-     * Adds given {@link MCRExternalStoreFileInfo}.
+     * Adds list of {@link MCRExternalStoreFileInfo} elements to index by derivate id.
      *
      * @param derivateId the derivate id
-     * @param storeInfo the store info
+     * @param storeInfo list of file info elements
      */
     void addFileInfos(MCRObjectID derivateId, List<MCRExternalStoreFileInfo> fileInfos);
 
     /**
-     * Adds {@link MCRExternalStoreFileInfo}.
+     * Adds {@link MCRExternalStoreFileInfo} to index by derivate id.
      *
-     * @param derivateId the derivate id
-     * @param fileInfo the file info
+     * @param derivateId derivate id
+     * @param fileInfo file info
      */
     void addFileInfo(MCRObjectID derivateId, MCRExternalStoreFileInfo fileInfo);
 
     /**
-     * Updates {@link MCRExternalStoreFileInfo}.
+     * Updates {@link MCRExternalStoreFileInfo} in index by derivate id.
      *
-     * @param derivateId the derivate id
-     * @param fileInfo the file info
+     * @param derivateId derivate id
+     * @param fileInfo file info
      */
     void updateFileInfo(MCRObjectID derivateId, MCRExternalStoreFileInfo fileInfo);
 
     /**
-     * Finds {@link MCRExternalStoreFileInfo} by path for derivate.
+     * Returns an {@code Optional} with {@link MCRExternalStoreFileInfo} by path for derivate id.
      *
-     * @param derivateId the derivate id
-     * @param path the path
-     * @return optional of file info
+     * @param derivateId derivate id
+     * @param path path
+     * @return optional with file info
      */
     Optional<MCRExternalStoreFileInfo> findFileInfo(MCRObjectID derivateId, String path);
 
     /**
-     * Lists all files of a derivate specified by the path.
+     * Returns a list of {@link MCRExternalStoreFileInfo} elements specified by the path and derivate id.
      *
      * @param derivateId the derivate id
      * @param path the path of the directory
@@ -72,9 +72,9 @@ public interface MCRExternalStoreInfoIndex {
     List<MCRExternalStoreFileInfo> listFileInfos(MCRObjectID derivateId, String path);
 
     /**
-     * Deletes {@link MCRExternalStoreInfo} by given derivate id.
+     * Clears all info specified by derivate id.
      *
-     * @param derivateId the derivate id
+     * @param derivateId derivate id
      */
     void deleteFileInfos(MCRObjectID derivateId);
 

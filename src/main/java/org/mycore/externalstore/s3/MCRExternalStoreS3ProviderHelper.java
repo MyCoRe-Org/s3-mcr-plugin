@@ -44,7 +44,7 @@ public class MCRExternalStoreS3ProviderHelper {
      * @param settings the settings
      * @return the client
      */
-    public static AmazonS3 createClient(MCRS3Settings settings) {
+    protected static AmazonS3 createClient(MCRS3Settings settings) {
         final ClientConfiguration clientConfig
             = new ClientConfiguration().withProtocol(Protocol.valueOf(settings.getProtocol().toUpperCase(Locale.ROOT)));
         final AWSCredentials credentials = new BasicAWSCredentials(settings.getAccessKey(), settings.getSecretKey());

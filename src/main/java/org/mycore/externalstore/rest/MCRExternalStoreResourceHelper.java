@@ -49,6 +49,13 @@ import jakarta.ws.rs.core.StreamingOutput;
 
 public class MCRExternalStoreResourceHelper {
 
+    /**
+     * Returns an input stream response with file specified by path.
+     *
+     * @param derivateId derivate id
+     * @param path path
+     * @return response
+     */
     protected static Response getFile(MCRObjectID derivateId, String path) {
         final String fileName = MCRExternalStoreUtils.getFileName(path);
         return Response.ok(new StreamingOutput() {
@@ -62,8 +69,15 @@ public class MCRExternalStoreResourceHelper {
             .header("Access-Control-Allow-Origin", "*").build();
     }
 
-    protected static Response getArchiveFile(MCRObjectID derivateId, String archivePath, String archiveEntryPath)
-        throws IOException {
+    /**
+     * Returns an input stream response with file specified by archive path.
+     *
+     * @param derivateId derivate id
+     * @param archivePath archive path
+     * @param archiveEntryPath archive entry path
+     * @return response
+     */
+    protected static Response getArchiveFile(MCRObjectID derivateId, String archivePath, String archiveEntryPath) {
         final Optional<String> resolverId = MCRExternalStoreArchiveResolverFactory.findResolverId(archivePath);
         if (resolverId.isEmpty()) {
             throw new BadRequestException("Cannot resolve archive");
@@ -83,6 +97,12 @@ public class MCRExternalStoreResourceHelper {
             .header("Access-Control-Allow-Origin", "*").build();
     }
 
+    /**
+     * Returns a list of {@link MCRDerivateInfoDto} elements by object id.
+     *
+     * @param objectId object id
+     * @return list of derivate info dto elements
+     */
     protected static List<MCRDerivateInfoDto> listDerivateInformations(MCRObjectID objectId) {
         return listStoreDerivates(objectId).stream()
             .map(MCRObjectID::getInstance)
@@ -106,13 +126,19 @@ public class MCRExternalStoreResourceHelper {
                     = new MCRDerivateInfoDto(der.getId().toString(), titles, canView, canDelete, canEdit);
                 final MCRExternalStore store = MCRExternalStoreService.getInstance().getStore(der.getId());
                 final Map<String, String> metadataMap
-                    = canEdit ? store.getStoreProviderSettings() : Collections.emptyMap();
+                    = canEdit ? store.getStoreSettings() : Collections.emptyMap();
                 derivateInfo.setMetadata(metadataMap);
                 return derivateInfo;
             })
             .collect(Collectors.toList());
     }
 
+    /**
+     * Returns a list of objects derivate id elements which are store classified.
+     *
+     * @param objectId the object id
+     * @return list of derivate id elements
+     */
     protected static List<String> listStoreDerivates(MCRObjectID objectId) {
         final MCRObject object = MCRMetadataManager.retrieveMCRObject(objectId);
         return MCRExternalStoreServiceUtils.listExternalStoreDerivateIds(object);

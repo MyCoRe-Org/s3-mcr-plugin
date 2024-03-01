@@ -18,7 +18,7 @@ import org.mycore.externalstore.model.MCRExternalStoreFileInfo.MCRExternalStoreF
 public class MCRExternalStoreDbMapper {
 
     /**
-     * Maps {@link MCRExternalStoreFileInfoData} to {@link MCRExternalStoreFileInfo}.
+     * Maps and returns {@link MCRExternalStoreFileInfo} from {@link MCRExternalStoreFileInfoData}.
      *
      * @param fileInfoData file info data
      * @return file info
@@ -28,17 +28,15 @@ public class MCRExternalStoreDbMapper {
             = fileInfoData.getFlags().stream().map(f -> toDomain(f)).collect(Collectors.toList());
         final MCRExternalStoreFileInfo result
             = new MCRExternalStoreFileInfoBuilder(fileInfoData.getName(), fileInfoData.getParentPath())
-                .checksum(fileInfoData.getChecksum()).directory(fileInfoData.isDirectory())
-                .size(fileInfoData.getSize())
-                .flags(flags)
-                .build();
+                .checksum(fileInfoData.getChecksum()).directory(fileInfoData.isDirectory()).size(fileInfoData.getSize())
+                .flags(flags).build();
         Optional.ofNullable(fileInfoData.getLastModified()).map(d -> convertToDate(d))
             .ifPresent(result::setLastModified);
         return result;
     }
 
     /**
-     * Maps {@link MCRExternalStoreFileInfo} to {@link MCRExternalStoreFileInfoData}.
+     * Maps and returns {@link MCRExternalStoreFileInfoData} from {@link MCRExternalStoreFileInfo}.
      *
      * @param fileInfo file info
      * @return file info data
@@ -58,31 +56,25 @@ public class MCRExternalStoreDbMapper {
     }
 
     /**
-     * Maps {@link MCRExternalStoreFileInfo} to string.
+     * Maps and returns a string from {@link MCRExternalStoreFileInfo}.
      *
-     * @param flag the flag
-     * @return flag as string
+     * @param fileFlag flag
+     * @return string
      */
-    protected static String toData(MCRExternalStoreFileInfo.FileFlag flag) {
-        return flag.toString();
+    protected static String toData(MCRExternalStoreFileInfo.FileFlag fileFlag) {
+        return fileFlag.toString();
     }
 
     /**
-     * Maps string to {@link MCRExternalStoreFileInfo.FileFlag}.
+     * Maps and returns {@link MCRExternalStoreFileInfo.FileFlag} from string.
      *
-     * @param flag the string
-     * @return flag
+     * @param flag string
+     * @return file flag
      */
     protected static MCRExternalStoreFileInfo.FileFlag toDomain(String flag) {
         return MCRExternalStoreFileInfo.FileFlag.valueOf(flag);
     }
 
-    /**
-     * Generates {@link LocalDateTime} instance from {@link Date} instance.
-     *
-     * @param dateToConvert the date as {@link Date} instance
-     * @return the date as {@link LocalDateTime} instance
-     */
     private static LocalDateTime convertToLocalDateTime(Date date) {
         final Instant instant = Instant.ofEpochMilli(date.getTime());
         return LocalDateTime.ofInstant(instant, ZoneOffset.UTC);

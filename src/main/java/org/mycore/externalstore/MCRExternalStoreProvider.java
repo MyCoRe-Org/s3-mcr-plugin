@@ -24,12 +24,12 @@ import java.nio.channels.SeekableByteChannel;
 import java.util.List;
 import java.util.Map;
 
-import org.mycore.externalstore.exception.MCRExternalStoreException;
+import org.mycore.externalstore.exception.MCRExternalStoreNoAccessException;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 
 /**
- * A {@link MCRExternalStoreProvider} offers an interface to an external store.
- * This includes providing file infos or the provision of files.
+ * An external store provider offers an interface to an external store.
+ * This includes providing file info or the provision of files.
  */
 public interface MCRExternalStoreProvider {
 
@@ -41,54 +41,55 @@ public interface MCRExternalStoreProvider {
     public void init(Map<String, String> settingsMap);
 
     /**
-     * Creates new {@link SeekableByteChannel} instance for path.
+     * Opens and returns a {@link SeekableByteChannel} for a path.
      *
-     * @param path the path
-     * @return the channel
-     * @throws IOException if channeling fails
+     * @param path path to file
+     * @return byte channel
+     * @throws IOException if am I/O error occurs
      */
     public SeekableByteChannel newByteChannel(String path) throws IOException;
 
     /**
-     * Creates new {@link InputStream} instance for path.
+     * Opens and returns an {@link InputStream} for a path.
      *
-     * @param path the path
-     * @return the channel
-     * @throws IOException if streaming fails
+     * @param path path to file
+     * @return input stream
+     * @throws IOException if an I/O error occurs
      */
     public InputStream newInputStream(String path) throws IOException;
 
     /**
-     * Get {@link MCRExternalStoreFileInfo} for given path.
+     * Returns an {@link MCRExternalStoreFileInfo} for a path.
      *
-     * @param path the path
-     * @return the file info
+     * @param path path to file
+     * @return file info
+     * @throws IOException if an I/O error occurs
      */
     public MCRExternalStoreFileInfo getFileInfo(String path) throws IOException;
 
     /**
-     * Lists all files and directories as {@link MCRExternalStoreFileInfo} by specified path.
+     * Returns a list over {@link MCRExternalStoreFileInfo} elements for a path.
      *
-     * @param path the path
-     * @return list of all files or directories
-     * @throws IOException if request fails
+     * @param path path to files
+     * @return list of file info elements
+     * @throws IOException if an I/O error occurs
      */
     public List<MCRExternalStoreFileInfo> listFileInfos(String path) throws IOException;
 
     /**
-     * Lists all files in directory as {@link MCRExternalStoreFileInfo} recursive specified by path.
+     * Returns a list over {@link MCRExternalStoreFileInfo} elements for a path (recursive).
      *
-     * @param path the path
+     * @param path the path to files
      * @return list of all files or directories
-     * @throws IOException if the directory cannot be read
+     * @throws IOException if an I/O error occurs
      */
     public List<MCRExternalStoreFileInfo> listFileInfosRecursive(String path) throws IOException;
 
     /**
-     * Checks whether the client is able to read.
+     * Ensures that the provider is able to read.
      *
-     * @throws MCRExternalStoreException if there is an access problem
+     * @throws MCRExternalStoreNoAccessException if an access problem occurs
      */
-    public void checkReadAccess();
+    public void ensureReadAccess();
 
 }

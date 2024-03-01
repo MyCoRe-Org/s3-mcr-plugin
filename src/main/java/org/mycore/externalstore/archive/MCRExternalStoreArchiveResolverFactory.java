@@ -52,36 +52,35 @@ public class MCRExternalStoreArchiveResolverFactory {
     }
 
     /**
-     * Creates {@link MCRExternalStoreArchiveResolver} with id and {@link MCRExternalStoreFileContent}.
+     * Constructs {@link MCRExternalStoreArchiveResolver} with id and {@link MCRExternalStoreFileContent}.
      *
-     * @param id the resolver id
-     * @param content the content
-     * @return the resolver
+     * @param resolverId resolver id
+     * @param content content
+     * @return archive resolver
      */
-    public static MCRExternalStoreArchiveResolver createResolver(String id, MCRSeekableChannelContent content) {
+    public static MCRExternalStoreArchiveResolver createResolver(String resolverId, MCRSeekableChannelContent content) {
         final MCRExternalStoreArchiveResolver resolver
-            = MCRConfiguration2.<MCRExternalStoreArchiveResolver>getInstanceOf(CONFIG_PREFIX + id + ".Class")
+            = MCRConfiguration2.<MCRExternalStoreArchiveResolver>getInstanceOf(CONFIG_PREFIX + resolverId + ".Class")
                 .orElseThrow();
         resolver.setContent(content);
         return resolver;
     }
 
     /**
-     * Checks if there is {@link MCRExternalStoreArchiveResolver} for given path.
+     * Checks if an {@link MCRExternalStoreArchiveResolver} exists for a file by path.
      *
-     * @param path the path
-     * @return the resolver instance
+     * @param path path
+     * @return archive resolver
      */
     public static boolean checkResolveable(String path) {
-        LOGGER.debug("Searching resolver for path: {}", path);
         return findResolverId(path).isPresent();
     }
 
     /**
-     * Checks whether {@link MCRExternalStoreArchiveResolver} exists that offers downloads.
+     * Checks if an {@link MCRExternalStoreArchiveResolver} exists for path that offers downloads.
      *
-     * @param path the path
-     * @return true is resolver exists
+     * @param path path
+     * @return true if there is an archive resolver
      */
     public static boolean checkDownloadable(String path) {
         final Optional<String> resolverId = findResolverId(path);
@@ -92,10 +91,10 @@ public class MCRExternalStoreArchiveResolverFactory {
     }
 
     /**
-     * Returns resolver id for given path.
+     * Returns a resolver id for given path.
      *
-     * @param path the path
-     * @return resolver type
+     * @param path path
+     * @return resolver id
      */
     public static Optional<String> findResolverId(String path) {
         return MCRExternalStoreArchiveResolverFactory.listAvailableSuffixes().stream()

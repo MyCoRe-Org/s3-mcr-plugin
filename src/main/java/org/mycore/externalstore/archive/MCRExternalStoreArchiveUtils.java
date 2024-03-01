@@ -34,10 +34,10 @@ import org.mycore.externalstore.util.MCRExternalStoreUtils;
 public class MCRExternalStoreArchiveUtils {
 
     /**
-     * Maps {@link ArchiveEntry} to {@link MCRExternalStoreFileInfo}.
+     * Maps and returns an {@link MCRExternalStoreFileInfo} from {@link ArchiveEntry}.
      *
-     * @param entries the archive entry
-     * @return the result
+     * @param entry archive entry
+     * @return file info
      */
     public static MCRExternalStoreFileInfo mapToFileInfo(ArchiveEntry entry) {
         MCRExternalStoreFileInfo file;
@@ -53,12 +53,12 @@ public class MCRExternalStoreArchiveUtils {
     }
 
     /**
-     * Gets entries of a {@link TarArchiveInputStream} specified by path.
+     * Returns a list of {@link ArchiveEntry} elements of a {@link TarArchiveInputStream} specified by path.
      *
-     * @param tarArchiveInputStream the input stream
-     * @param path the path
+     * @param tarArchiveInputStream input stream
+     * @param path path
      * @return list of archive entries
-     * @throws IOException if input stream is faulty
+     * @throws IOException if an I/O error occurs
      */
     public static List<ArchiveEntry> getEntries(TarArchiveInputStream tarArchiveInputStream, String path)
         throws IOException {

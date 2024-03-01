@@ -21,18 +21,17 @@ package org.mycore.externalstore.index;
 import org.mycore.common.config.MCRConfiguration2;
 
 /**
- * Provides a {@link MCRExternalStoreInfoIndex}.
+ * Manages {@link MCRExternalStoreInfoIndex} implementations.
  */
 public class MCRExternalStoreInfoIndexManager {
 
     /**
-     * Returns the {@link MCRExternalStoreInfoIndex}.
+     * Returns default {@link MCRExternalStoreInfoIndex}.
      *
-     * @return the service
+     * @return store info index
      */
     public static MCRExternalStoreInfoIndex getInfoIndex() {
-        return MCRConfiguration2
-            .<MCRExternalStoreInfoIndex>getSingleInstanceOf("MCR.ExternalStore.InfoIndex.Class")
+        return MCRConfiguration2.<MCRExternalStoreInfoIndex>getSingleInstanceOf("MCR.ExternalStore.InfoIndex.Class")
             .orElseThrow();
     }
 }
