@@ -28,7 +28,7 @@ import java.util.Map;
 
 import org.junit.Test;
 
-public class MCRExternalStoreS3UtilsTest {
+public class MCRS3SettingsTest {
 
     private static final String ACCESS_KEY = "accesskey";
 
@@ -45,7 +45,7 @@ public class MCRExternalStoreS3UtilsTest {
     private static final String SIGNING_REGION = "foo";
 
     @Test
-    public void testMapToS3Settings() {
+    public void testFromMap() {
         final Map<String, String> settingsMap = new HashMap<>();
         settingsMap.put(MCRS3Settings.ACCESS_KEY, ACCESS_KEY);
         settingsMap.put(MCRS3Settings.BUCKET, BUCKET);
@@ -56,7 +56,7 @@ public class MCRExternalStoreS3UtilsTest {
         settingsMap.put(MCRS3Settings.SECRET_KEY, SECRET_KEY);
         settingsMap.put(MCRS3Settings.SIGNING_REGION, SIGNING_REGION);
 
-        final MCRS3Settings settings = MCRExternalStoreS3ProviderUtils.mapToS3Settings(settingsMap);
+        final MCRS3Settings settings = MCRS3Settings.fromMap(settingsMap);
         assertEquals(ACCESS_KEY, settings.getAccessKey());
         assertEquals(BUCKET, settings.getBucket());
         assertEquals(DIRECTORY, settings.getDirectory());
@@ -68,24 +68,24 @@ public class MCRExternalStoreS3UtilsTest {
     }
 
     @Test
-    public void testMapToS3SettingsDirectoryNull() {
+    public void testFromMap_directoryNull() {
         final Map<String, String> settingsMap = new HashMap<>();
-        final MCRS3Settings settings = MCRExternalStoreS3ProviderUtils.mapToS3Settings(settingsMap);
+        final MCRS3Settings settings = MCRS3Settings.fromMap(settingsMap);
         assertNull(null, settings.getDirectory());
     }
 
     @Test
-    public void testMapToS3SettingsNoPathStyleAccessNull() {
+    public void testFromMap_noPathStyleAccessNull() {
         final Map<String, String> settingsMap = new HashMap<>();
-        final MCRS3Settings settings = MCRExternalStoreS3ProviderUtils.mapToS3Settings(settingsMap);
+        final MCRS3Settings settings = MCRS3Settings.fromMap(settingsMap);
         assertFalse(settings.isPathStyleAccess());
     }
 
     @Test
-    public void testMapToS3SettingsPathStyleAccessFalse() {
+    public void testFromMap_pathStyleAccessFalse() {
         final Map<String, String> settingsMap = new HashMap<>();
         settingsMap.put(MCRS3Settings.PATH_STYLE_ACCESS, "false");
-        final MCRS3Settings settings = MCRExternalStoreS3ProviderUtils.mapToS3Settings(settingsMap);
+        final MCRS3Settings settings = MCRS3Settings.fromMap(settingsMap);
         assertFalse(settings.isPathStyleAccess());
     }
 

@@ -63,11 +63,9 @@ public class MCRExternalStore {
      * @return store provider
      */
     public MCRExternalStoreProvider getStoreProvider() {
-        MCRExternalStoreProvider provider = storeProvider;
-        if (provider == null) {
+        if (storeProvider == null) {
             synchronized (this) {
-                provider = storeProvider;
-                if (provider == null) {
+                if (storeProvider == null) {
                     storeProvider
                         = MCRExternalStoreProviderFactory.createStoreProvider(storeType, storeSettings);
                 }

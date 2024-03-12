@@ -18,6 +18,7 @@
 
 package org.mycore.externalstore.s3;
 
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -119,6 +120,19 @@ public class MCRS3Settings {
 
     public void setDirectory(String directory) {
         this.directory = directory;
+    }
+
+    public static MCRS3Settings fromMap(Map<String, String> map) {
+        final MCRS3Settings settings = new MCRS3Settings();
+        settings.setAccessKey(map.get(ACCESS_KEY));
+        settings.setBucket(map.get(BUCKET));
+        settings.setSecretKey(map.get(SECRET_KEY));
+        settings.setDirectory(map.get(DIRECTORY));
+        settings.setEndpoint(map.get(ENDPOINT));
+        settings.setProtocol(map.get(MCRS3Settings.PROTOCOL));
+        settings.setPathStyleAccess(Boolean.valueOf(map.get(PATH_STYLE_ACCESS)));
+        settings.setSigningRegion(map.get(SIGNING_REGION));
+        return settings;
     }
 
 }

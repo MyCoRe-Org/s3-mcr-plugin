@@ -178,7 +178,7 @@ public class MCRExternalStoreFileInfoData {
     /**
      * Sets the time of last modification.
      *
-     * @param lastModfied the time of last modification
+     * @param lastModified the time of last modification
      */
     public void setLastModified(LocalDateTime lastModified) {
         this.lastModified = lastModified;

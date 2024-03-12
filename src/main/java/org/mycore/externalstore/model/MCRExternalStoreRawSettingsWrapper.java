@@ -20,8 +20,6 @@ package org.mycore.externalstore.model;
 
 import java.util.Objects;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 /**
  * Wrapper model for remote store config/settings.
  */
@@ -30,15 +28,6 @@ public class MCRExternalStoreRawSettingsWrapper {
     private String content;
 
     private boolean encryptedContent;
-
-    /**
-     * Constructs new settings wrapper.
-     * Necessary for {@link ObjectMapper}.
-     */
-    @SuppressWarnings("PMD.UnnecessaryConstructor")
-    public MCRExternalStoreRawSettingsWrapper() {
-
-    }
 
     /**
      * Returns if content is encrypted.

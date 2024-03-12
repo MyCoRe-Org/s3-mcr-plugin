@@ -86,7 +86,8 @@ public class MCRExternalStoreService {
      * Creates and saves info over an {@link MCRExternlStore} to an object.
      *
      * @param objectId object id
-     * @param storeSettings map over provider store setting elements
+     * @param storeType store type
+     * @param storeProviderSettings map over provider store setting elements
      * @throws MCRExternalStoreException if an error while creating store info occurs
      */
     public static void createStore(MCRObjectID objectId, String storeType, Map<String, String> storeProviderSettings) {
@@ -188,7 +189,7 @@ public class MCRExternalStoreService {
      * Saves a list of {@link MCRExternalStoreFileInfo} elements to derivate.
      *
      * @param derivateId derivate id
-     * @param storeInfo list of file info elements
+     * @param fileInfos list of file info elements
      * @throws IOException if an I/O error occurs
      */
     protected static void saveFileInfos(MCRObjectID derivateId, List<MCRExternalStoreFileInfo> fileInfos)

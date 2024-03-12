@@ -33,7 +33,7 @@ public interface MCRExternalStoreInfoIndex {
      * Adds list of {@link MCRExternalStoreFileInfo} elements to index by derivate id.
      *
      * @param derivateId the derivate id
-     * @param storeInfo list of file info elements
+     * @param fileInfos list of file info elements
      */
     void addFileInfos(MCRObjectID derivateId, List<MCRExternalStoreFileInfo> fileInfos);
 

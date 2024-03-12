@@ -55,11 +55,11 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
- * This class provides utility methods for {@link MCRExternalStoreConfigService}.
+ * This class provides utility methods for {@link MCRExternalStoreService}.
  */
 public class MCRExternalStoreServiceHelper {
 
-    private static final ObjectMapper mapper = createMapper();
+    private static final ObjectMapper MAPPER = createMapper();
 
     /**
      * Creates and returns an {@link MCRDerivate} with given classifications for {@link MCRObjectID}.
@@ -156,7 +156,7 @@ public class MCRExternalStoreServiceHelper {
     protected static void saveRawSettingsWrapper(MCRPath path, MCRExternalStoreRawSettingsWrapper wrapper)
         throws IOException {
         try (OutputStream outputStream = Files.newOutputStream(path)) {
-            mapper.writeValue(outputStream, wrapper);
+            MAPPER.writeValue(outputStream, wrapper);
         }
     }
 
@@ -164,13 +164,13 @@ public class MCRExternalStoreServiceHelper {
      * Saves {@link MCRExternalStoreArchiveInfo} list to given {@link MCRPath}.
      *
      * @param path the path
-     * @param archives the list
+     * @param archiveInfos the list
      * @throws IOException if an I/O error occurs
      */
     protected static void saveArchiveInfos(MCRPath path, List<MCRExternalStoreArchiveInfo> archiveInfos)
         throws IOException {
         try (OutputStream outputStream = Files.newOutputStream(path)) {
-            mapper.writeValue(outputStream, archiveInfos);
+            MAPPER.writeValue(outputStream, archiveInfos);
         }
     }
 
@@ -183,7 +183,7 @@ public class MCRExternalStoreServiceHelper {
      */
     protected static void saveFileInfos(MCRPath path, List<MCRExternalStoreFileInfo> fileInfos) throws IOException {
         try (OutputStream outputStream = Files.newOutputStream(path)) {
-            mapper.writeValue(outputStream, fileInfos);
+            MAPPER.writeValue(outputStream, fileInfos);
         }
     }
 
@@ -195,7 +195,7 @@ public class MCRExternalStoreServiceHelper {
      * @throws IOException if an I/O error occurs
      */
     protected static List<MCRExternalStoreFileInfo> getFileInfos(InputStream inputStream) throws IOException {
-        return Arrays.asList(mapper.readerFor(MCRExternalStoreFileInfo[].class).readValue(inputStream));
+        return Arrays.asList(MAPPER.readerFor(MCRExternalStoreFileInfo[].class).readValue(inputStream));
     }
 
     /**
@@ -206,7 +206,7 @@ public class MCRExternalStoreServiceHelper {
      * @throws IOException if an I/O error occurs
      */
     protected static List<MCRExternalStoreArchiveInfo> getArchiveInfos(InputStream inputStream) throws IOException {
-        return Arrays.asList(mapper.readerFor(MCRExternalStoreArchiveInfo[].class).readValue(inputStream));
+        return Arrays.asList(MAPPER.readerFor(MCRExternalStoreArchiveInfo[].class).readValue(inputStream));
     }
 
     /**

@@ -24,8 +24,8 @@ import java.nio.channels.SeekableByteChannel;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
@@ -36,11 +36,19 @@ import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.util.MCRExternalStoreUtils;
 
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.HeadBucketRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 /**
  * An {@link MCRExternalStoreProvider} for an s3 bucket.
@@ -53,14 +61,14 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
 
     private String bucket;
 
-    private Optional<String> directory;
+    private String directory;
 
     @Override
     public void init(Map<String, String> settings) {
-        final MCRS3Settings s3Settings = MCRExternalStoreS3ProviderUtils.mapToS3Settings(settings);
-        this.client = MCRExternalStoreS3ProviderHelper.createClient(s3Settings);
-        this.bucket = s3Settings.getBucket();
-        directory = Optional.ofNullable(s3Settings.getDirectory());
+        final MCRS3Settings s3Settings = MCRS3Settings.fromMap(settings);
+        client = createClient(s3Settings);
+        bucket = s3Settings.getBucket();
+        directory = s3Settings.getDirectory();
     }
 
     @Override
@@ -123,6 +131,25 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
         }
     }
 
+    /**
+     * Builds {@link AmazonS3} instance by given {@link MCRS3Settings}.
+     *
+     * @param settings the settings
+     * @return the client
+     */
+    protected static AmazonS3 createClient(MCRS3Settings settings) {
+        final ClientConfiguration clientConfig
+            = new ClientConfiguration().withProtocol(Protocol.valueOf(settings.getProtocol().toUpperCase(Locale.ROOT)));
+        final AWSCredentials credentials = new BasicAWSCredentials(settings.getAccessKey(), settings.getSecretKey());
+        final AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard()
+            .withEndpointConfiguration(
+                new AwsClientBuilder.EndpointConfiguration(settings.getEndpoint(), settings.getSigningRegion()))
+            .withPathStyleAccessEnabled(settings.isPathStyleAccess())
+            .withClientConfiguration(clientConfig)
+            .withCredentials(new AWSStaticCredentialsProvider(credentials));
+        return builder.build();
+    }
+
     private List<MCRExternalStoreFileInfo> list(ListObjectsV2Request listObjectsV2Request) throws IOException {
         ListObjectsV2Result listObjectsV2Result = null;
         final List<MCRExternalStoreFileInfo> fileInfos = new ArrayList<>();
@@ -131,8 +158,7 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
                 listObjectsV2Request.setContinuationToken(listObjectsV2Result.getNextContinuationToken());
             }
             listObjectsV2Result = client.listObjectsV2(listObjectsV2Request);
-            listObjectsV2Result.getObjectSummaries().stream()
-                .map(s -> MCRExternalStoreS3ProviderHelper.mapToFileInfos(s)).forEach(fileInfos::add);
+            listObjectsV2Result.getObjectSummaries().stream().map(s -> toFileInfo(s)).forEach(fileInfos::add);
             listObjectsV2Result.getCommonPrefixes().stream().map(p -> MCRExternalStoreUtils.createDirectory(p))
                 .forEach(fileInfos::add);
         } while (listObjectsV2Result.isTruncated());
@@ -140,12 +166,26 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
         return fileInfos;
     }
 
+    /**
+     * Maps {@link S3ObjectSummary} to {@link MCRExternalStoreFileInfo}.
+     *
+     * @param summary the object summary
+     * @return the remote stored file
+     */
+    protected static MCRExternalStoreFileInfo toFileInfo(S3ObjectSummary summary) {
+        final MCRExternalStoreFileInfo fileInfo = MCRExternalStoreUtils.createBaseFile(summary.getKey());
+        fileInfo.setSize(summary.getSize());
+        fileInfo.setLastModified(summary.getLastModified());
+        fileInfo.setChecksum(summary.getETag());
+        return fileInfo;
+    }
+
     private ObjectMetadata getObjectMetadata(String path) {
         return client.getObjectMetadata(bucket, getKey(path));
     }
 
     private String getKey(String path) {
-        return (directory.isPresent()) ? MCRExternalStoreUtils.concatPaths(directory.get(), path) : path;
+        return (directory != null) ? MCRExternalStoreUtils.concatPaths(directory, path) : path;
     }
 
     private void fixDirectory(MCRExternalStoreFileInfo fileInfo) {
@@ -153,8 +193,8 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
     }
 
     private String removeDirectory(String path) {
-        if (directory.isPresent()) {
-            final String fixedPath = path.substring(directory.get().length());
+        if (directory != null) {
+            final String fixedPath = path.substring(directory.length());
             return (fixedPath.startsWith("/")) ? fixedPath.substring(1) : fixedPath;
         }
         return path;

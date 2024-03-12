@@ -39,16 +39,17 @@ public class MCRExternalStoreArchiveResolverFactory {
 
     private static final String CONFIG_PREFIX = "MCR.ExternalStore.ArchiveResolver.";
 
-    private static Map<String, String> suffixMap = new HashMap<String, String>();
+    private static final Map<String, String> SUFFIX_MAP = new HashMap<String, String>();
 
     static {
         final Map<String, String> properties = MCRConfiguration2.getSubPropertiesMap(CONFIG_PREFIX);
         properties.entrySet().stream().map(Map.Entry::getKey).filter(k -> k.endsWith(".Suffix"))
             .map(k -> k.substring(0, k.length() - ".Suffix".length())).forEach(t -> {
-                Optional.ofNullable(properties.get(t + ".Suffix")).ifPresentOrElse(p -> suffixMap.put(p, t),
-                    () -> new MCRExternalStoreException("Suffix required for resolver: " + t));
+                Optional.ofNullable(properties.get(t + ".Suffix")).ifPresentOrElse(p -> SUFFIX_MAP.put(p, t), () -> {
+                    throw new MCRExternalStoreException("Suffix required for resolver: " + t);
+                });
             });
-        LOGGER.debug("Found {} configured archive resolver", suffixMap.keySet().size());
+        LOGGER.debug("Found {} configured archive resolver", SUFFIX_MAP.keySet().size());
     }
 
     /**
@@ -83,11 +84,8 @@ public class MCRExternalStoreArchiveResolverFactory {
      * @return true if there is an archive resolver
      */
     public static boolean checkDownloadable(String path) {
-        final Optional<String> resolverId = findResolverId(path);
-        if (resolverId.isEmpty()) {
-            return false;
-        }
-        return MCRConfiguration2.getBoolean(CONFIG_PREFIX + resolverId.get() + ".Download").orElseThrow();
+        return findResolverId(path)
+            .map(id -> MCRConfiguration2.getBoolean(CONFIG_PREFIX + id + ".Download").orElseThrow()).orElse(false);
     }
 
     /**
@@ -97,12 +95,11 @@ public class MCRExternalStoreArchiveResolverFactory {
      * @return resolver id
      */
     public static Optional<String> findResolverId(String path) {
-        return MCRExternalStoreArchiveResolverFactory.listAvailableSuffixes().stream()
-            .filter(s -> path.endsWith(s)).findAny();
+        return MCRExternalStoreArchiveResolverFactory.listAvailableSuffixes().stream().filter(path::endsWith).findAny();
     }
 
     private static List<String> listAvailableSuffixes() {
-        return List.copyOf(suffixMap.keySet());
+        return List.copyOf(SUFFIX_MAP.keySet());
     }
 
 }

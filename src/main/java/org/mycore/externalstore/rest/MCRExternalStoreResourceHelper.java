@@ -65,8 +65,7 @@ public class MCRExternalStoreResourceHelper {
                     .transferTo(outputStream);
             }
         })
-            .header("Content-Disposition", "attachment; filename=" + fileName)
-            .header("Access-Control-Allow-Origin", "*").build();
+            .header("Content-Disposition", "attachment; filename=" + fileName).build();
     }
 
     /**
@@ -93,8 +92,7 @@ public class MCRExternalStoreResourceHelper {
                     .getInputStream(archiveEntryPath).transferTo(outputStream);
             }
         })
-            .header("Content-Disposition", "attachment; filename=" + fileName)
-            .header("Access-Control-Allow-Origin", "*").build();
+            .header("Content-Disposition", "attachment; filename=" + fileName).build();
     }
 
     /**

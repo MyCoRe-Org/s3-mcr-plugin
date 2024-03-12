@@ -29,17 +29,17 @@ import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
-public class MCRExternalStoreS3ProviderHelperTest extends MCRTestCase {
+public class MCRExternalStoreS3ProviderTest extends MCRTestCase {
 
     @Test
-    public void testMapSummaryToFile() {
+    public void testToFileInfo() {
         final S3ObjectSummary objectSummary = new S3ObjectSummary();
         objectSummary.setKey("foo/bar.txt");
         objectSummary.setETag("etag");
         objectSummary.setSize(10);
         final Date date = new Date();
         objectSummary.setLastModified(date);
-        final MCRExternalStoreFileInfo fileSummary = MCRExternalStoreS3ProviderHelper.mapToFileInfos(objectSummary);
+        final MCRExternalStoreFileInfo fileSummary = MCRExternalStoreS3Provider.toFileInfo(objectSummary);
         assertEquals("foo", fileSummary.getParentPath());
         assertEquals("bar.txt", fileSummary.getName());
         assertFalse(fileSummary.isDirectory());

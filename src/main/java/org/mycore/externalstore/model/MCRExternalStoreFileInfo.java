@@ -54,7 +54,7 @@ public class MCRExternalStoreFileInfo {
     }
 
     /**
-     * Returns the file name.
+     * Returns file name.
      *
      * @return the name
      */
@@ -63,7 +63,7 @@ public class MCRExternalStoreFileInfo {
     }
 
     /**
-     * Sets the filename.
+     * Sets filename.
      *
      * @param name
      */
@@ -90,18 +90,18 @@ public class MCRExternalStoreFileInfo {
     }
 
     /**
-     * Returns the file size.
+     * Returns size.
      *
-     * @return the size
+     * @return size
      */
     public Long getSize() {
         return size;
     }
 
     /**
-     * Sets the file size.
+     * Sets size.
      *
-     * @param size the size
+     * @param size size
      */
     public void setSize(Long size) {
         this.size = size;
@@ -119,7 +119,7 @@ public class MCRExternalStoreFileInfo {
     /**
      * Sets the time of last modification.
      *
-     * @param lastModfied the time of last modification
+     * @param lastModified time of last modification
      */
     public void setLastModified(Date lastModified) {
         this.lastModified = lastModified;
@@ -128,7 +128,7 @@ public class MCRExternalStoreFileInfo {
     /**
      * Returns the checksum.
      *
-     * @return the checksum
+     * @return checksum
      */
     public String getChecksum() {
         return checksum;
@@ -137,7 +137,7 @@ public class MCRExternalStoreFileInfo {
     /**
      * Sets the checksum.
      *
-     * @param checksum the checksum
+     * @param checksum checksum
      */
     public void setChecksum(String checksum) {
         this.checksum = checksum;
@@ -146,7 +146,7 @@ public class MCRExternalStoreFileInfo {
     /**
      * Returns the parent path.
      *
-     * @return the parent path which can be null
+     * @return parent path which can be null
      */
     public String getParentPath() {
         return parentPath;
@@ -155,25 +155,25 @@ public class MCRExternalStoreFileInfo {
     /**
      * Sets the parent path.
      *
-     * @param parentPath the parent path
+     * @param parentPath parent path
      */
     public void setParentPath(String parentPath) {
         this.parentPath = parentPath;
     }
 
     /**
-     * Returns the list of {@link FileFlag}.
+     * Returns list of {@link FileFlag} elements.
      *
-     * @return the flags
+     * @return list of file flag elements
      */
     public List<FileFlag> getFlags() {
         return flags;
     }
 
     /**
-     * Sets the list of {@link FileFlag}.
+     * Sets list of {@link FileFlag} elements.
      *
-     * @param flags the flags
+     * @param flags list of file flag elements
      */
     public void setFlags(List<FileFlag> flags) {
         this.flags = flags;

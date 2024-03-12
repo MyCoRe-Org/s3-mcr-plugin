@@ -87,7 +87,7 @@ public class MCRExternalStoreResource {
     @GET
     @Path("{" + PARAM_OBJ_ID + "}/info")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response listInfo(@PathParam(PARAM_OBJ_ID) MCRObjectID objectId) {
+    public MCRDerivateInfosDto listInfo(@PathParam(PARAM_OBJ_ID) MCRObjectID objectId) {
         ensureObjectExists(objectId);
         if (!MCRAccessManager.checkPermission(objectId, MCRAccessManager.PERMISSION_READ)) {
             throw new ForbiddenException();
@@ -95,8 +95,7 @@ public class MCRExternalStoreResource {
         final List<MCRDerivateInfoDto> derivateInfos
             = MCRExternalStoreResourceHelper.listDerivateInformations(objectId);
         final boolean canCreateStore = checkCreateStorePermission(objectId.toString());
-        final MCRDerivateInfosDto result = new MCRDerivateInfosDto(derivateInfos, canCreateStore);
-        return Response.ok(result).header("Access-Control-Allow-Origin", "*").build();
+        return new MCRDerivateInfosDto(derivateInfos, canCreateStore);
     }
 
     @POST
@@ -114,7 +113,7 @@ public class MCRExternalStoreResource {
         } catch (MCRExternalStoreException e) {
             throw new BadRequestException(e);
         }
-        return Response.ok().header("Access-Control-Allow-Origin", "*").build();
+        return Response.ok().build();
     }
 
     @GET
@@ -122,7 +121,7 @@ public class MCRExternalStoreResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response listFilesInfos(@PathParam(PARAM_OBJ_ID) MCRObjectID objectId,
         @PathParam(PARAM_DER_ID) String base64DerivateId, @DefaultValue("0") @QueryParam("offset") int offset,
-        @DefaultValue("2147483647") @QueryParam("limit") int limit) {
+        @DefaultValue("" + Integer.MAX_VALUE) @QueryParam("limit") int limit) {
         return listFilesInfos(objectId, base64DerivateId, "", offset, limit);
     }
 
@@ -142,7 +141,7 @@ public class MCRExternalStoreResource {
         final List<MCRExternalStoreFileInfoDto> fileInfos = listFileInfos(derivateId, path);
         final List<MCRExternalStoreFileInfoDto> result = fileInfos.stream().skip(offset).limit(limit).toList();
         return Response.ok(result)
-            .header("X-Total-Count", fileInfos.size()).header("Access-Control-Allow-Origin", "*").build();
+            .header("X-Total-Count", fileInfos.size()).build();
     }
 
     private List<MCRExternalStoreFileInfoDto> listFileInfos(MCRObjectID derivateId, String path) {

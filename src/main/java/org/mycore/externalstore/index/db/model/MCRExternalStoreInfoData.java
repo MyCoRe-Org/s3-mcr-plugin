@@ -83,7 +83,7 @@ public class MCRExternalStoreInfoData {
     /**
      * Returns the internal id.
      *
-     * @return the id
+     * @return id
      */
     public Long getId() {
         return id;
@@ -92,7 +92,7 @@ public class MCRExternalStoreInfoData {
     /**
      * Sets the internal id.
      *
-     * @param id the id
+     * @param id id
      */
     public void setId(Long id) {
         this.id = id;
@@ -110,34 +110,34 @@ public class MCRExternalStoreInfoData {
     /**
      * Sets the derivate id.
      *
-     * @param derivateId the object id
+     * @param derivateId derivate id
      */
     public void setDerivateId(MCRObjectID derivateId) {
         this.derivateId = derivateId;
     }
 
     /**
-     * Returns a list of {@link MCRExternalStoreFileInfoData}.
+     * Returns list of {@link MCRExternalStoreFileInfoData} elements.
      *
-     * @return the files
+     * @return list of file info data elements
      */
     public List<MCRExternalStoreFileInfoData> getFileInfos() {
         return fileInfos;
     }
 
     /**
-     * Sets list of {@link MCRExternalStoreFileInfoData}.
+     * Sets list of {@link MCRExternalStoreFileInfoData} elements.
      *
-     * @param files the list of files
+     * @param fileInfos list of files
      */
     public void setFileInfos(List<MCRExternalStoreFileInfoData> fileInfos) {
         this.fileInfos = fileInfos;
     }
 
     /**
-     * Adds {@link MCRExternalStoreFileInfoData} to files.
+     * Adds {@link MCRExternalStoreFileInfoData} to file info list.
      *
-     * @param file the file
+     * @param fileInfo fileInfo
      */
     public void addFileInfo(MCRExternalStoreFileInfoData fileInfo) {
         fileInfos.add(fileInfo);
@@ -145,9 +145,9 @@ public class MCRExternalStoreInfoData {
     }
 
     /**
-     * Removes a {@link MCRExternalStoreFileInfoData}.
+     * Removes {@link MCRExternalStoreFileInfoData} element from file info list.
      *
-     * @param the file
+     * @param fileInfo fileInfo
      */
     public void removeFileInfo(MCRExternalStoreFileInfoData fileInfo) {
         fileInfos.remove(fileInfo);

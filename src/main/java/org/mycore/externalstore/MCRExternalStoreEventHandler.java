@@ -119,7 +119,7 @@ public class MCRExternalStoreEventHandler extends MCREventHandlerBase {
             type = MCRExternalStoreServiceUtils.getStoreType(derivate);
             LOGGER.debug("detected type: {}", type);
         } catch (MCRExternalStoreException e) {
-            LOGGER.debug(e);
+            LOGGER.error(e);
             return;
         }
         LOGGER.debug("Found store specific file");

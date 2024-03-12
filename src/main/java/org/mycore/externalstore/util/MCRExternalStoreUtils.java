@@ -44,7 +44,7 @@ public class MCRExternalStoreUtils {
     }
 
     /**
-     * Returns file name of of given path.
+     * Returns file name of given path.
      *
      * @param path path
      * @return file name
