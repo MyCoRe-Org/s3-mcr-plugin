@@ -24,75 +24,7 @@ import java.util.Map;
 /**
  * Dto for derivate info.
  */
-public class MCRDerivateInfoDto {
-
-    private String id;
-
-    private List<MCRDerivateTitleDto> titles;
-
-    private boolean view;
-
-    private boolean delete;
-
-    private Map<String, String> metadata;
-
-    private boolean write;
-
-    public MCRDerivateInfoDto(String id, List<MCRDerivateTitleDto> titles, boolean view, boolean delete,
-        boolean write) {
-        this.id = id;
-        this.titles = titles;
-        this.view = view;
-        this.delete = delete;
-        this.write = write;
-    }
-
-    public boolean isWrite() {
-        return write;
-    }
-
-    public void setWrite(boolean write) {
-        this.write = write;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public List<MCRDerivateTitleDto> getTitles() {
-        return titles;
-    }
-
-    public void setTitles(List<MCRDerivateTitleDto> titles) {
-        this.titles = titles;
-    }
-
-    public boolean isView() {
-        return view;
-    }
-
-    public void setView(boolean view) {
-        this.view = view;
-    }
-
-    public boolean isDelete() {
-        return delete;
-    }
-
-    public void setDelete(boolean delete) {
-        this.delete = delete;
-    }
-
-    public Map<String, String> getMetadata() {
-        return metadata;
-    }
-
-    public void setMetadata(Map<String, String> metadata) {
-        this.metadata = metadata;
-    }
-
+public record MCRDerivateInfoDto(String id, List<MCRDerivateTitleDto> titles, Map<String, String> metadata,
+    boolean view, boolean delete,
+    boolean write) {
 }

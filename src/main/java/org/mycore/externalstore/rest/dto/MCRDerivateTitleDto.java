@@ -18,41 +18,8 @@
 
 package org.mycore.externalstore.rest.dto;
 
-public class MCRDerivateTitleDto {
-
-    private String text;
-
-    private String lang;
-
-    private String form;
-
-    public MCRDerivateTitleDto(String text, String lang, String form) {
-        this.text = text;
-        this.lang = lang;
-        this.form = form;
-    }
-
-    public String getForm() {
-        return form;
-    }
-
-    public String getLang() {
-        return lang;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public void setForm(String form) {
-        this.form = form;
-    }
-
-    public void setLang(String lang) {
-        this.lang = lang;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
+/**
+ * Dto for derivate title.
+ */
+public record MCRDerivateTitleDto(String text, String lang, String form) {
 }

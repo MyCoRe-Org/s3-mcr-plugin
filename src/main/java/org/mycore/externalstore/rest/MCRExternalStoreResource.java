@@ -30,7 +30,6 @@ import java.util.Optional;
 import org.mycore.access.MCRAccessManager;
 import org.mycore.datamodel.metadata.MCRMetadataManager;
 import org.mycore.datamodel.metadata.MCRObjectID;
-import org.mycore.externalstore.MCRExternalStoreConstants;
 import org.mycore.externalstore.MCRExternalStoreService;
 import org.mycore.externalstore.archive.MCRExternalStoreArchiveResolverFactory;
 import org.mycore.externalstore.exception.MCRExternalStoreException;
@@ -41,9 +40,7 @@ import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo.FileFlag;
 import org.mycore.externalstore.rest.dto.MCRDerivateInfoDto;
 import org.mycore.externalstore.rest.dto.MCRDerivateInfosDto;
-import org.mycore.externalstore.rest.dto.MCRExternalStoreDtoMapper;
 import org.mycore.externalstore.rest.dto.MCRExternalStoreFileInfoDto;
-import org.mycore.externalstore.rest.dto.MCRFileCapability;
 import org.mycore.externalstore.util.MCRExternalStoreUtils;
 import org.mycore.frontend.jersey.MCRJWTUtil;
 import org.mycore.restapi.annotations.MCRRequireTransaction;
@@ -145,28 +142,17 @@ public class MCRExternalStoreResource {
     }
 
     private List<MCRExternalStoreFileInfoDto> listFileInfos(MCRObjectID derivateId, String path) {
-        final MCRExternalStoreFileInfo fileInfo;
-        if (path.isEmpty()) {
-            // fake root
-            fileInfo = new MCRExternalStoreFileInfo.MCRExternalStoreFileInfoBuilder("", "").directory(true).build();
-        } else {
-            fileInfo = INDEX.findFileInfo(derivateId, path)
-                .orElseThrow(() -> new BadRequestException("Path does not exist"));
-        }
+        final MCRExternalStoreFileInfo fileInfo = path.isEmpty()
+            ? new MCRExternalStoreFileInfo.MCRExternalStoreFileInfoBuilder("", "").directory(true).build()
+            : INDEX.findFileInfo(derivateId, path).orElseThrow(() -> new BadRequestException("Path does not exist"));
         if (fileInfo.isDirectory() || fileInfo.getFlags().contains(FileFlag.ARCHIVE)) {
-            boolean childrenDownloadable;
             try {
-                childrenDownloadable = checkChildrenDownloadable(derivateId, fileInfo);
+                final boolean childrenDownloadable = checkChildrenDownloadable(derivateId, fileInfo);
+                return INDEX.listFileInfos(derivateId, path).stream()
+                    .map(i -> MCRExternalStoreResourceHelper.toDto(i, childrenDownloadable)).toList();
             } catch (MCRExternalStoreIndexInconsistentException e) {
                 throw new InternalServerErrorException(e);
             }
-            return INDEX.listFileInfos(derivateId, path).stream().map(MCRExternalStoreDtoMapper::toDto).peek(f -> {
-                if (childrenDownloadable && !f.isDirectory() && f.getSize() != null
-                    && f.getSize() <= MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
-                    f.getCapabilities().add(MCRFileCapability.DOWNLOAD);
-                }
-            }).toList();
-
         }
         throw new BadRequestException("Path is not a directory or archive");
     }

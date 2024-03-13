@@ -20,31 +20,8 @@ package org.mycore.externalstore.rest.dto;
 
 import java.util.List;
 
-public class MCRDerivateInfosDto {
-
-    private List<MCRDerivateInfoDto> derivates;
-
-    private boolean create;
-
-    public MCRDerivateInfosDto(List<MCRDerivateInfoDto> derivates, boolean create) {
-        this.derivates = derivates;
-        this.create = create;
-    }
-
-    public List<MCRDerivateInfoDto> getDerivates() {
-        return derivates;
-    }
-
-    public void setDerivates(List<MCRDerivateInfoDto> derivates) {
-        this.derivates = derivates;
-    }
-
-    public boolean isCreate() {
-        return create;
-    }
-
-    public void setCreate(boolean create) {
-        this.create = create;
-    }
-
+/**
+ * Dto for derivate infos.
+ */
+public record MCRDerivateInfosDto(List<MCRDerivateInfoDto> derivates, boolean create) {
 }

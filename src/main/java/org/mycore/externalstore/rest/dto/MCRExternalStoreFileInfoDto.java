@@ -18,102 +18,21 @@
 
 package org.mycore.externalstore.rest.dto;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo.FileFlag;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class MCRExternalStoreFileInfoDto {
-
-    @JsonProperty("name")
-    private String name;
-
-    @JsonProperty("parentPath")
-    private String parentPath;
-
-    @JsonProperty("isDirectory")
-    private boolean isDirectory;
-
-    @JsonProperty("size")
-    private Long size;
-
-    @JsonProperty("checksum")
-    private String checksum;
-
-    @JsonProperty("lastModified")
-    private Date lastModified;
-
-    @JsonProperty("flags")
-    private List<FileFlag> flags = new ArrayList<FileFlag>();
-
-    @JsonProperty("capabilities")
-    private List<MCRFileCapability> capabilities = new ArrayList<MCRFileCapability>();
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getParentPath() {
-        return parentPath;
-    }
-
-    public void setParentPath(String parentPath) {
-        this.parentPath = parentPath;
-    }
-
-    public boolean isDirectory() {
-        return isDirectory;
-    }
-
-    public void setDirectory(boolean isDirectory) {
-        this.isDirectory = isDirectory;
-    }
-
-    public Long getSize() {
-        return size;
-    }
-
-    public void setSize(Long size) {
-        this.size = size;
-    }
-
-    public String getChecksum() {
-        return checksum;
-    }
-
-    public void setChecksum(String checksum) {
-        this.checksum = checksum;
-    }
-
-    public Date getLastModified() {
-        return lastModified;
-    }
-
-    public void setLastModified(Date lastModified) {
-        this.lastModified = lastModified;
-    }
-
-    public List<FileFlag> getFlags() {
-        return flags;
-    }
-
-    public void setFlags(List<FileFlag> flags) {
-        this.flags = flags;
-    }
-
-    public List<MCRFileCapability> getCapabilities() {
-        return capabilities;
-    }
-
-    public void setCapabilities(List<MCRFileCapability> capabilities) {
-        this.capabilities = capabilities;
-    }
+/**
+ * Dto for {@link MCRExternalStoreFileInfo}.
+ */
+public record MCRExternalStoreFileInfoDto(@JsonProperty("name") String name,
+    @JsonProperty("parentPath") String parentPath, @JsonProperty("isDirectory") boolean isDirectory,
+    @JsonProperty("size") Long size, @JsonProperty("checksum") String checksum,
+    @JsonProperty("lastModified") Date lastModified, @JsonProperty("flags") List<FileFlag> flags,
+    @JsonProperty("capabilities") List<MCRFileCapability> capabilities) {
 
 }

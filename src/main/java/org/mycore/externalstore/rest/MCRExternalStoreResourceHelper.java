@@ -20,6 +20,7 @@ package org.mycore.externalstore.rest;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -33,12 +34,16 @@ import org.mycore.datamodel.metadata.MCRMetadataManager;
 import org.mycore.datamodel.metadata.MCRObject;
 import org.mycore.datamodel.metadata.MCRObjectID;
 import org.mycore.externalstore.MCRExternalStore;
+import org.mycore.externalstore.MCRExternalStoreConstants;
 import org.mycore.externalstore.MCRExternalStoreFileContent;
 import org.mycore.externalstore.MCRExternalStoreService;
 import org.mycore.externalstore.MCRExternalStoreServiceUtils;
 import org.mycore.externalstore.archive.MCRExternalStoreArchiveResolverFactory;
+import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.rest.dto.MCRDerivateInfoDto;
 import org.mycore.externalstore.rest.dto.MCRDerivateTitleDto;
+import org.mycore.externalstore.rest.dto.MCRExternalStoreFileInfoDto;
+import org.mycore.externalstore.rest.dto.MCRFileCapability;
 import org.mycore.externalstore.util.MCRExternalStoreUtils;
 import org.mycore.services.i18n.MCRTranslation;
 
@@ -96,6 +101,24 @@ public class MCRExternalStoreResourceHelper {
     }
 
     /**
+     * Returns {@link MCRExternalStoreFileInfoDto} from file info.
+     *
+     * @param fileInfo file info
+     * @param downloadable if file is downloadable
+     * @return file info dto
+     */
+    protected static MCRExternalStoreFileInfoDto toDto(MCRExternalStoreFileInfo fileInfo, boolean downloadable) {
+        final List<MCRFileCapability> capabilities = new ArrayList<>();
+        if (downloadable && !fileInfo.isDirectory() && fileInfo.getSize() != null
+            && fileInfo.getSize() <= MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
+            capabilities.add(MCRFileCapability.DOWNLOAD);
+        }
+        return new MCRExternalStoreFileInfoDto(fileInfo.getName(), fileInfo.getParentPath(),
+            fileInfo.isDirectory(), fileInfo.getSize(), fileInfo.getChecksum(), fileInfo.getLastModified(),
+            fileInfo.getFlags(), capabilities);
+    }
+
+    /**
      * Returns a list of {@link MCRDerivateInfoDto} elements by object id.
      *
      * @param objectId object id
@@ -120,12 +143,11 @@ public class MCRExternalStoreResourceHelper {
                         title.getForm()))
                     .collect(Collectors.toList());
 
-                final MCRDerivateInfoDto derivateInfo
-                    = new MCRDerivateInfoDto(der.getId().toString(), titles, canView, canDelete, canEdit);
                 final MCRExternalStore store = MCRExternalStoreService.getInstance().getStore(der.getId());
                 final Map<String, String> metadataMap
                     = canEdit ? store.getStoreSettings() : Collections.emptyMap();
-                derivateInfo.setMetadata(metadataMap);
+                final MCRDerivateInfoDto derivateInfo
+                    = new MCRDerivateInfoDto(der.getId().toString(), titles, metadataMap, canView, canDelete, canEdit);
                 return derivateInfo;
             })
             .collect(Collectors.toList());
