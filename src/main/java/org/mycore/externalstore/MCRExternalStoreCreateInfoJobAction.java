@@ -44,7 +44,6 @@ public class MCRExternalStoreCreateInfoJobAction extends MCRJobAction {
      */
     private static final String DERIVATE_ID = "derivate_id";
 
-    @SuppressWarnings("PMD.UnnecessaryConstructor")
     public MCRExternalStoreCreateInfoJobAction() {
 
     }
@@ -78,9 +77,9 @@ public class MCRExternalStoreCreateInfoJobAction extends MCRJobAction {
         session.setUserInformation(MCRSystemUserInformation.getGuestInstance());
         session.setUserInformation(MCRSystemUserInformation.getJanitorInstance());
         try {
-            new MCRTransactionableCallable<Boolean>(() -> {
+            new MCRTransactionableCallable<>(() -> {
                 MCRExternalStoreService.createStoreInfo(derivateId);
-                return true;
+                return null;
             }).call();
             LOGGER.debug("Finished embedding {} store to {}", derivateId);
         } catch (Exception e) {
