@@ -19,7 +19,7 @@
 package org.mycore.externalstore.rest.dto;
 
 import java.util.Date;
-import java.util.List;
+import java.util.Set;
 
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo.FileFlag;
@@ -32,7 +32,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public record MCRExternalStoreFileInfoDto(@JsonProperty("name") String name,
     @JsonProperty("parentPath") String parentPath, @JsonProperty("isDirectory") boolean isDirectory,
     @JsonProperty("size") Long size, @JsonProperty("checksum") String checksum,
-    @JsonProperty("lastModified") Date lastModified, @JsonProperty("flags") List<FileFlag> flags,
-    @JsonProperty("capabilities") List<MCRFileCapability> capabilities) {
+    @JsonProperty("lastModified") Date lastModified, @JsonProperty("flags") Set<FileFlag> flags,
+    @JsonProperty("capabilities") Set<MCRFileCapability> capabilities) {
 
 }

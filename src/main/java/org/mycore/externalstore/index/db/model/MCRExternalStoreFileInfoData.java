@@ -19,9 +19,9 @@
 package org.mycore.externalstore.index.db.model;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo.FileFlag;
 
@@ -78,7 +78,7 @@ public class MCRExternalStoreFileInfoData {
     @ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)
     @CollectionTable(name = "MCRExternalStoreFile_Flag")
     @Column(name = "flag")
-    private List<String> flags = new ArrayList<String>();
+    private Set<String> flags = new HashSet<String>();
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "store_info_id")
@@ -233,7 +233,7 @@ public class MCRExternalStoreFileInfoData {
      *
      * @return the flags
      */
-    public List<String> getFlags() {
+    public Set<String> getFlags() {
         return flags;
     }
 
@@ -242,7 +242,7 @@ public class MCRExternalStoreFileInfoData {
      *
      * @param flags the flags
      */
-    public void setFlags(List<String> flags) {
+    public void setFlags(Set<String> flags) {
         this.flags = flags;
     }
 

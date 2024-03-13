@@ -18,16 +18,16 @@
 
 package org.mycore.externalstore.model;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * An {@link MCRExternalStoreFileInfo} describes a file.
  * Also, a file can be a directory.
  */
 public record MCRExternalStoreFileInfo(String name, String parentPath, boolean isDirectory, Long size,
-    Date lastModified, String checksum, List<FileFlag> flags) {
+    Date lastModified, String checksum, Set<FileFlag> flags) {
 
     private MCRExternalStoreFileInfo(Builder builder) {
         this(builder.name, builder.parentPath, builder.isDirectory, builder.size, builder.lastModified,
@@ -65,7 +65,7 @@ public record MCRExternalStoreFileInfo(String name, String parentPath, boolean i
         private String checksum;
 
         @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
-        private List<FileFlag> flags = new ArrayList<FileFlag>();
+        private Set<FileFlag> flags = new HashSet<FileFlag>();
 
         public Builder(String name) {
             this(name, "");
@@ -121,7 +121,7 @@ public record MCRExternalStoreFileInfo(String name, String parentPath, boolean i
          * @param flags list of flags
          * @return builder instance
          */
-        public Builder flags(List<FileFlag> flags) {
+        public Builder flags(Set<FileFlag> flags) {
             this.flags = flags;
             return this;
         }

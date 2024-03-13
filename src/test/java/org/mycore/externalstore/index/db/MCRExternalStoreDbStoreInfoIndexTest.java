@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.Test;
 import org.mycore.common.MCRJPATestCase;
@@ -93,7 +94,7 @@ public class MCRExternalStoreDbStoreInfoIndexTest extends MCRJPATestCase {
         final MCRExternalStoreFileInfoData updatedFileInfoData = storeInfoData.getFileInfos().get(0);
         final MCRExternalStoreFileInfo updatedFileInfo
             = new MCRExternalStoreFileInfo.Builder(updatedFileInfoData.getName(), updatedFileInfoData.getParentPath())
-                .flags(List.of(MCRExternalStoreFileInfo.FileFlag.ARCHIVE)).build();
+                .flags(Set.of(MCRExternalStoreFileInfo.FileFlag.ARCHIVE)).build();
         storeIndex.updateFileInfo(derivateId, updatedFileInfo);
         final Optional<MCRExternalStoreFileInfo> result
             = storeIndex.findFileInfo(derivateId, updatedFileInfoData.getAbsolutePath());

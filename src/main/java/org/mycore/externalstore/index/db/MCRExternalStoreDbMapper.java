@@ -4,8 +4,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.mycore.externalstore.index.db.model.MCRExternalStoreFileInfoData;
@@ -23,8 +23,8 @@ public class MCRExternalStoreDbMapper {
      * @return file info
      */
     public static MCRExternalStoreFileInfo toDomain(MCRExternalStoreFileInfoData fileInfoData) {
-        final List<MCRExternalStoreFileInfo.FileFlag> flags
-            = fileInfoData.getFlags().stream().map(f -> toDomain(f)).collect(Collectors.toList());
+        final Set<MCRExternalStoreFileInfo.FileFlag> flags
+            = fileInfoData.getFlags().stream().map(f -> toDomain(f)).collect(Collectors.toSet());
         final MCRExternalStoreFileInfo.Builder result
             = new MCRExternalStoreFileInfo.Builder(fileInfoData.getName(), fileInfoData.getParentPath())
                 .checksum(fileInfoData.getChecksum()).directory(fileInfoData.isDirectory()).size(fileInfoData.getSize())
@@ -48,7 +48,7 @@ public class MCRExternalStoreDbMapper {
         Optional.ofNullable(fileInfo.lastModified()).map(d -> convertToLocalDateTime(d))
             .ifPresent(data::setLastModified);
         data.setSize(fileInfo.size());
-        final List<String> flags = fileInfo.flags().stream().map(f -> toData(f)).collect(Collectors.toList());
+        final Set<String> flags = fileInfo.flags().stream().map(f -> toData(f)).collect(Collectors.toSet());
         data.setFlags(flags);
         return data;
     }

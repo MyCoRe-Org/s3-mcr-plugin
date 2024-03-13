@@ -20,12 +20,13 @@ package org.mycore.externalstore.rest;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.mycore.access.MCRAccessManager;
@@ -108,7 +109,7 @@ public class MCRExternalStoreResourceHelper {
      * @return file info dto
      */
     protected static MCRExternalStoreFileInfoDto toDto(MCRExternalStoreFileInfo fileInfo, boolean downloadable) {
-        final List<MCRFileCapability> capabilities = new ArrayList<>();
+        final Set<MCRFileCapability> capabilities = new HashSet<>();
         if (downloadable && !fileInfo.isDirectory() && fileInfo.size() != null
             && fileInfo.size() <= MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
             capabilities.add(MCRFileCapability.DOWNLOAD);
