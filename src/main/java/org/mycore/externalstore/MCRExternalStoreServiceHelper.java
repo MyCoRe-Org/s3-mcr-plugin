@@ -43,7 +43,7 @@ import org.mycore.externalstore.archive.MCRExternalStoreArchiveResolverFactory;
 import org.mycore.externalstore.exception.MCRExternalStoreException;
 import org.mycore.externalstore.model.MCRExternalStoreArchiveInfo;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
-import org.mycore.externalstore.model.MCRExternalStoreRawSettingsWrapper;
+import org.mycore.externalstore.model.MCRExternalStoreSettingsWrapper;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -111,15 +111,14 @@ public class MCRExternalStoreServiceHelper {
         if (resolverId.isEmpty()) {
             throw new MCRExternalStoreException("there is no matching resolver");
         }
-        MCRExternalStoreArchiveInfo archive = new MCRExternalStoreArchiveInfo(fileInfo.getAbsolutePath());
         try {
-            resolveArchive(provider, resolverId.get(), fileInfo.getAbsolutePath()).stream()
-                .peek(a -> a.flags().add(MCRExternalStoreFileInfo.FileFlag.ARCHIVE_ENTRY))
-                .forEach(archive::addFile);
+            final List<MCRExternalStoreFileInfo> fileInfos
+                = resolveArchive(provider, resolverId.get(), fileInfo.getAbsolutePath()).stream()
+                    .peek(a -> a.flags().add(MCRExternalStoreFileInfo.FileFlag.ARCHIVE_ENTRY)).toList();
+            return new MCRExternalStoreArchiveInfo(fileInfo.getAbsolutePath(), fileInfos);
         } catch (IOException e) {
             throw new MCRExternalStoreException("error while resolving archive");
         }
-        return archive;
     }
 
     private static List<MCRExternalStoreFileInfo> resolveArchive(MCRExternalStoreProvider provider, String resolverId,
@@ -154,13 +153,13 @@ public class MCRExternalStoreServiceHelper {
     }
 
     /**
-     * Saves a {@link MCRExternalStoreRawSettingsWrapper} to given {@link MCRPath}.
+     * Saves a {@link MCRExternalStoreSettingsWrapper} to given {@link MCRPath}.
      *
      * @param path path
      * @param wrapper wrapper
      * @throws IOException if an I/O error occurs
      */
-    protected static void saveRawSettingsWrapper(MCRPath path, MCRExternalStoreRawSettingsWrapper wrapper)
+    protected static void saveSettingsWrapper(MCRPath path, MCRExternalStoreSettingsWrapper wrapper)
         throws IOException {
         try (OutputStream outputStream = Files.newOutputStream(path)) {
             MAPPER.writeValue(outputStream, wrapper);
@@ -217,15 +216,15 @@ public class MCRExternalStoreServiceHelper {
     }
 
     /**
-     * Returns a {@link MCRExternalStoreRawSettingsWrapper} from given {@link InputStream}.
+     * Returns a {@link MCRExternalStoreSettingsWrapper} from given {@link InputStream}.
      *
      * @param inputStream input stream
      * @return wrapper
      * @throws IOException if an I/O error occurs
      */
-    protected static MCRExternalStoreRawSettingsWrapper getRawSettingsWrapper(InputStream inputStream)
+    protected static MCRExternalStoreSettingsWrapper getSettingsWrapper(InputStream inputStream)
         throws IOException {
-        ObjectReader reader = new ObjectMapper().readerFor(MCRExternalStoreRawSettingsWrapper.class);
+        ObjectReader reader = new ObjectMapper().readerFor(MCRExternalStoreSettingsWrapper.class);
         return reader.readValue(inputStream);
     }
 
@@ -278,8 +277,6 @@ public class MCRExternalStoreServiceHelper {
     }
 
     abstract class MCRExternalStoreFileInfoMinxIn {
-        @JsonIgnore
-        abstract Long getId();
 
         @JsonIgnore
         abstract String getAbsolutePath();

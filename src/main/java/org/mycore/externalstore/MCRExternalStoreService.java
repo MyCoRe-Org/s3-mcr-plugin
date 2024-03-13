@@ -47,7 +47,7 @@ import org.mycore.externalstore.archive.MCRExternalStoreArchiveResolverFactory;
 import org.mycore.externalstore.exception.MCRExternalStoreException;
 import org.mycore.externalstore.model.MCRExternalStoreArchiveInfo;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
-import org.mycore.externalstore.model.MCRExternalStoreRawSettingsWrapper;
+import org.mycore.externalstore.model.MCRExternalStoreSettingsWrapper;
 import org.mycore.services.queuedjob.MCRJob;
 import org.mycore.services.queuedjob.MCRJobQueue;
 
@@ -132,16 +132,16 @@ public class MCRExternalStoreService {
      */
     protected static void saveStoreProviderSettings(MCRObjectID derivateId, Map<String, String> storeProviderSettings)
         throws IOException {
-        final MCRExternalStoreRawSettingsWrapper wrapper = new MCRExternalStoreRawSettingsWrapper();
+        MCRExternalStoreSettingsWrapper wrapper;
         try {
             final String settingsMapString = MCRExternalStoreServiceHelper.getMapString(storeProviderSettings);
             final String encryptedSettings = encryptString(settingsMapString);
-            wrapper.setRawContent(encryptedSettings);
+            wrapper = new MCRExternalStoreSettingsWrapper(encryptedSettings, true);
         } catch (MCRCryptKeyFileNotFoundException | MCRCryptKeyNoPermissionException | IllegalArgumentException e) {
             throw new IOException("Error while processing settings", e);
         }
         final MCRPath path = MCRPath.getPath(derivateId.toString(), STORE_PROVIDER_SETTINGS_FILENAME);
-        MCRExternalStoreServiceHelper.saveRawSettingsWrapper(path, wrapper);
+        MCRExternalStoreServiceHelper.saveSettingsWrapper(path, wrapper);
     }
 
     private static void enqueueCreateStoreJob(MCRObjectID derivateId) {
@@ -242,19 +242,19 @@ public class MCRExternalStoreService {
     }
 
     private static Map<String, String> loadStoreProviderSettings(MCRObjectID derivateId) {
-        final MCRExternalStoreRawSettingsWrapper settingsWrapper = loadSettingsWrapper(derivateId);
+        final MCRExternalStoreSettingsWrapper settingsWrapper = loadSettingsWrapper(derivateId);
         try {
-            final String settingsMapString = decryptString(settingsWrapper.getRawContent());
+            final String settingsMapString = decryptString(settingsWrapper.settings());
             return MCRExternalStoreServiceHelper.getMap(settingsMapString);
         } catch (IOException | MCRCryptKeyNoPermissionException | IllegalArgumentException e) {
             throw new MCRExternalStoreException("Error while processing settings wrapper", e);
         }
     }
 
-    private static MCRExternalStoreRawSettingsWrapper loadSettingsWrapper(MCRObjectID derivateId) {
+    private static MCRExternalStoreSettingsWrapper loadSettingsWrapper(MCRObjectID derivateId) {
         try (InputStream inputStream
             = MCRExternalStoreServiceHelper.readFile(derivateId, STORE_PROVIDER_SETTINGS_FILENAME)) {
-            return MCRExternalStoreServiceHelper.getRawSettingsWrapper(inputStream);
+            return MCRExternalStoreServiceHelper.getSettingsWrapper(inputStream);
         } catch (IOException e) {
             throw new MCRExternalStoreException("Error while reading settings file", e);
         }
