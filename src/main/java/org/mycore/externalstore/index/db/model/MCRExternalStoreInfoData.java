@@ -25,8 +25,6 @@ import java.util.Objects;
 import org.mycore.backend.jpa.MCRObjectIDConverter;
 import org.mycore.datamodel.metadata.MCRObjectID;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -71,14 +69,6 @@ public class MCRExternalStoreInfoData {
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "storeInfo", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MCRExternalStoreFileInfoData> fileInfos = new ArrayList<>();
-
-    /**
-     * Constructs new instance. Necessary for {@link ObjectMapper}.
-     */
-    @SuppressWarnings("PMD.UnnecessaryConstructor")
-    public MCRExternalStoreInfoData() {
-
-    }
 
     /**
      * Returns the internal id.

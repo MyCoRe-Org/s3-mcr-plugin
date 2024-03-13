@@ -25,8 +25,6 @@ import java.util.Objects;
 
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo.FileFlag;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -85,14 +83,6 @@ public class MCRExternalStoreFileInfoData {
     @ManyToOne(optional = false)
     @JoinColumn(name = "store_info_id")
     private MCRExternalStoreInfoData storeInfo;
-
-    /**
-     * Constructs new instance. Necessary for {@link ObjectMapper}.
-     */
-    @SuppressWarnings("PMD.UnnecessaryConstructor")
-    public MCRExternalStoreFileInfoData() {
-
-    }
 
     /**
      * Returns the internal id.
