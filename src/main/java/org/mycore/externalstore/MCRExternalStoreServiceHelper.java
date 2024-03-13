@@ -44,7 +44,6 @@ import org.mycore.externalstore.exception.MCRExternalStoreException;
 import org.mycore.externalstore.model.MCRExternalStoreArchiveInfo;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.model.MCRExternalStoreRawSettingsWrapper;
-import org.mycore.externalstore.util.MCRExternalStoreUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -105,17 +104,17 @@ public class MCRExternalStoreServiceHelper {
         if (fileInfo.isDirectory()) {
             throw new MCRExternalStoreException("directory is not allowed");
         }
-        if (fileInfo.getSize() > MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
+        if (fileInfo.size() > MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
             throw new MCRExternalStoreException("file is too large");
         }
-        final Optional<String> resolverId = MCRExternalStoreArchiveResolverFactory.findResolverId(fileInfo.getName());
+        final Optional<String> resolverId = MCRExternalStoreArchiveResolverFactory.findResolverId(fileInfo.name());
         if (resolverId.isEmpty()) {
             throw new MCRExternalStoreException("there is no matching resolver");
         }
         MCRExternalStoreArchiveInfo archive = new MCRExternalStoreArchiveInfo(fileInfo.getAbsolutePath());
         try {
             resolveArchive(provider, resolverId.get(), fileInfo.getAbsolutePath()).stream()
-                .peek(a -> a.getFlags().add(MCRExternalStoreFileInfo.FileFlag.ARCHIVE_ENTRY))
+                .peek(a -> a.flags().add(MCRExternalStoreFileInfo.FileFlag.ARCHIVE_ENTRY))
                 .forEach(archive::addFile);
         } catch (IOException e) {
             throw new MCRExternalStoreException("error while resolving archive");
@@ -128,7 +127,15 @@ public class MCRExternalStoreServiceHelper {
         final MCRExternalStoreFileContent fileContent = new MCRExternalStoreFileContent(provider, path);
         final MCRExternalStoreArchiveResolver resolver
             = MCRExternalStoreArchiveResolverFactory.createResolver(resolverId, fileContent);
-        return resolver.listFileInfos().stream().peek(f -> MCRExternalStoreUtils.addParentPath(f, path)).toList();
+        return resolver.listFileInfos().stream().map(f -> addParentPath(f, path)).toList();
+    }
+
+    private static MCRExternalStoreFileInfo addParentPath(MCRExternalStoreFileInfo fileInfo, String path) {
+        final String parentPath = Optional.of(fileInfo.parentPath()).filter(p -> !p.isEmpty())
+            .map(p -> path.concat("/").concat(p)).orElse(path);
+        return new MCRExternalStoreFileInfo.Builder(fileInfo.name(), parentPath).directory(fileInfo.isDirectory())
+            .lastModified(fileInfo.lastModified()).flags(fileInfo.flags()).size(fileInfo.size())
+            .checksum(fileInfo.checksum()).build();
     }
 
     /**

@@ -89,7 +89,7 @@ public class MCRExternalStoreEventHandler extends MCREventHandlerBase {
             if (entry.isEmpty()) {
                 throw new MCRExternalStoreException("Found missmatch");
             }
-            entry.get().getFlags().add(MCRExternalStoreFileInfo.FileFlag.ARCHIVE);
+            entry.get().flags().add(MCRExternalStoreFileInfo.FileFlag.ARCHIVE);
             STORE_INFO_INDEX.updateFileInfo(derivateId, entry.get());
         });
     }

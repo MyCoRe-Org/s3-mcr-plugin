@@ -42,10 +42,10 @@ public class MCRExternalStoreArchiveUtilsTest {
             = entries.stream().map(MCRExternalStoreArchiveUtils::mapToFileInfo).toList();
         assertEquals(3, fileInfos.size());
         assertTrue(fileInfos.stream().filter(MCRExternalStoreFileInfo::isDirectory)
-            .filter(f -> Objects.equals("bar", f.getName())).findAny().isPresent());
-        assertTrue(fileInfos.stream().filter(f -> !f.isDirectory()).filter(f -> Objects.equals("foo", f.getName()))
+            .filter(f -> Objects.equals("bar", f.name())).findAny().isPresent());
+        assertTrue(fileInfos.stream().filter(f -> !f.isDirectory()).filter(f -> Objects.equals("foo", f.name()))
             .findAny().isPresent());
-        assertTrue(fileInfos.stream().filter(f -> !f.isDirectory()).filter(f -> Objects.equals("foo.txt", f.getName()))
+        assertTrue(fileInfos.stream().filter(f -> !f.isDirectory()).filter(f -> Objects.equals("foo.txt", f.name()))
             .findAny().isPresent());
     }
 

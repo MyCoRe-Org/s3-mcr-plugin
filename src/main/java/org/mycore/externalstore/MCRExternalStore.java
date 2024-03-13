@@ -125,7 +125,7 @@ public class MCRExternalStore {
         if (fileInfo.isDirectory()) {
             throw new IOException("Object is a directory");
         }
-        if (fileInfo.getSize() > MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
+        if (fileInfo.size() > MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
             throw new IOException("Object exceeds max size");
         }
     }

@@ -109,13 +109,13 @@ public class MCRExternalStoreResourceHelper {
      */
     protected static MCRExternalStoreFileInfoDto toDto(MCRExternalStoreFileInfo fileInfo, boolean downloadable) {
         final List<MCRFileCapability> capabilities = new ArrayList<>();
-        if (downloadable && !fileInfo.isDirectory() && fileInfo.getSize() != null
-            && fileInfo.getSize() <= MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
+        if (downloadable && !fileInfo.isDirectory() && fileInfo.size() != null
+            && fileInfo.size() <= MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
             capabilities.add(MCRFileCapability.DOWNLOAD);
         }
-        return new MCRExternalStoreFileInfoDto(fileInfo.getName(), fileInfo.getParentPath(),
-            fileInfo.isDirectory(), fileInfo.getSize(), fileInfo.getChecksum(), fileInfo.getLastModified(),
-            fileInfo.getFlags(), capabilities);
+        return new MCRExternalStoreFileInfoDto(fileInfo.name(), fileInfo.parentPath(),
+            fileInfo.isDirectory(), fileInfo.size(), fileInfo.checksum(), fileInfo.lastModified(), fileInfo.flags(),
+            capabilities);
     }
 
     /**

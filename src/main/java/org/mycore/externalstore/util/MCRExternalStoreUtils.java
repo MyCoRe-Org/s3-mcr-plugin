@@ -25,7 +25,6 @@ import java.util.Optional;
 
 import org.apache.commons.io.FilenameUtils;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
-import org.mycore.externalstore.model.MCRExternalStoreFileInfo.MCRExternalStoreFileInfoBuilder;
 
 /**
  * Provides general utility methods.
@@ -54,17 +53,6 @@ public class MCRExternalStoreUtils {
     }
 
     /**
-     * Adds parent path to {@link MCRExternalStoreFileInfo} parent path.
-     *
-     * @param fileInfo file info
-     * @param path path
-     */
-    public static void addParentPath(MCRExternalStoreFileInfo fileInfo, String path) {
-        Optional.of(fileInfo).filter(f -> f.getParentPath().isEmpty()).ifPresentOrElse(f -> f.setParentPath(path),
-            () -> fileInfo.setParentPath(path.concat("/").concat(fileInfo.getParentPath())));
-    }
-
-    /**
      * Returns concatenation of two paths.
      *
      * @param pathOne first path
@@ -80,23 +68,7 @@ public class MCRExternalStoreUtils {
         return pathOne;
     }
 
-    /**
-     * Creates and returns {@link MCRExternalStoreFileInfo} with path of parent and file name.
-     *
-     * @param path path
-     * @return file info
-     */
-    public static MCRExternalStoreFileInfo createBaseFile(String path) {
-        return buildBaseFile(path).build();
-    }
-
-    /**
-     * Creates and returns {@link MCRExternalStoreFileInfo} as directory with path of parent and file name.
-     *
-     * @param path path
-     * @return file info
-     */
-    public static MCRExternalStoreFileInfo createDirectory(String path) {
+    private static MCRExternalStoreFileInfo createDirectory(String path) {
         return buildBaseFile(path).directory(true).build();
     }
 
@@ -132,9 +104,8 @@ public class MCRExternalStoreUtils {
         return result;
     }
 
-    private static MCRExternalStoreFileInfoBuilder buildBaseFile(String path) {
-        return new MCRExternalStoreFileInfo.MCRExternalStoreFileInfoBuilder(getFileName(path),
-            getParentPath(path));
+    private static MCRExternalStoreFileInfo.Builder buildBaseFile(String path) {
+        return new MCRExternalStoreFileInfo.Builder(getFileName(path), getParentPath(path));
     }
 
 }

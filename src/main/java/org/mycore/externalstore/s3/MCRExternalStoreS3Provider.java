@@ -86,7 +86,7 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
         final ObjectMetadata metadata = getObjectMetadata(path);
         final String parentPath = MCRExternalStoreUtils.getParentPath(path);
         final String name = MCRExternalStoreUtils.getFileName(path);
-        return new MCRExternalStoreFileInfo.MCRExternalStoreFileInfoBuilder(name, parentPath)
+        return new MCRExternalStoreFileInfo.Builder(name, parentPath)
             .checksum(metadata.getETag())
             .size(metadata.getContentLength())
             .lastModified(metadata.getLastModified())
@@ -111,7 +111,7 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
         final List<MCRExternalStoreFileInfo> result = list(listObjectsV2Request);
         final Set<MCRExternalStoreFileInfo> directories = new HashSet<MCRExternalStoreFileInfo>();
         for (MCRExternalStoreFileInfo file : result) {
-            directories.addAll(MCRExternalStoreUtils.getDirectories(file.getParentPath()));
+            directories.addAll(MCRExternalStoreUtils.getDirectories(file.parentPath()));
         }
         result.addAll(directories);
         return result;
@@ -159,10 +159,8 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
             }
             listObjectsV2Result = client.listObjectsV2(listObjectsV2Request);
             listObjectsV2Result.getObjectSummaries().stream().map(s -> toFileInfo(s)).forEach(fileInfos::add);
-            listObjectsV2Result.getCommonPrefixes().stream().map(p -> MCRExternalStoreUtils.createDirectory(p))
-                .forEach(fileInfos::add);
+            listObjectsV2Result.getCommonPrefixes().stream().map(p -> toDirectoryInfo(p)).forEach(fileInfos::add);
         } while (listObjectsV2Result.isTruncated());
-        fileInfos.forEach(f -> fixDirectory(f));
         return fileInfos;
     }
 
@@ -170,14 +168,27 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
      * Maps {@link S3ObjectSummary} to {@link MCRExternalStoreFileInfo}.
      *
      * @param summary the object summary
-     * @return the remote stored file
+     * @return file info
      */
-    protected static MCRExternalStoreFileInfo toFileInfo(S3ObjectSummary summary) {
-        final MCRExternalStoreFileInfo fileInfo = MCRExternalStoreUtils.createBaseFile(summary.getKey());
-        fileInfo.setSize(summary.getSize());
-        fileInfo.setLastModified(summary.getLastModified());
-        fileInfo.setChecksum(summary.getETag());
-        return fileInfo;
+    protected MCRExternalStoreFileInfo toFileInfo(S3ObjectSummary summary) {
+        final String fileName = MCRExternalStoreUtils.getFileName(summary.getKey());
+        final String parentPath = removeDirectory(MCRExternalStoreUtils.getParentPath(summary.getKey()));
+        return new MCRExternalStoreFileInfo.Builder(fileName, parentPath)
+            .size(summary.getSize()).directory(false).lastModified(summary.getLastModified())
+            .checksum(summary.getETag()).build();
+    }
+
+    /**
+     * Maps key to {@link MCRExternalStoreFileInfo}.
+     *
+     * @param key key
+     * @return directory info
+     */
+    protected MCRExternalStoreFileInfo toDirectoryInfo(String key) {
+        final String fileName = MCRExternalStoreUtils.getFileName(key);
+        final String parentPath = removeDirectory(MCRExternalStoreUtils.getParentPath(key));
+        return new MCRExternalStoreFileInfo.Builder(fileName, parentPath).directory(true)
+            .build();
     }
 
     private ObjectMetadata getObjectMetadata(String path) {
@@ -186,10 +197,6 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
 
     private String getKey(String path) {
         return (directory != null) ? MCRExternalStoreUtils.concatPaths(directory, path) : path;
-    }
-
-    private void fixDirectory(MCRExternalStoreFileInfo fileInfo) {
-        fileInfo.setParentPath(removeDirectory(fileInfo.getParentPath()));
     }
 
     private String removeDirectory(String path) {

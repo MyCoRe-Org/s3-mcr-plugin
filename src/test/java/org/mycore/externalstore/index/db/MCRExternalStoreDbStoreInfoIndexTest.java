@@ -68,8 +68,8 @@ public class MCRExternalStoreDbStoreInfoIndexTest extends MCRJPATestCase {
         final List<MCRExternalStoreFileInfo> fooFiles = storeIndex.listFileInfos(derivateId, "foo");
         assertNotNull(fooFiles);
         assertEquals(1, fooFiles.size());
-        assertEquals("test.txt", fooFiles.get(0).getName());
-        assertEquals("foo", fooFiles.get(0).getParentPath());
+        assertEquals("test.txt", fooFiles.get(0).name());
+        assertEquals("foo", fooFiles.get(0).parentPath());
     }
 
     @Test
@@ -78,9 +78,7 @@ public class MCRExternalStoreDbStoreInfoIndexTest extends MCRJPATestCase {
         final MCRExternalStoreInfoData storeInfoData = createTestInfoData(derivateId);
         storeInfoRepository.insert(storeInfoData);
         this.startNewTransaction();
-        final MCRExternalStoreFileInfo fileInfo = new MCRExternalStoreFileInfo();
-        fileInfo.setName("baz");
-        fileInfo.setParentPath("stu");
+        final MCRExternalStoreFileInfo fileInfo = new MCRExternalStoreFileInfo.Builder("baz", "stu").build();
         storeIndex.addFileInfo(derivateId, fileInfo);
         final Optional<MCRExternalStoreFileInfo> result = storeIndex.findFileInfo(derivateId, "stu/baz");
         assertTrue(result.isPresent());
@@ -93,13 +91,14 @@ public class MCRExternalStoreDbStoreInfoIndexTest extends MCRJPATestCase {
         storeInfoRepository.insert(storeInfoData);
         this.startNewTransaction();
         final MCRExternalStoreFileInfoData updatedFileInfoData = storeInfoData.getFileInfos().get(0);
-        final MCRExternalStoreFileInfo updatedFileInfo = MCRExternalStoreDbMapper.toDomain(updatedFileInfoData);
-        updatedFileInfo.setFlags(List.of(MCRExternalStoreFileInfo.FileFlag.ARCHIVE));
+        final MCRExternalStoreFileInfo updatedFileInfo
+            = new MCRExternalStoreFileInfo.Builder(updatedFileInfoData.getName(), updatedFileInfoData.getParentPath())
+                .flags(List.of(MCRExternalStoreFileInfo.FileFlag.ARCHIVE)).build();
         storeIndex.updateFileInfo(derivateId, updatedFileInfo);
         final Optional<MCRExternalStoreFileInfo> result
             = storeIndex.findFileInfo(derivateId, updatedFileInfoData.getAbsolutePath());
         assertTrue(result.isPresent());
-        assertTrue(result.get().getFlags().size() > 0);
+        assertTrue(result.get().flags().size() > 0);
     }
 
     @Test
@@ -124,8 +123,8 @@ public class MCRExternalStoreDbStoreInfoIndexTest extends MCRJPATestCase {
         this.startNewTransaction();
         final Optional<MCRExternalStoreFileInfo> fileInfo = storeIndex.findFileInfo(derivateId, "foo/test.txt");
         assertTrue(fileInfo.isPresent());
-        assertEquals("test.txt", fileInfo.get().getName());
-        assertEquals("foo", fileInfo.get().getParentPath());
+        assertEquals("test.txt", fileInfo.get().name());
+        assertEquals("foo", fileInfo.get().parentPath());
     }
 
     private MCRExternalStoreInfoData createTestInfoData(MCRObjectID derivateId) {

@@ -45,19 +45,19 @@ public class MCRExternalStoreDbMapperTest extends MCRTestCase {
         fileInfoData.getFlags().add(FileFlag.ARCHIVE.toString());
         final MCRExternalStoreFileInfo result = MCRExternalStoreDbMapper.toDomain(fileInfoData);
         assertFalse(result.isDirectory());
-        assertEquals("foo.txt", result.getName());
-        assertEquals("bar", result.getParentPath());
-        assertEquals("123", result.getChecksum());
-        assertEquals(Long.valueOf(1l), result.getSize());
-        assertNotNull(result.getFlags());
-        assertEquals(1, result.getFlags().size());
-        assertNotNull(result.getLastModified());
+        assertEquals("foo.txt", result.name());
+        assertEquals("bar", result.parentPath());
+        assertEquals("123", result.checksum());
+        assertEquals(Long.valueOf(1l), result.size());
+        assertNotNull(result.flags());
+        assertEquals(1, result.flags().size());
+        assertNotNull(result.lastModified());
     }
 
     @Test
     public void fileInfoToDataTest() {
         final MCRExternalStoreFileInfo fileSummary
-            = new MCRExternalStoreFileInfo.MCRExternalStoreFileInfoBuilder("foo.txt", "bar").directory(false)
+            = new MCRExternalStoreFileInfo.Builder("foo.txt", "bar").directory(false)
                 .checksum("123").size(1l).lastModified(new Date()).build();
         final MCRExternalStoreFileInfoData result = MCRExternalStoreDbMapper.toData(fileSummary);
         assertFalse(result.isDirectory());

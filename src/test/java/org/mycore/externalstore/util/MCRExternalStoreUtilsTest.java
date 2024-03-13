@@ -19,7 +19,6 @@
 package org.mycore.externalstore.util;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
@@ -41,16 +40,6 @@ public class MCRExternalStoreUtilsTest {
     }
 
     @Test
-    public void testAddParentPath() {
-        final MCRExternalStoreFileInfo fileInfo
-            = new MCRExternalStoreFileInfo.MCRExternalStoreFileInfoBuilder("test", "").build();
-        MCRExternalStoreUtils.addParentPath(fileInfo, "bar");
-        assertEquals("bar", fileInfo.getParentPath());
-        MCRExternalStoreUtils.addParentPath(fileInfo, "foo");
-        assertEquals("foo/bar", fileInfo.getParentPath());
-    }
-
-    @Test
     public void testGetName() {
         assertEquals("", MCRExternalStoreUtils.getFileName(""));
         assertEquals("test.txt", MCRExternalStoreUtils.getFileName("test.txt"));
@@ -61,22 +50,6 @@ public class MCRExternalStoreUtilsTest {
         assertEquals("bar", MCRExternalStoreUtils.getFileName("/bar"));
         assertEquals("foo", MCRExternalStoreUtils.getFileName("/bar/foo"));
         assertEquals("test.txt", MCRExternalStoreUtils.getFileName("/bar/test.txt"));
-    }
-
-    @Test
-    public void testCreateBaseFile() {
-        final MCRExternalStoreFileInfo file = MCRExternalStoreUtils.createBaseFile("bar/test.txt");
-        assertEquals("bar", file.getParentPath());
-        assertEquals("test.txt", file.getName());
-        assertFalse(file.isDirectory());
-    }
-
-    @Test
-    public void testCreateDirectory() {
-        final MCRExternalStoreFileInfo file = MCRExternalStoreUtils.createDirectory("bar/foo");
-        assertEquals("bar", file.getParentPath());
-        assertEquals("foo", file.getName());
-        assertTrue(file.isDirectory());
     }
 
     @Test
@@ -92,16 +65,16 @@ public class MCRExternalStoreUtilsTest {
         assertEquals(0, MCRExternalStoreUtils.getDirectories("").size());
         List<MCRExternalStoreFileInfo> files = MCRExternalStoreUtils.getDirectories("bla");
         assertEquals(1, files.size());
-        assertEquals("", files.get(0).getParentPath());
-        assertEquals("bla", files.get(0).getName());
+        assertEquals("", files.get(0).parentPath());
+        assertEquals("bla", files.get(0).name());
         assertTrue(files.get(0).isDirectory());
         files = MCRExternalStoreUtils.getDirectories("bla/foo");
         assertEquals(2, files.size());
-        assertEquals("bla", files.get(0).getName());
-        assertEquals("", files.get(0).getParentPath());
+        assertEquals("bla", files.get(0).name());
+        assertEquals("", files.get(0).parentPath());
         assertTrue(files.get(0).isDirectory());
-        assertEquals("foo", files.get(1).getName());
-        assertEquals("bla", files.get(1).getParentPath());
+        assertEquals("foo", files.get(1).name());
+        assertEquals("bla", files.get(1).parentPath());
         assertTrue(files.get(1).isDirectory());
     }
 

@@ -21,169 +21,19 @@ package org.mycore.externalstore.model;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * An {@link MCRExternalStoreFileInfo} describes a file.
  * Also, a file can be a directory.
  */
-public class MCRExternalStoreFileInfo {
+public record MCRExternalStoreFileInfo(String name, String parentPath, boolean isDirectory, Long size,
+    Date lastModified, String checksum, List<FileFlag> flags) {
 
-    private String name;
-
-    private String parentPath;
-
-    private boolean isDirectory;
-
-    private Long size;
-
-    private Date lastModified;
-
-    private String checksum;
-
-    private List<FileFlag> flags = new ArrayList<FileFlag>();
-
-    /**
-     * Constructs new instance. Necessary for {@link ObjectMapper}.
-     */
-    @SuppressWarnings("PMD.UnnecessaryConstructor")
-    public MCRExternalStoreFileInfo() {
-
+    private MCRExternalStoreFileInfo(Builder builder) {
+        this(builder.name, builder.parentPath, builder.isDirectory, builder.size, builder.lastModified,
+            builder.checksum, builder.flags);
     }
 
-    /**
-     * Returns file name.
-     *
-     * @return the name
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Sets filename.
-     *
-     * @param name
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
-     * Returns whether file is a directory.
-     *
-     * @return true is file is a directory
-     */
-    public boolean isDirectory() {
-        return isDirectory;
-    }
-
-    /**
-     * Returns whether file is a directory.
-     *
-     * @param isDirectory true if file is a directory
-     */
-    public void setDirectory(boolean isDirectory) {
-        this.isDirectory = isDirectory;
-    }
-
-    /**
-     * Returns size.
-     *
-     * @return size
-     */
-    public Long getSize() {
-        return size;
-    }
-
-    /**
-     * Sets size.
-     *
-     * @param size size
-     */
-    public void setSize(Long size) {
-        this.size = size;
-    }
-
-    /**
-     * Returns the time of the last modification.
-     *
-     * @return time of last modification
-     */
-    public Date getLastModified() {
-        return lastModified;
-    }
-
-    /**
-     * Sets the time of last modification.
-     *
-     * @param lastModified time of last modification
-     */
-    public void setLastModified(Date lastModified) {
-        this.lastModified = lastModified;
-    }
-
-    /**
-     * Returns the checksum.
-     *
-     * @return checksum
-     */
-    public String getChecksum() {
-        return checksum;
-    }
-
-    /**
-     * Sets the checksum.
-     *
-     * @param checksum checksum
-     */
-    public void setChecksum(String checksum) {
-        this.checksum = checksum;
-    }
-
-    /**
-     * Returns the parent path.
-     *
-     * @return parent path which can be null
-     */
-    public String getParentPath() {
-        return parentPath;
-    }
-
-    /**
-     * Sets the parent path.
-     *
-     * @param parentPath parent path
-     */
-    public void setParentPath(String parentPath) {
-        this.parentPath = parentPath;
-    }
-
-    /**
-     * Returns list of {@link FileFlag} elements.
-     *
-     * @return list of file flag elements
-     */
-    public List<FileFlag> getFlags() {
-        return flags;
-    }
-
-    /**
-     * Sets list of {@link FileFlag} elements.
-     *
-     * @param flags list of file flag elements
-     */
-    public void setFlags(List<FileFlag> flags) {
-        this.flags = flags;
-    }
-
-    /**
-     * Returns absolute path.
-     *
-     * @return the absolute path
-     */
     public String getAbsolutePath() {
         if (parentPath != null && !parentPath.isEmpty()) {
             return parentPath + "/" + name;
@@ -191,55 +41,43 @@ public class MCRExternalStoreFileInfo {
         return name;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(checksum, isDirectory, lastModified, name, parentPath, flags, size);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        MCRExternalStoreFileInfo other = (MCRExternalStoreFileInfo) obj;
-        return Objects.equals(checksum, other.checksum) && isDirectory == other.isDirectory
-            && Objects.equals(lastModified, other.lastModified) && Objects.equals(name, other.name)
-            && Objects.equals(parentPath, other.parentPath) && Objects.equals(size, other.size)
-            && Objects.equals(flags, other.flags);
-    }
-
     /**
      * Builder for {@link MCRExternalStoreFileInfo}.
      */
-    public static class MCRExternalStoreFileInfoBuilder {
+    public static final class Builder {
 
+        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private String parentPath;
 
+        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private String name;
 
+        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private boolean isDirectory = false;
 
+        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private Long size;
 
+        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private Date lastModified;
 
+        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private String checksum;
 
+        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private List<FileFlag> flags = new ArrayList<FileFlag>();
 
+        public Builder(String name) {
+            this(name, "");
+        }
+
         /**
-         * Creates a {@link MCRExternalStoreFileInfoBuilder} with file name and parent path.
+         * Creates a {@link Builder} with file name and parent path.
          *
          * @param name the file name
          * @param parentPath the parent path
          */
-        public MCRExternalStoreFileInfoBuilder(String name, String parentPath) {
+        public Builder(String name, String parentPath) {
             this.name = name;
             this.parentPath = parentPath;
         }
@@ -250,7 +88,7 @@ public class MCRExternalStoreFileInfo {
          * @param isDirectory true if file is a directory
          * @return builder instance
          */
-        public MCRExternalStoreFileInfoBuilder directory(boolean isDirectory) {
+        public Builder directory(boolean isDirectory) {
             this.isDirectory = isDirectory;
             return this;
         }
@@ -261,7 +99,7 @@ public class MCRExternalStoreFileInfo {
          * @param size the file size
          * @return builder instance
          */
-        public MCRExternalStoreFileInfoBuilder size(Long size) {
+        public Builder size(Long size) {
             this.size = size;
             return this;
         }
@@ -272,7 +110,7 @@ public class MCRExternalStoreFileInfo {
          * @param lastModified last modified
          * @return builder instance
          */
-        public MCRExternalStoreFileInfoBuilder lastModified(Date lastModified) {
+        public Builder lastModified(Date lastModified) {
             this.lastModified = lastModified;
             return this;
         }
@@ -283,7 +121,7 @@ public class MCRExternalStoreFileInfo {
          * @param flags list of flags
          * @return builder instance
          */
-        public MCRExternalStoreFileInfoBuilder flags(List<FileFlag> flags) {
+        public Builder flags(List<FileFlag> flags) {
             this.flags = flags;
             return this;
         }
@@ -294,7 +132,7 @@ public class MCRExternalStoreFileInfo {
          * @param checksum the checksum
          * @return builder instance
          */
-        public MCRExternalStoreFileInfoBuilder checksum(String checksum) {
+        public Builder checksum(String checksum) {
             this.checksum = checksum;
             return this;
         }
@@ -305,15 +143,7 @@ public class MCRExternalStoreFileInfo {
          * @return the file info
          */
         public MCRExternalStoreFileInfo build() {
-            final MCRExternalStoreFileInfo file = new MCRExternalStoreFileInfo();
-            file.setName(name);
-            file.setParentPath(parentPath);
-            file.setDirectory(isDirectory);
-            file.setSize(size);
-            file.setLastModified(lastModified);
-            file.setChecksum(checksum);
-            file.setFlags(flags);
-            return file;
+            return new MCRExternalStoreFileInfo(this);
         }
 
     }

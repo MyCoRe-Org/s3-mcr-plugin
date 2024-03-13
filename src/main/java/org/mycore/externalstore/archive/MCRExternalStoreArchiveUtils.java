@@ -40,16 +40,17 @@ public class MCRExternalStoreArchiveUtils {
      * @return file info
      */
     public static MCRExternalStoreFileInfo mapToFileInfo(ArchiveEntry entry) {
-        MCRExternalStoreFileInfo file;
         if (entry.isDirectory()) {
             final String path = entry.getName().substring(0, entry.getName().length() - 1);
-            file = MCRExternalStoreUtils.createDirectory(path);
+            final String fileName = MCRExternalStoreUtils.getFileName(path);
+            final String parentPath = MCRExternalStoreUtils.getParentPath(path);
+            return new MCRExternalStoreFileInfo.Builder(fileName, parentPath).directory(true).build();
         } else {
-            file = MCRExternalStoreUtils.createBaseFile(entry.getName());
-            file.setLastModified(entry.getLastModifiedDate());
-            file.setSize(entry.getSize());
+            final String fileName = MCRExternalStoreUtils.getFileName(entry.getName());
+            final String parentPath = MCRExternalStoreUtils.getParentPath(entry.getName());
+            return new MCRExternalStoreFileInfo.Builder(fileName, parentPath).directory(false)
+                .lastModified(entry.getLastModifiedDate()).size(entry.getSize()).build();
         }
-        return file;
     }
 
     /**

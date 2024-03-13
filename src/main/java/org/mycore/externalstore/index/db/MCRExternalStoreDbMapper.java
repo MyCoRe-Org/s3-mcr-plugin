@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 
 import org.mycore.externalstore.index.db.model.MCRExternalStoreFileInfoData;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
-import org.mycore.externalstore.model.MCRExternalStoreFileInfo.MCRExternalStoreFileInfoBuilder;
 
 /**
  * Provides methods to map between data and domain.
@@ -26,13 +25,12 @@ public class MCRExternalStoreDbMapper {
     public static MCRExternalStoreFileInfo toDomain(MCRExternalStoreFileInfoData fileInfoData) {
         final List<MCRExternalStoreFileInfo.FileFlag> flags
             = fileInfoData.getFlags().stream().map(f -> toDomain(f)).collect(Collectors.toList());
-        final MCRExternalStoreFileInfo result
-            = new MCRExternalStoreFileInfoBuilder(fileInfoData.getName(), fileInfoData.getParentPath())
+        final MCRExternalStoreFileInfo.Builder result
+            = new MCRExternalStoreFileInfo.Builder(fileInfoData.getName(), fileInfoData.getParentPath())
                 .checksum(fileInfoData.getChecksum()).directory(fileInfoData.isDirectory()).size(fileInfoData.getSize())
-                .flags(flags).build();
-        Optional.ofNullable(fileInfoData.getLastModified()).map(d -> convertToDate(d))
-            .ifPresent(result::setLastModified);
-        return result;
+                .flags(flags);
+        Optional.ofNullable(fileInfoData.getLastModified()).map(d -> convertToDate(d)).ifPresent(result::lastModified);
+        return result.build();
     }
 
     /**
@@ -43,14 +41,14 @@ public class MCRExternalStoreDbMapper {
      */
     protected static MCRExternalStoreFileInfoData toData(MCRExternalStoreFileInfo fileInfo) {
         final MCRExternalStoreFileInfoData data = new MCRExternalStoreFileInfoData();
-        data.setParentPath(fileInfo.getParentPath());
-        data.setName(fileInfo.getName());
-        data.setChecksum(fileInfo.getChecksum());
+        data.setParentPath(fileInfo.parentPath());
+        data.setName(fileInfo.name());
+        data.setChecksum(fileInfo.checksum());
         data.setDirectory(fileInfo.isDirectory());
-        Optional.ofNullable(fileInfo.getLastModified()).map(d -> convertToLocalDateTime(d))
+        Optional.ofNullable(fileInfo.lastModified()).map(d -> convertToLocalDateTime(d))
             .ifPresent(data::setLastModified);
-        data.setSize(fileInfo.getSize());
-        final List<String> flags = fileInfo.getFlags().stream().map(f -> toData(f)).collect(Collectors.toList());
+        data.setSize(fileInfo.size());
+        final List<String> flags = fileInfo.flags().stream().map(f -> toData(f)).collect(Collectors.toList());
         data.setFlags(flags);
         return data;
     }

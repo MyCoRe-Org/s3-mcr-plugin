@@ -143,9 +143,9 @@ public class MCRExternalStoreResource {
 
     private List<MCRExternalStoreFileInfoDto> listFileInfos(MCRObjectID derivateId, String path) {
         final MCRExternalStoreFileInfo fileInfo = path.isEmpty()
-            ? new MCRExternalStoreFileInfo.MCRExternalStoreFileInfoBuilder("", "").directory(true).build()
+            ? new MCRExternalStoreFileInfo.Builder("", "").directory(true).build()
             : INDEX.findFileInfo(derivateId, path).orElseThrow(() -> new BadRequestException("Path does not exist"));
-        if (fileInfo.isDirectory() || fileInfo.getFlags().contains(FileFlag.ARCHIVE)) {
+        if (fileInfo.isDirectory() || fileInfo.flags().contains(FileFlag.ARCHIVE)) {
             try {
                 final boolean childrenDownloadable = checkChildrenDownloadable(derivateId, fileInfo);
                 return INDEX.listFileInfos(derivateId, path).stream()
@@ -158,13 +158,13 @@ public class MCRExternalStoreResource {
     }
 
     private boolean checkChildrenDownloadable(MCRObjectID derivateId, MCRExternalStoreFileInfo fileInfo) {
-        if (fileInfo.getFlags().contains(FileFlag.ARCHIVE)) {
-            return MCRExternalStoreArchiveResolverFactory.checkDownloadable(fileInfo.getName());
+        if (fileInfo.flags().contains(FileFlag.ARCHIVE)) {
+            return MCRExternalStoreArchiveResolverFactory.checkDownloadable(fileInfo.name());
         }
-        if (fileInfo.getFlags().contains(FileFlag.ARCHIVE_ENTRY)) {
+        if (fileInfo.flags().contains(FileFlag.ARCHIVE_ENTRY)) {
             final MCRExternalStoreFileInfo archiveFileInfo
                 = getNearestArchiveFileInfo(derivateId, fileInfo.getAbsolutePath());
-            return MCRExternalStoreArchiveResolverFactory.checkDownloadable(archiveFileInfo.getName());
+            return MCRExternalStoreArchiveResolverFactory.checkDownloadable(archiveFileInfo.name());
         }
         return true;
     }
@@ -185,7 +185,7 @@ public class MCRExternalStoreResource {
                 throw new MCRExternalStoreIndexInconsistentException();
             }
             final MCRExternalStoreFileInfo currentFileInfo = currentFileInfoOpt.get();
-            if (currentFileInfo.getFlags().contains(FileFlag.ARCHIVE)) {
+            if (currentFileInfo.flags().contains(FileFlag.ARCHIVE)) {
                 return currentFileInfo;
             }
             currentPath = MCRExternalStoreUtils.getParentPath(currentPath);
@@ -207,11 +207,11 @@ public class MCRExternalStoreResource {
         final MCRObjectID derivateId = MCRObjectID.getInstance(derivateIdString);
         final MCRExternalStoreFileInfo fileInfo
             = INDEX.findFileInfo(derivateId, path).orElseThrow(() -> new BadRequestException("File does not exist"));
-        if (fileInfo.getFlags().contains(FileFlag.ARCHIVE_ENTRY)) {
+        if (fileInfo.flags().contains(FileFlag.ARCHIVE_ENTRY)) {
             final MCRExternalStoreFileInfo archiveFileInfo
                 = getNearestArchiveFileInfo(derivateId, fileInfo.getAbsolutePath());
             ensureFileIntegrity(derivateId, archiveFileInfo);
-            if (!MCRExternalStoreArchiveResolverFactory.checkDownloadable(archiveFileInfo.getName())) {
+            if (!MCRExternalStoreArchiveResolverFactory.checkDownloadable(archiveFileInfo.name())) {
                 throw new BadRequestException("Download is not available");
             }
             final String archiveEntryPath = path.substring(archiveFileInfo.getAbsolutePath().length() + 1);
@@ -226,11 +226,11 @@ public class MCRExternalStoreResource {
         String storeArchiveChecksum;
         try {
             storeArchiveChecksum = MCRExternalStoreService.getInstance().getStore(derivateId)
-                .getFileInfo(fileInfo.getAbsolutePath()).getChecksum();
+                .getFileInfo(fileInfo.getAbsolutePath()).checksum();
         } catch (IOException e) {
             throw new InternalServerErrorException("Detected integrity violation");
         }
-        if (!Objects.equals(fileInfo.getChecksum(), storeArchiveChecksum)) {
+        if (!Objects.equals(fileInfo.checksum(), storeArchiveChecksum)) {
             throw new InternalServerErrorException("Detected integrity violation");
         }
     }

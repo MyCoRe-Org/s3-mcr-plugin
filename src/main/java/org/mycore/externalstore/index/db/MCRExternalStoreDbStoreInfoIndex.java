@@ -76,7 +76,7 @@ public class MCRExternalStoreDbStoreInfoIndex implements MCRExternalStoreInfoInd
     public synchronized void updateFileInfo(MCRObjectID derivateId, MCRExternalStoreFileInfo fileInfo) {
         final MCRExternalStoreFileInfoData fileInfoData = MCRExternalStoreDbMapper.toData(fileInfo);
         final Optional<MCRExternalStoreFileInfoData> currentFileInfoData
-            = storeInfoRepository.findFileInfo(derivateId, fileInfo.getName(), fileInfo.getParentPath());
+            = storeInfoRepository.findFileInfo(derivateId, fileInfo.name(), fileInfo.parentPath());
         if (currentFileInfoData.isEmpty()) {
             throw new MCRExternalStoreNoSuchFileException("There is no matching file info to update");
         }

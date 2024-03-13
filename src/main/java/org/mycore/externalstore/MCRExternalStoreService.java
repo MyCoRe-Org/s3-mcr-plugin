@@ -162,7 +162,7 @@ public class MCRExternalStoreService {
         if (checkResolveArchives()) {
             final List<MCRExternalStoreArchiveInfo> archives = new ArrayList<>();
             fileInfos.stream().filter(f -> !f.isDirectory())
-                .filter(f -> MCRExternalStoreArchiveResolverFactory.checkResolveable(f.getName())).forEach(f -> {
+                .filter(f -> MCRExternalStoreArchiveResolverFactory.checkResolveable(f.name())).forEach(f -> {
                     try {
                         final MCRExternalStoreArchiveInfo archive
                             = MCRExternalStoreServiceHelper.createArchive(storeProvider, f);
