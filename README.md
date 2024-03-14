@@ -1,21 +1,36 @@
 # Plugin
-This plugin provides a additional file view to view buckets stored in S3. It also adds some rest endpoint and makes it possible to link buckets to MODS objects.
+This plugin provides an additional file view to view buckets stored in an external store.
+It also adds some rest endpoint and makes it possible to link buckets to MODS objects.
+An external store provides information about files and also allows to download them.
+To ensure integrity, information for all files in the external store is stored in a derivate.
+After integration, it is no longer necessary to communicate with the store for file information, as the information is provided via a local index.
+It is currently possible to integrate an s3 buckets as external stores.
+In addition, archives can be resolved to provide information about the files. It may also be possible to download files directly from archives.
 
 ## Configuration
 
 The plugin comes preconfigured with the following properties. 
 ```
-MCR.FS.Impl.S3=org.mycore.filesystem.s3.XMLS3BucketProvider
-MCR.FS.Impl.S3.Key=bucket-crypt
+MCR.Crypt.Cipher.external-store-settings.class=org.mycore.crypt.MCRAESCipher
+MCR.Crypt.Cipher.external-store-settings.KeyFile=external_store_settings.key
+MCR.Crypt.Cipher.external-store-settings.EnableACL=false
 
-MCR.Crypt.Cipher.bucket-crypt.class=org.mycore.crypt.MCRAESCipher
-MCR.Crypt.Cipher.bucket-crypt.KeyFile=%MCR.datadir%/bucket.key
-MCR.Crypt.Cipher.bucket-crypt.EnableACL=false
+MCR.ExternalStore.Service.StoreProviderSettings.Cipher=external-store-settings
+MCR.ExternalStore.Service.ResolveArchives=true
+
+MCR.ExternalStore.s3.Provider.Class=org.mycore.externalstore.s3.MCRExternalStoreS3Provider
+
+MCR.ExternalStore.MaxDownloadSize=1000000
+
+MCR.ExternalStore.InfoIndex.Class=org.mycore.externalstore.index.db.MCRExternalStoreDbStoreInfoIndex
+
+MCR.ExternalStore.ArchiveResolver.zip.Download=true
+MCR.ExternalStore.ArchiveResolver.tar.Download=false
 ```
 ### Create key file
-You need to create the bucket-crypt key with the CLI command:
+You need to create the external-store-settings key with the CLI command:
 ```
-generate keyfile for cipher bucket-crypt
+generate keyfile for cipher external-store-settings
 ```
 ### Embed
 If you are using a MIR you will get a preconfigured metadata-page id which you can insert e.g.
@@ -26,26 +41,14 @@ If not you can take a look at the file **src/main/resources/xsl/metadata/extende
 
 
 ### Derivate types
-You need to add derivate_types:extension to the derivate_types classification.
+You need to add `derivate_types:extension_<type>` to the derivate_types classification, for s3 buckets it is `derivate_types:extension_s3`.
 
-## How is the Bucket stored?
-The Bucket Data is stored as derivate with derivate_type:extension.
-```
-<folder-extension-bind class="org.mycore.filesystem.s3.XMLS3BucketProvider" encrypted="false">
-    <XMLS3Bucket>
-        <endpoint>s3archive.gbv.de:9003</endpoint>
-        <accessKey>05698686438511ec872adfc2556acb1e</accessKey>
-        <secretKey>xxxxxxxxxxxxxxxxxxxxxxxxxx</secretKey>
-        <protocol>http</protocol>
-        <bucket>testbucket01</bucket>
-    </XMLS3Bucket>
-</folder-extension-bind>
+## How are settings and information saved?
+The relevant data is stored in associated derivate.
+Sensitive information, such as settings for communication with the provider of the store, is stored in encrypted form in provider_settings.json.
+Information about the files is stored in files.json.
+Information about archives is stored separately in archives.json because it depends on the configuration of the resolvers.
 
-
-<folder-extension-bind class="org.mycore.filesystem.s3.XMLS3BucketProvider" encrypted="true" key="bucket-crypt">
-KDaecE1SXn851uXbEi5DNah+fiaNyG7LAPsI3R22S0pSMYAnJoqpjOj9YY2H6RakiUaJwnOjpwheKa+TaNzYl3Ci6UcgtHy/CdiM4rgz9cWCSWjtGPPeUL2MU9CsaF8dEL4gCPOO10lBOyZzN11gVDUkMxMJGsqcy+WUcqLmJvPaudp/PSt5bMrBOijzqeuhjS2kz+2IF1p/wQfTM4TL7WlSlJEgRBJJDfIh3RBtbWxJ8F0g3iZqumzxX3ZL+dBST2F+lIZmwKDZL0taBosFIPH/rH4MbD1JcMM2iwKol76mNPIiuMDZcPZERrnz91wDlQqqI9STNOfMieTDbyH8wA==
-</folder-extension-bind>
-```
 ## How can I test local?
 You can use minio for testing s3 with docker and docker-compose.
 Copy this to a docker-compose.yml and run `docker-compose up` to start a demo s3 server.

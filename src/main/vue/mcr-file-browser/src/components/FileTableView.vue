@@ -1,221 +1,164 @@
+<!--
+  - This file is part of ***  M y C o R e  ***
+  - See http://www.mycore.de/ for details.
+  -
+  - MyCoRe is free software: you can redistribute it and/or modify
+  - it under the terms of the GNU General Public License as published by
+  - the Free Software Foundation, either version 3 of the License, or
+  - (at your option) any later version.
+  -
+  - MyCoRe is distributed in the hope that it will be useful,
+  - but WITHOUT ANY WARRANTY; without even the implied warranty of
+  - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  - GNU General Public License for more details.
+  -
+  - You should have received a copy of the GNU General Public License
+  - along with MyCoRe.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
 <template>
   <div class="mcr-file-table-view">
-    <!--
-    <table v-if="fs != null" class="table table-striped">
-      <thead>
-      <tr>
-        <th scope="col">{{i18n.fileName}}</th>
-        <th scope="col">{{i18n.fileDate}}</th>
-        <th scope="col">{{i18n.fileSize}}</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr class="clickable" v-if="fs.type==='DIRECTORY'" v-on:click.prevent="backButtonClicked">
-        <td colspan="3"><a href="#" v-on:click.prevent="">..</a></td>
-      </tr>
-      <tr v-for="child in fs.children" :key="child.path">
-        <td class="clickable" v-on:click.prevent="childClicked(child)"><a href="#" v-on:click.prevent="">{{ child.name }}</a></td>
-        <td v-if="child.lastModified!=null">{{ new Date(child.lastModified).toLocaleString() }}</td>
-        <td v-else></td>
-        <td v-if="child.size>0">{{ size(child.size) }}</td>
-        <td v-else></td>
-      </tr>
-      </tbody>
-    </table> -->
-    <b-table id="my-table" :current-page="currentPage" :fields="fields"
-             :sort-compare-options="{ numeric: true }"
-             :items="fs.children"
-             :per-page="perPage" hover striped>
+    <b-table id="file-table" :current-page="currentPage" :fields="fields"
+        :sort-compare-options="{ numeric: true }" :items="fs" :per-page="perPage" hover striped>
       <template #head(download)="">
         <span> </span>
       </template>
-
-      <template #head(valid)="">
-        <span> </span>
-      </template>
-
       <template #head(name)="">
         <span class="text-info clickable">{{ i18n.fileName }} </span>
       </template>
-
       <template #head(lastModified)="">
         <span class="text-info clickable">{{ i18n.fileDate }} </span>
       </template>
-
-      <template #top-row="" v-if="fs.type==='DIRECTORY'">
-        <td role="cell"></td>
-        <td role="cell" colspan="4"><a href="#" v-on:click.prevent="backButtonClicked">..</a></td>
-      </template>
-
       <template #head(size)="">
         <span class="text-info clickable">{{ i18n.fileSize }} </span>
       </template>
-
+      <template #top-row="" v-if="!isRoot">
+        <td></td>
+        <td colspan="4"><a href="#" v-on:click.prevent="backButtonClicked">..</a></td>
+      </template>
       <template #cell(download)="data">
         <span>
-          <a v-if="data.item.capabilities.indexOf('DOWNLOAD')!==-1" href="#"
-             v-on:click.prevent="childDownloadClicke(data.item)">
-            <span class="fa fa-download"> </span>
+          <a v-if="!data.item.isDirectory
+            && data.item.capabilities.indexOf('DOWNLOAD') !== -1" href="#"
+            v-on:click.prevent="fileDownloadClicked(data.item)">
+            <i class="fa fa-download" />
           </a>
         </span>
       </template>
-
-      <template #cell(valid)="data">
-        <span>
-          <span v-if="data.item.etag !== null && (data.item.type === 'BROWSABLE_FILE' || data.item.type === 'FILE')">
-            <span :id="generateId(data.item)" v-if="data.item.storedEtag == data.item.etag"
-                  class="fa fa-check clickable text-success"> </span>
-            <span :id="generateId(data.item)" v-else class="fa fa-exclamation-triangle clickable text-danger"> </span>
-            <b-tooltip :target="generateId(data.item)" placement="left" triggers="click">
-              <template v-if="data.item.storedEtag != data.item.etag">
-                <p>{{ i18n.etagMissmatch }}</p>
-                <dl>
-                  <dt>{{ i18n.etagS3 }}</dt>
-                  <dd>{{ data.item.etag }}</dd>
-                  <dt>{{ i18n.etagMCR }}</dt>
-                  <dd>{{ data.item.storedEtag }}</dd>
-                </dl>
-              </template>
-              <template v-else>
-                <p>{{ i18n.etagMatch }}</p>
-                <dl>
-                  <dt>{{ i18n.etagS3 }}</dt>
-                  <dd>{{ data.item.storedEtag }}</dd>
-                </dl>
-              </template>
-            </b-tooltip>
-          </span>
-        </span>
-      </template>
-
       <template #cell(name)="data">
-        <a v-if="data.item.type === 'DIRECTORY' || data.item.type === 'BROWSABLE_FILE'" href="#"
-           v-on:click.prevent="childClicked(data.item)"> {{ data.item.name }}</a>
+        <a v-if="data.item.isDirectory || data.item.flags.indexOf('ARCHIVE') !== -1" href="#"
+           v-on:click.prevent="fileClicked(data.item)"> {{ data.item.name }}</a>
         <template v-else>
           {{ data.item.name }}
         </template>
       </template>
-
       <template #cell(lastModified)="data">
-        <span v-if="data.item.lastModified!=null" :title="new Date(data.item.lastModified).toLocaleTimeString()">
-          {{ new Date(data.item.lastModified).toLocaleDateString() }}
+        <span v-if="data.item.lastModified != null"
+          :title="new Date(data.item.lastModified).toLocaleString()">
+          {{ new Date(data.item.lastModified).toLocaleString() }}
         </span>
-        <template v-else></template>
       </template>
-
       <template #cell(size)="data">
-        <template v-if="data.item.size>0">
-          {{ size(data.item.size) }}
-        </template>
-        <template v-else>
+        <template v-if="data.item.size > 0">
+          {{ getSizeAsString(data.item.size) }}
         </template>
       </template>
-
     </b-table>
 
-    <b-pagination
-        v-model="currentPage"
-        :fields="fields"
-        :per-page="perPage"
-        :total-rows="fs.children.length"
-        aria-controls="my-table"
-        align="center"
-        v-show="Math.ceil(fs.children.length/perPage)>1"
-    ></b-pagination>
+    <b-pagination v-model="currentPage" :fields="fields" :per-page="perPage"
+      :total-rows="fs.length" aria-controls="file-table" align="center"
+      v-show="Math.ceil(fs.length / perPage) > 1" />
   </div>
 </template>
 
 <script lang="ts">
-import {Component, Prop, Vue} from 'vue-property-decorator';
-import {FileBase} from "@/model/FileBase";
-import {I18n} from "@/i18n";
-import {BPagination, BTable, BTooltip} from "bootstrap-vue";
+import { Component, Prop, Vue } from 'vue-property-decorator';
+import I18n from '@/i18n';
+import { BPagination, BTable, BTooltip } from 'bootstrap-vue';
+import { FileInfo } from '@/model';
 
 @Component({
   components: {
     BPagination,
     BTable,
-    BTooltip
-  }
+    BTooltip,
+  },
 })
 export default class FileTableView extends Vue {
-  @Prop() private fs!: FileBase;
+  @Prop({
+    required: true,
+  })
+  fs!: FileInfo[];
 
-  private perPage = 10;
-  private currentPage = 1;
+  @Prop({
+    required: true,
+  })
+  isRoot!: boolean;
 
-  private i18n: Record<string, string> = {
-    fileSize: "",
-    fileDate: "",
-    fileName: "",
-    etagMCR: "",
-    etagS3: "",
-    etagMissmatch: "",
-    etagMatch: ""
+  perPage = 8;
+
+  currentPage = 1;
+
+  i18n: Record<string, string> = {
+    fileSize: '',
+    fileDate: '',
+    fileName: '',
   };
 
-  private fields = [
+  fields = [
     {
       key: 'download',
-      sortable: false
+      sortable: false,
     },
     {
       key: 'name',
-      sortable: true
-    },
-    {
-      key: 'valid',
-      sortable: false
+      sortable: true,
     },
     {
       key: 'lastModified',
-      sortable: true
+      sortable: true,
     },
     {
       key: 'size',
-      sortable: true
-    }]
+      sortable: true,
+    },
+  ];
 
-
-  async created() {
+  async created(): Promise<void> {
     await I18n.loadToObject(this.i18n);
   }
 
-  public childClicked(file: FileBase): void {
-    this.$emit("childClicked", file);
+  fileClicked(file: FileInfo): void {
+    this.$emit('fileClicked', file);
   }
 
-  public childDownloadClicke(file: FileBase): void {
-    this.$emit("childDownloadClicked", file);
+  fileDownloadClicked(file: FileInfo): void {
+    this.$emit('fileDownloadClicked', file);
   }
 
-  public backButtonClicked() {
-    this.$emit("backButtonClicked");
+  backButtonClicked(): void {
+    this.$emit('backButtonClicked');
   }
 
-  public generateId(file: FileBase) {
-    return 'validation' + btoa(file.path);
-  }
-
-  public size(bytes: number) {
+  getSizeAsString(bytes: number): string {
     // Values used in MIR
-    const {radix, unit} = {radix: 1e3, unit: ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']};
-    bytes = Math.abs(bytes);
-
+    const { radix, unit } = { radix: 1e3, unit: ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] };
+    let result = Math.abs(bytes);
 
     let loop = 0;
-
     // calculate
-    while (bytes >= radix) {
-      bytes /= radix;
-      ++loop;
+    while (result >= radix) {
+      result /= radix;
+      loop += 1;
     }
-    return `${bytes.toFixed(1)} ${unit[loop]}`;
+    return `${result.toFixed(1)} ${unit[loop]}`;
+  }
+
+  generateId(file: FileInfo) {
+    return `info${btoa(file.name)}`;
   }
 }
 </script>
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 .clickable {
   cursor: pointer;
