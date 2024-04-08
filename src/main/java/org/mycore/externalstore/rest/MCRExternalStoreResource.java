@@ -274,6 +274,7 @@ public class MCRExternalStoreResource {
         }
     }
 
+    // TODO may replace with MCRMetadataManager#checkCreatePrivilege
     private boolean checkCreateStorePermission(String objectIdStr) {
         return MCRAccessManager.checkPermission(CREATE_DERIVATE_PERMISSION)
             && MCRAccessManager.checkPermission(objectIdStr, MCRAccessManager.PERMISSION_WRITE);

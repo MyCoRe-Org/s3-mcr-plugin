@@ -34,9 +34,11 @@ public class MCRExternalStoreZipArchiveResolver extends MCRExternalStoreArchiveR
     @Override
     public List<MCRExternalStoreFileInfo> listFileInfos() throws IOException {
         final List<ArchiveEntry> list = new ArrayList<>();
-        try (ZipFile zipFile = new ZipFile(getContent().getSeekableByteChannel())) {
-            zipFile.getEntries().asIterator().forEachRemaining(list::add);
-        }
+        getZipFile().getEntries().asIterator().forEachRemaining(list::add);
         return list.stream().map(MCRExternalStoreArchiveUtils::mapToFileInfo).toList();
+    }
+
+    private ZipFile getZipFile() throws IOException {
+        return ZipFile.builder().setSeekableByteChannel(getContent().getSeekableByteChannel()).get();
     }
 }

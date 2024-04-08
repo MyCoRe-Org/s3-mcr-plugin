@@ -36,6 +36,7 @@ import org.mycore.datamodel.metadata.MCRDerivate;
 import org.mycore.datamodel.metadata.MCRMetaClassification;
 import org.mycore.datamodel.metadata.MCRMetaIFS;
 import org.mycore.datamodel.metadata.MCRMetaLinkID;
+import org.mycore.datamodel.metadata.MCRMetadataManager;
 import org.mycore.datamodel.metadata.MCRObjectID;
 import org.mycore.datamodel.niofs.MCRPath;
 import org.mycore.externalstore.archive.MCRExternalStoreArchiveResolver;
@@ -72,7 +73,8 @@ public class MCRExternalStoreServiceHelper {
     protected static MCRDerivate createDerivate(MCRObjectID objectID, List<MCRMetaClassification> classifications)
         throws MCRPersistenceException, MCRAccessException {
         MCRDerivate derivate = new MCRDerivate();
-        derivate.setId(MCRObjectID.getNextFreeId(objectID.getProjectId() + "_derivate"));
+        derivate
+            .setId(MCRMetadataManager.getMCRObjectIDGenerator().getNextFreeId(objectID.getProjectId() + "_derivate"));
         derivate.getDerivate().getClassifications().addAll(classifications);
 
         final String schema = MCRConfiguration2.getString("MCR.Metadata.Config.derivate")
@@ -106,9 +108,9 @@ public class MCRExternalStoreServiceHelper {
             throw new MCRExternalStoreException("there is no matching resolver");
         }
         try {
-            final List<MCRExternalStoreFileInfo> fileInfos
-                = resolveArchive(provider, resolverId.get(), fileInfo.getAbsolutePath()).stream()
-                    .peek(a -> a.flags().add(MCRExternalStoreFileInfo.FileFlag.ARCHIVE_ENTRY)).toList();
+            final List<MCRExternalStoreFileInfo> fileInfos = resolveArchive(provider, resolverId.get(),
+                fileInfo.getAbsolutePath()).stream()
+                .peek(a -> a.flags().add(MCRExternalStoreFileInfo.FileFlag.ARCHIVE_ENTRY)).toList();
             return new MCRExternalStoreArchiveInfo(fileInfo.getAbsolutePath(), fileInfos);
         } catch (IOException e) {
             throw new MCRExternalStoreException("error while resolving archive");
@@ -118,8 +120,8 @@ public class MCRExternalStoreServiceHelper {
     private static List<MCRExternalStoreFileInfo> resolveArchive(MCRExternalStoreProvider provider, String resolverId,
         String path) throws IOException {
         final MCRExternalStoreFileContent fileContent = new MCRExternalStoreFileContent(provider, path);
-        final MCRExternalStoreArchiveResolver resolver
-            = MCRExternalStoreArchiveResolverFactory.createResolver(resolverId, fileContent);
+        final MCRExternalStoreArchiveResolver resolver = MCRExternalStoreArchiveResolverFactory
+            .createResolver(resolverId, fileContent);
         return resolver.listFileInfos().stream().map(f -> addParentPath(f, path)).toList();
     }
 

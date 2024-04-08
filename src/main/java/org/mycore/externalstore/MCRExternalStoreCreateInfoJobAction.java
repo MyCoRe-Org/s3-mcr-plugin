@@ -22,18 +22,12 @@ import java.util.concurrent.ExecutionException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mycore.common.MCRSession;
-import org.mycore.common.MCRSessionMgr;
-import org.mycore.common.MCRSystemUserInformation;
-import org.mycore.common.MCRUserInformation;
 import org.mycore.datamodel.metadata.MCRObjectID;
-import org.mycore.externalstore.index.db.model.MCRExternalStoreInfoData;
 import org.mycore.services.queuedjob.MCRJob;
 import org.mycore.services.queuedjob.MCRJobAction;
-import org.mycore.util.concurrent.MCRTransactionableCallable;
 
 /**
- * A {@link MCRJobAction} which creates and saves {@link MCRExternalStoreInfoData}.
+ * A {@link MCRJobAction} which creates and saves job info.
  */
 public class MCRExternalStoreCreateInfoJobAction extends MCRJobAction {
 
@@ -43,13 +37,6 @@ public class MCRExternalStoreCreateInfoJobAction extends MCRJobAction {
      * Derivate id property name.
      */
     private static final String DERIVATE_ID = "derivate_id";
-
-    /**
-     * Constructs new job action.
-     */
-    public MCRExternalStoreCreateInfoJobAction() {
-
-    }
 
     /**
      * Constucts new job action with job.
@@ -86,22 +73,12 @@ public class MCRExternalStoreCreateInfoJobAction extends MCRJobAction {
     public void execute() throws ExecutionException {
         final MCRObjectID derivateId = getDerivateId();
         LOGGER.debug("Embedding external store to {}", derivateId);
-        final MCRSession session = MCRSessionMgr.getCurrentSession();
-        MCRUserInformation savedUserInformation = session.getUserInformation();
-        session.setUserInformation(MCRSystemUserInformation.getGuestInstance());
-        session.setUserInformation(MCRSystemUserInformation.getJanitorInstance());
         try {
-            new MCRTransactionableCallable<>(() -> {
-                MCRExternalStoreService.createStoreInfo(derivateId);
-                return null;
-            }).call();
+            MCRExternalStoreService.createStoreInfo(derivateId);
             LOGGER.debug("Finished embedding external store to {}", derivateId);
         } catch (Exception e) {
             LOGGER.error("There was an Error while embedding external store to {}", derivateId);
             throw new ExecutionException(e);
-        } finally {
-            session.setUserInformation(MCRSystemUserInformation.getGuestInstance());
-            session.setUserInformation(savedUserInformation);
         }
     }
 
