@@ -19,6 +19,7 @@
 package org.mycore.externalstore.rest;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collections;
 import java.util.HashSet;
@@ -67,8 +68,10 @@ public class MCRExternalStoreResourceHelper {
         return Response.ok(new StreamingOutput() {
             @Override
             public void write(OutputStream outputStream) throws IOException, WebApplicationException {
-                MCRExternalStoreService.getInstance().getStore(derivateId).newInputStream(path)
-                    .transferTo(outputStream);
+                try (InputStream inputStream = MCRExternalStoreService.getInstance().getStore(derivateId)
+                    .newInputStream(path)) {
+                    inputStream.transferTo(outputStream);
+                }
             }
         })
             .header("Content-Disposition", "attachment; filename=" + fileName).build();
@@ -88,14 +91,16 @@ public class MCRExternalStoreResourceHelper {
             throw new BadRequestException("Cannot resolve archive");
         }
         final MCRExternalStore store = MCRExternalStoreService.getInstance().getStore(derivateId);
-        final MCRExternalStoreFileContent fileContent
-            = new MCRExternalStoreFileContent(store.getStoreProvider(), archivePath);
+        final MCRExternalStoreFileContent fileContent = new MCRExternalStoreFileContent(store.getStoreProvider(),
+            archivePath);
         final String fileName = MCRExternalStoreUtils.getFileName(archiveEntryPath);
         return Response.ok(new StreamingOutput() {
             @Override
             public void write(OutputStream outputStream) throws IOException, WebApplicationException {
-                MCRExternalStoreArchiveResolverFactory.createResolver(resolverId.get(), fileContent)
-                    .getInputStream(archiveEntryPath).transferTo(outputStream);
+                try (InputStream inputStream = MCRExternalStoreArchiveResolverFactory
+                    .createResolver(resolverId.get(), fileContent).getInputStream(archiveEntryPath)) {
+                    inputStream.transferTo(outputStream);
+                }
             }
         })
             .header("Content-Disposition", "attachment; filename=" + fileName).build();
@@ -132,10 +137,10 @@ public class MCRExternalStoreResourceHelper {
             .map(der -> {
                 final boolean canView = MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_VIEW)
                     || MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_READ);
-                final boolean canDelete
-                    = MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_DELETE);
-                final boolean canEdit
-                    = MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_WRITE);
+                final boolean canDelete = MCRAccessManager.checkPermission(der.getId(),
+                    MCRAccessManager.PERMISSION_DELETE);
+                final boolean canEdit = MCRAccessManager.checkPermission(der.getId(),
+                    MCRAccessManager.PERMISSION_WRITE);
 
                 final List<MCRDerivateTitleDto> titles = der.getDerivate().getTitles().stream()
                     .sorted((t1, t2) -> getLanguageValue(t2) - getLanguageValue(t1))
@@ -145,10 +150,9 @@ public class MCRExternalStoreResourceHelper {
                     .collect(Collectors.toList());
 
                 final MCRExternalStore store = MCRExternalStoreService.getInstance().getStore(der.getId());
-                final Map<String, String> metadataMap
-                    = canEdit ? store.getStoreSettings() : Collections.emptyMap();
-                final MCRDerivateInfoDto derivateInfo
-                    = new MCRDerivateInfoDto(der.getId().toString(), titles, metadataMap, canView, canDelete, canEdit);
+                final Map<String, String> metadataMap = canEdit ? store.getStoreSettings() : Collections.emptyMap();
+                final MCRDerivateInfoDto derivateInfo = new MCRDerivateInfoDto(der.getId().toString(), titles,
+                    metadataMap, canView, canDelete, canEdit);
                 return derivateInfo;
             })
             .collect(Collectors.toList());

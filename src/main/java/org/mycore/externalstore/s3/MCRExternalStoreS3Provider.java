@@ -51,7 +51,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 /**
- * An {@link MCRExternalStoreProvider} for an s3 bucket.
+ * An {@link MCRExternalStoreProvider} for s3 bucket.
  */
 public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
 
@@ -138,8 +138,8 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
      * @return the client
      */
     protected static AmazonS3 createClient(MCRS3Settings settings) {
-        final ClientConfiguration clientConfig
-            = new ClientConfiguration().withProtocol(Protocol.valueOf(settings.getProtocol().toUpperCase(Locale.ROOT)));
+        final ClientConfiguration clientConfig = new ClientConfiguration()
+            .withProtocol(Protocol.valueOf(settings.getProtocol().toUpperCase(Locale.ROOT)));
         final AWSCredentials credentials = new BasicAWSCredentials(settings.getAccessKey(), settings.getSecretKey());
         final AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard()
             .withEndpointConfiguration(

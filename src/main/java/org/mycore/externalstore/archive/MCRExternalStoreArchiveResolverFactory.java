@@ -43,7 +43,7 @@ public class MCRExternalStoreArchiveResolverFactory {
 
     static {
         final Map<String, String> properties = MCRConfiguration2.getSubPropertiesMap(CONFIG_PREFIX);
-        properties.entrySet().stream().map(Map.Entry::getKey).filter(k -> k.endsWith(".Suffix"))
+        properties.keySet().stream().filter(k -> k.endsWith(".Suffix"))
             .map(k -> k.substring(0, k.length() - ".Suffix".length())).forEach(t -> {
                 Optional.ofNullable(properties.get(t + ".Suffix")).ifPresentOrElse(p -> SUFFIX_MAP.put(p, t), () -> {
                     throw new MCRExternalStoreException("Suffix required for resolver: " + t);
@@ -60,9 +60,9 @@ public class MCRExternalStoreArchiveResolverFactory {
      * @return archive resolver
      */
     public static MCRExternalStoreArchiveResolver createResolver(String resolverId, MCRSeekableChannelContent content) {
-        final MCRExternalStoreArchiveResolver resolver
-            = MCRConfiguration2.<MCRExternalStoreArchiveResolver>getInstanceOf(CONFIG_PREFIX + resolverId + ".Class")
-                .orElseThrow();
+        final MCRExternalStoreArchiveResolver resolver = MCRConfiguration2
+            .<MCRExternalStoreArchiveResolver>getInstanceOf(CONFIG_PREFIX + resolverId + ".Class")
+            .orElseThrow();
         resolver.setContent(content);
         return resolver;
     }
@@ -73,7 +73,7 @@ public class MCRExternalStoreArchiveResolverFactory {
      * @param path path
      * @return archive resolver
      */
-    public static boolean checkResolveable(String path) {
+    public static boolean checkResolvable(String path) {
         return findResolverId(path).isPresent();
     }
 

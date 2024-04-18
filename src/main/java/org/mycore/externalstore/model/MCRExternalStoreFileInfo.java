@@ -27,7 +27,7 @@ import java.util.Set;
  * Also, a file can be a directory.
  */
 public record MCRExternalStoreFileInfo(String name, String parentPath, boolean isDirectory, Long size,
-    Date lastModified, String checksum, Set<FileFlag> flags) {
+    Date lastModified, String checksum, Set<MCRExternalStoreFileInfo.FileFlag> flags) {
 
     private MCRExternalStoreFileInfo(Builder builder) {
         this(builder.name, builder.parentPath, builder.isDirectory, builder.size, builder.lastModified,
@@ -47,10 +47,10 @@ public record MCRExternalStoreFileInfo(String name, String parentPath, boolean i
     public static final class Builder {
 
         @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
-        private String parentPath;
+        private final String parentPath;
 
         @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
-        private String name;
+        private final String name;
 
         @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private boolean isDirectory = false;

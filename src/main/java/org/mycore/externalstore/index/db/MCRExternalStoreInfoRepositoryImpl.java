@@ -95,7 +95,7 @@ public class MCRExternalStoreInfoRepositoryImpl extends MCRExternalStoreInfoRepo
     @Override
     public List<MCRExternalStoreFileInfoData> findFileInfos(MCRObjectID derivateId, String parentPath) {
         final TypedQuery<MCRExternalStoreFileInfoData> query = getEntityManager().createNamedQuery(
-            "MCRExternalStoreInfo.findFileInfosByDerivateIdAndParenthPath", MCRExternalStoreFileInfoData.class);
+            "MCRExternalStoreInfo.findFileInfosByDerivateIdAndParentPath", MCRExternalStoreFileInfoData.class);
         query.setParameter("derivateId", derivateId);
         query.setParameter("parentPath", parentPath);
         return query.getResultList();

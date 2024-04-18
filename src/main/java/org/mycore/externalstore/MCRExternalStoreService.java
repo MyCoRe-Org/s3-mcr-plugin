@@ -72,8 +72,8 @@ public class MCRExternalStoreService {
 
     private static final MCRCache<String, MCRExternalStore> STORE_CACHE = new MCRCache<>(100, "MCRExternalStore cache");
 
-    private static final MCRJobQueue CREATE_STORE_INFO_QUEUE
-        = MCRJobQueue.getInstance(MCRExternalStoreCreateInfoJobAction.class);
+    private static final MCRJobQueue CREATE_STORE_INFO_QUEUE = MCRJobQueue
+        .getInstance(MCRExternalStoreCreateInfoJobAction.class);
 
     private MCRExternalStoreService() {
     }
@@ -83,7 +83,7 @@ public class MCRExternalStoreService {
     }
 
     /**
-     * Creates and saves info over an {@link MCRExternlStore} to an object.
+     * Creates and saves info over an {@link MCRExternalStore} to an object.
      *
      * @param objectId object id
      * @param storeType store type
@@ -162,10 +162,10 @@ public class MCRExternalStoreService {
         if (checkResolveArchives()) {
             final List<MCRExternalStoreArchiveInfo> archives = new ArrayList<>();
             fileInfos.stream().filter(f -> !f.isDirectory())
-                .filter(f -> MCRExternalStoreArchiveResolverFactory.checkResolveable(f.name())).forEach(f -> {
+                .filter(f -> MCRExternalStoreArchiveResolverFactory.checkResolvable(f.name())).forEach(f -> {
                     try {
-                        final MCRExternalStoreArchiveInfo archive
-                            = MCRExternalStoreServiceHelper.createArchive(storeProvider, f);
+                        final MCRExternalStoreArchiveInfo archive = MCRExternalStoreServiceHelper
+                            .createArchive(storeProvider, f);
                         archives.add(archive);
                     } catch (MCRExternalStoreException e) {
                         LOGGER.warn(e);
@@ -252,8 +252,8 @@ public class MCRExternalStoreService {
     }
 
     private static MCRExternalStoreSettingsWrapper loadSettingsWrapper(MCRObjectID derivateId) {
-        try (InputStream inputStream
-            = MCRExternalStoreServiceHelper.readFile(derivateId, STORE_PROVIDER_SETTINGS_FILENAME)) {
+        try (InputStream inputStream = MCRExternalStoreServiceHelper.readFile(derivateId,
+            STORE_PROVIDER_SETTINGS_FILENAME)) {
             return MCRExternalStoreServiceHelper.getSettingsWrapper(inputStream);
         } catch (IOException e) {
             throw new MCRExternalStoreException("Error while reading settings file", e);

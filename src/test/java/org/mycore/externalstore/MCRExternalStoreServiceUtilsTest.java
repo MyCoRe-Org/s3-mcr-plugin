@@ -40,7 +40,7 @@ import org.mycore.datamodel.metadata.MCRObjectID;
 import org.mycore.datamodel.niofs.MCRPath;
 import org.mycore.externalstore.exception.MCRExternalStoreException;
 
-public class MCRExternalStoreSeviceUtils extends MCRStoreTestCase {
+public class MCRExternalStoreServiceUtilsTest extends MCRStoreTestCase {
 
     @Override
     protected Map<String, String> getTestProperties() {

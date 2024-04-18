@@ -37,7 +37,7 @@ import org.mycore.util.concurrent.MCRTransactionableCallable;
  */
 public class MCRExternalStoreCreateInfoJobAction extends MCRJobAction {
 
-    private final Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = LogManager.getLogger();
 
     /**
      * Derivate id property name.
@@ -71,7 +71,7 @@ public class MCRExternalStoreCreateInfoJobAction extends MCRJobAction {
     @Override
     public void execute() throws ExecutionException {
         final MCRObjectID derivateId = getDerivateId();
-        LOGGER.debug("Embedding {} store to {}", derivateId);
+        LOGGER.debug("Embedding external store to {}", derivateId);
         final MCRSession session = MCRSessionMgr.getCurrentSession();
         MCRUserInformation savedUserInformation = session.getUserInformation();
         session.setUserInformation(MCRSystemUserInformation.getGuestInstance());
@@ -81,9 +81,9 @@ public class MCRExternalStoreCreateInfoJobAction extends MCRJobAction {
                 MCRExternalStoreService.createStoreInfo(derivateId);
                 return null;
             }).call();
-            LOGGER.debug("Finished embedding {} store to {}", derivateId);
+            LOGGER.debug("Finished embedding external store to {}", derivateId);
         } catch (Exception e) {
-            LOGGER.error("There was an Error while embedding {} store to {}", derivateId);
+            LOGGER.error("There was an Error while embedding external store to {}", derivateId);
             throw new ExecutionException(e);
         } finally {
             session.setUserInformation(MCRSystemUserInformation.getGuestInstance());

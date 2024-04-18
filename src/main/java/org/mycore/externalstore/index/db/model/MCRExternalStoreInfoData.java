@@ -49,7 +49,7 @@ import jakarta.persistence.Table;
         query = "SELECT i FROM MCRExternalStoreInfoData i"),
     @NamedQuery(name = "MCRExternalStoreInfo.findByDerivateId",
         query = "SELECT i FROM MCRExternalStoreInfoData i WHERE i.derivateId = :derivateId"),
-    @NamedQuery(name = "MCRExternalStoreInfo.findFileInfosByDerivateIdAndParenthPath",
+    @NamedQuery(name = "MCRExternalStoreInfo.findFileInfosByDerivateIdAndParentPath",
         query = "SELECT i FROM MCRExternalStoreFileInfoData i, MCRExternalStoreInfoData s "
             + "where i.storeInfo = s and s.derivateId = :derivateId and i.parentPath = :parentPath"),
     @NamedQuery(name = "MCRExternalStoreInfo.findFileInfoByDerivateIdAndPath",
