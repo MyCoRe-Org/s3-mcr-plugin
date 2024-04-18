@@ -40,6 +40,13 @@ public class MCRExternalStoreTarArchiveResolver extends MCRExternalStoreArchiveR
         return listFileInfos(getContent().getSeekableByteChannel());
     }
 
+    /**
+     * Maps and returns tar file entries to list over {@link MCRExternalStoreFileInfo} elements.
+     *
+     * @param channel channel
+     * @return list over file info elements
+     * @throws IOException if an I/O error occurs
+     */
     protected List<MCRExternalStoreFileInfo> listFileInfos(SeekableByteChannel channel) throws IOException {
         try (TarFile tarFile = new TarFile(channel)) {
             return tarFile.getEntries().stream().map(MCRExternalStoreArchiveUtils::mapToFileInfo).toList();
@@ -51,11 +58,19 @@ public class MCRExternalStoreTarArchiveResolver extends MCRExternalStoreArchiveR
         return getInputStream(getContent().getSeekableByteChannel(), path);
     }
 
+    /**
+     * Creates and returns input stream for path.
+     *
+     * @param channel channel
+     * @param path path
+     * @return input stream
+     * @throws IOException if an I/O error occurs
+     */
     protected InputStream getInputStream(SeekableByteChannel channel, String path) throws IOException {
         try (TarFile tarFile = new TarFile(channel)) {
-            final TarArchiveEntry entry
-                = tarFile.getEntries().stream().filter(t -> Objects.equals(path, t.getName())).findAny()
-                    .orElseThrow(() -> new MCRExternalStoreException("Path does not exist"));
+            final TarArchiveEntry entry = tarFile.getEntries().stream().filter(t -> Objects.equals(path, t.getName()))
+                .findAny()
+                .orElseThrow(() -> new MCRExternalStoreException("Path does not exist"));
             return new ByteArrayInputStream(tarFile.getInputStream(entry).readAllBytes());
         }
     }

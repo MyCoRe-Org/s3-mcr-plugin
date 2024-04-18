@@ -62,6 +62,9 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+/**
+ * Provides external store rest resource.
+ */
 @Path("es/")
 public class MCRExternalStoreResource {
 
@@ -81,6 +84,12 @@ public class MCRExternalStoreResource {
 
     private static final MCRExternalStoreInfoIndex INDEX = MCRExternalStoreInfoIndexManager.getInfoIndex();
 
+    /**
+     * Returns derivate info for object.
+     *
+     * @param objectId object id
+     * @return derivate infos dto
+     */
     @GET
     @Path("{" + PARAM_OBJ_ID + "}/info")
     @Produces(MediaType.APPLICATION_JSON)
@@ -89,12 +98,20 @@ public class MCRExternalStoreResource {
         if (!MCRAccessManager.checkPermission(objectId, MCRAccessManager.PERMISSION_READ)) {
             throw new ForbiddenException();
         }
-        final List<MCRDerivateInfoDto> derivateInfos
-            = MCRExternalStoreResourceHelper.listDerivateInformations(objectId);
+        final List<MCRDerivateInfoDto> derivateInfos = MCRExternalStoreResourceHelper
+            .listDerivateInformations(objectId);
         final boolean canCreateStore = checkCreateStorePermission(objectId.toString());
         return new MCRDerivateInfosDto(derivateInfos, canCreateStore);
     }
 
+    /**
+     * Creates external store for object with store settings.
+     *
+     * @param objectId object id
+     * @param storeType store type
+     * @param storeProviderSettings map over store settings
+     * @return response
+     */
     @POST
     @Path("{" + PARAM_OBJ_ID + "}/add/{" + PARAM_STORE_TYPE + "}/")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -113,19 +130,38 @@ public class MCRExternalStoreResource {
         return Response.ok().build();
     }
 
+    /**
+     * Returns file infos for external store.
+     *
+     * @param objectId object id
+     * @param base64DerivateId derivate id
+     * @param offset offset
+     * @param limit limit
+     * @return response with list over file infos dtos
+     */
     @GET
     @Path("{" + PARAM_OBJ_ID + "}/list/{" + PARAM_DER_ID + "}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response listFilesInfos(@PathParam(PARAM_OBJ_ID) MCRObjectID objectId,
+    public Response listFileInfos(@PathParam(PARAM_OBJ_ID) MCRObjectID objectId,
         @PathParam(PARAM_DER_ID) String base64DerivateId, @DefaultValue("0") @QueryParam("offset") int offset,
         @DefaultValue("" + Integer.MAX_VALUE) @QueryParam("limit") int limit) {
-        return listFilesInfos(objectId, base64DerivateId, "", offset, limit);
+        return listFileInfos(objectId, base64DerivateId, "", offset, limit);
     }
 
+    /**
+     * Returns file infos for external store by path.
+     *
+     * @param objectId object id
+     * @param base64DerivateId derivate id
+     * @param base64Path path
+     * @param offset offset
+     * @param limit limit
+     * @return response with list over file infos dtos
+     */
     @GET
     @Path("{" + PARAM_OBJ_ID + "}/list/{" + PARAM_DER_ID + "}/{" + PARAM_PATH + "}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response listFilesInfos(@PathParam(PARAM_OBJ_ID) MCRObjectID objectId,
+    public Response listFileInfos(@PathParam(PARAM_OBJ_ID) MCRObjectID objectId,
         @PathParam(PARAM_DER_ID) String base64DerivateId, @PathParam(PARAM_PATH) String base64Path,
         @DefaultValue("0") @QueryParam("offset") int offset,
         @DefaultValue("2147483647") @QueryParam("limit") int limit) {
@@ -162,8 +198,8 @@ public class MCRExternalStoreResource {
             return MCRExternalStoreArchiveResolverFactory.checkDownloadable(fileInfo.name());
         }
         if (fileInfo.flags().contains(FileFlag.ARCHIVE_ENTRY)) {
-            final MCRExternalStoreFileInfo archiveFileInfo
-                = getNearestArchiveFileInfo(derivateId, fileInfo.getAbsolutePath());
+            final MCRExternalStoreFileInfo archiveFileInfo = getNearestArchiveFileInfo(derivateId,
+                fileInfo.getAbsolutePath());
             return MCRExternalStoreArchiveResolverFactory.checkDownloadable(archiveFileInfo.name());
         }
         return true;
@@ -193,6 +229,12 @@ public class MCRExternalStoreResource {
         throw new MCRExternalStoreIndexInconsistentException();
     }
 
+    /**
+     * Returns file by download token.
+     *
+     * @param token token
+     * @return response with file
+     */
     @GET
     @Path("download/{" + PARAM_DOWNLOAD_TOKEN + "}")
     @Produces("*/*")
@@ -205,11 +247,11 @@ public class MCRExternalStoreResource {
         final String derivateIdString = decodeBase64(split[0]);
         final String path = decodeBase64(split[1]);
         final MCRObjectID derivateId = MCRObjectID.getInstance(derivateIdString);
-        final MCRExternalStoreFileInfo fileInfo
-            = INDEX.findFileInfo(derivateId, path).orElseThrow(() -> new BadRequestException("File does not exist"));
+        final MCRExternalStoreFileInfo fileInfo = INDEX.findFileInfo(derivateId, path)
+            .orElseThrow(() -> new BadRequestException("File does not exist"));
         if (fileInfo.flags().contains(FileFlag.ARCHIVE_ENTRY)) {
-            final MCRExternalStoreFileInfo archiveFileInfo
-                = getNearestArchiveFileInfo(derivateId, fileInfo.getAbsolutePath());
+            final MCRExternalStoreFileInfo archiveFileInfo = getNearestArchiveFileInfo(derivateId,
+                fileInfo.getAbsolutePath());
             ensureFileIntegrity(derivateId, archiveFileInfo);
             if (!MCRExternalStoreArchiveResolverFactory.checkDownloadable(archiveFileInfo.name())) {
                 throw new BadRequestException("Download is not available");
@@ -235,6 +277,14 @@ public class MCRExternalStoreResource {
         }
     }
 
+    /**
+     * Creates download token for file.
+     *
+     * @param objectId object id
+     * @param base64DerivateId derivate id
+     * @param base64Path path
+     * @return response with download token
+     */
     @GET
     @Path("{" + PARAM_OBJ_ID + "}/download/{" + PARAM_DER_ID + "}/{" + PARAM_PATH + "}")
     @Produces("text/plain")
@@ -246,8 +296,8 @@ public class MCRExternalStoreResource {
         ensureDerivateReadPermission(derivateIdStr);
         final MCRObjectID derivateId = MCRObjectID.getInstance(derivateIdStr);
         final String path = decodeBase64(base64Path);
-        final MCRExternalStoreFileInfo fileInfo
-            = INDEX.findFileInfo(derivateId, path).orElseThrow(() -> new BadRequestException("File does not exist"));
+        final MCRExternalStoreFileInfo fileInfo = INDEX.findFileInfo(derivateId, path)
+            .orElseThrow(() -> new BadRequestException("File does not exist"));
         if (fileInfo.isDirectory()) {
             throw new BadRequestException("File is a directory");
         }

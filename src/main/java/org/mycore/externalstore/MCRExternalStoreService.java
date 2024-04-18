@@ -60,14 +60,29 @@ public class MCRExternalStoreService {
 
     private static final String PROPERTY_PEFIX = "MCR.ExternalStore.Service.";
 
+    /**
+     * Store provider settings filename.
+     */
     protected static final String STORE_PROVIDER_SETTINGS_FILENAME = "provider_settings.json";
 
+    /**
+     * File infos filename.
+     */
     protected static final String FILE_INFOS_FILENAME = "files.json";
 
+    /**
+     * Archive infos filename.
+     */
     protected static final String ARCHIVE_INFOS_FILENAME = "archives.json";
 
+    /**
+     * Derivate types classification id.
+     */
     protected static String CLASSIFICATION_ID = "derivate_types";
 
+    /**
+     * External store classification id prefix.
+     */
     protected static String CLASSIFICATION_CATEGORY_ID_PREFIX = "external_store_";
 
     private static final MCRCache<String, MCRExternalStore> STORE_CACHE = new MCRCache<>(100, "MCRExternalStore cache");
@@ -78,6 +93,11 @@ public class MCRExternalStoreService {
     private MCRExternalStoreService() {
     }
 
+    /**
+     * Returns service instance.
+     *
+     * @return service
+     */
     public static MCRExternalStoreService getInstance() {
         return InstanceHolder.INSTANCE;
     }
@@ -276,6 +296,11 @@ public class MCRExternalStoreService {
         return MCRConfiguration2.getStringOrThrow(PROPERTY_PEFIX + "StoreProviderSettings.Cipher");
     }
 
+    /**
+     * Deletes store/derivate.
+     *
+     * @param derivateId derivate id
+     */
     public void deleteStore(MCRObjectID derivateId) {
         try {
             MCRMetadataManager.deleteMCRDerivate(derivateId);

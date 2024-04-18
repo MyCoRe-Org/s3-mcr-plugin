@@ -44,14 +44,28 @@ public class MCRExternalStoreCreateInfoJobAction extends MCRJobAction {
      */
     private static final String DERIVATE_ID = "derivate_id";
 
+    /**
+     * Constructs new job action.
+     */
     public MCRExternalStoreCreateInfoJobAction() {
 
     }
 
+    /**
+     * Constucts new job action with job.
+     *
+     * @param job job
+     */
     public MCRExternalStoreCreateInfoJobAction(MCRJob job) {
         super(job);
     }
 
+    /**
+     * Creates new job with derivate id.
+     *
+     * @param derivateId derivate id
+     * @return job
+     */
     public static MCRJob createJob(MCRObjectID derivateId) {
         final MCRJob job = new MCRJob(MCRExternalStoreCreateInfoJobAction.class);
         job.setParameter(DERIVATE_ID, derivateId.toString());

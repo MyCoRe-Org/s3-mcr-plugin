@@ -47,8 +47,7 @@ import jakarta.persistence.Transient;
 @Entity
 @Table(name = "MCRExternalStoreFileInfo")
 @NamedQueries({
-    @NamedQuery(name = "MCRExternalStoreFileInfo.findAll",
-        query = "SELECT i FROM MCRExternalStoreFileInfoData i"),
+    @NamedQuery(name = "MCRExternalStoreFileInfo.findAll", query = "SELECT i FROM MCRExternalStoreFileInfoData i"),
 })
 public class MCRExternalStoreFileInfoData {
 
@@ -85,18 +84,18 @@ public class MCRExternalStoreFileInfoData {
     private MCRExternalStoreInfoData storeInfo;
 
     /**
-     * Returns the internal id.
+     * Returns internal id.
      *
-     * @return the id
+     * @return id
      */
     public Long getId() {
         return id;
     }
 
     /**
-     * Sets the internal id.
+     * Sets internal id.
      *
-     * @param id the id
+     * @param id id
      */
     public void setId(Long id) {
         this.id = id;
@@ -105,7 +104,7 @@ public class MCRExternalStoreFileInfoData {
     /**
      * Returns the filename.
      *
-     * @return the name
+     * @return name
      */
     public String getName() {
         return name;
@@ -114,7 +113,7 @@ public class MCRExternalStoreFileInfoData {
     /**
      * Sets the filename.
      *
-     * @param name
+     * @param name name
      */
     public void setName(String name) {
         this.name = name;
@@ -139,18 +138,18 @@ public class MCRExternalStoreFileInfoData {
     }
 
     /**
-     * Returns the file size.
+     * Returns file size.
      *
-     * @return the size
+     * @return size
      */
     public Long getSize() {
         return size;
     }
 
     /**
-     * Sets the file size.
+     * Sets file size.
      *
-     * @param size the size
+     * @param size size
      */
     public void setSize(Long size) {
         this.size = size;
@@ -175,77 +174,82 @@ public class MCRExternalStoreFileInfoData {
     }
 
     /**
-     * Returns the checksum.
+     * Returns checksum.
      *
-     * @return the checksum
+     * @return checksum
      */
     public String getChecksum() {
         return checksum;
     }
 
     /**
-     * Sets the checksum.
+     * Sets checksum.
      *
-     * @param checksum the checksum
+     * @param checksum checksum
      */
     public void setChecksum(String checksum) {
         this.checksum = checksum;
     }
 
     /**
-     * Returns the associated {@link MCRExternalStoreInfoData}.
+     * Returns associated {@link MCRExternalStoreInfoData}.
      *
-     * @return the store info
+     * @return store info
      */
     public MCRExternalStoreInfoData getStoreInfo() {
         return storeInfo;
     }
 
     /**
-     * Sets the associated {@link MCRExternalStoreInfoData}.
+     * Sets associated {@link MCRExternalStoreInfoData}.
      *
-     * @param storeInfo the store info
+     * @param storeInfo store info
      */
     public void setStoreInfo(MCRExternalStoreInfoData storeInfo) {
         this.storeInfo = storeInfo;
     }
 
     /**
-     * Returns the parent path.
+     * Returns parent path.
      *
-     * @return the parent path which can be null
+     * @return parent path which can be null
      */
     public String getParentPath() {
         return parentPath;
     }
 
     /**
-     * Sets the parent path.
+     * Sets parent path.
      *
-     * @param parentPath the parent path
+     * @param parentPath parent path
      */
     public void setParentPath(String parentPath) {
         this.parentPath = parentPath;
     }
 
     /**
-     * Returns the list of {@link FileFlag}.
+     * Returns list of {@link FileFlag}.
      *
-     * @return the flags
+     * @return flags
      */
     public Set<String> getFlags() {
         return flags;
     }
 
     /**
-     * Sets the list of {@link FileFlag}.
+     * Sets list of {@link FileFlag}.
      *
-     * @param flags the flags
+     * @param flags flags
      */
     public void setFlags(Set<String> flags) {
         this.flags = flags;
     }
 
+    /**
+     * Returns path composed of parent path and name.
+     *
+     * @return absolute path
+     */
     @Transient
     public String getAbsolutePath() {
         if (!parentPath.isEmpty()) {

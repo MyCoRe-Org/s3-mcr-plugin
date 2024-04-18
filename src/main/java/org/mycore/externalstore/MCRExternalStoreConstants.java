@@ -25,6 +25,9 @@ import org.mycore.common.config.MCRConfiguration2;
  */
 public class MCRExternalStoreConstants {
 
+    /**
+     * Property prefix.
+     */
     public static final String PROPERTY_PREFIX = "MCR.ExternalStore.";
 
     /**

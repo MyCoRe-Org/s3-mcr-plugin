@@ -36,7 +36,7 @@ public interface MCRExternalStoreProvider {
     /**
      * Initializes the provider by given settings map.
      *
-     * @param settings the settings map
+     * @param settingsMap settings map
      */
     public void init(Map<String, String> settingsMap);
 

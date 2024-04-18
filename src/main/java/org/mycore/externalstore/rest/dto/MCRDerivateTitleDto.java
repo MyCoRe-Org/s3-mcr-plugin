@@ -18,8 +18,15 @@
 
 package org.mycore.externalstore.rest.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Dto for derivate title.
+ *
+ * @param text text
+ * @param lang lang
+ * @param form form
  */
-public record MCRDerivateTitleDto(String text, String lang, String form) {
+public record MCRDerivateTitleDto(@JsonProperty("text") String text, @JsonProperty("lang") String lang,
+    @JsonProperty("form") String form) {
 }

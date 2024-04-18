@@ -20,6 +20,9 @@ package org.mycore.externalstore.model;
 
 /**
  * Wrapper model for store config/settings.
+ *
+ * @param settings settings map as string
+ * @param isEncrypted if settings is encrypted
  */
 public record MCRExternalStoreSettingsWrapper(String settings, boolean isEncrypted) {
 }

@@ -25,6 +25,14 @@ import java.util.Set;
 /**
  * An {@link MCRExternalStoreFileInfo} describes a file.
  * Also, a file can be a directory.
+ *
+ * @param name name
+ * @param parentPath parent path
+ * @param isDirectory is directory
+ * @param size size
+ * @param lastModified last modified
+ * @param checksum checksum
+ * @param flags list over file flag elements
  */
 public record MCRExternalStoreFileInfo(String name, String parentPath, boolean isDirectory, Long size,
     Date lastModified, String checksum, Set<MCRExternalStoreFileInfo.FileFlag> flags) {
@@ -34,6 +42,11 @@ public record MCRExternalStoreFileInfo(String name, String parentPath, boolean i
             builder.checksum, builder.flags);
     }
 
+    /**
+     * Returns path composed of parent path and name.
+     *
+     * @return absolute path
+     */
     public String getAbsolutePath() {
         if (parentPath != null && !parentPath.isEmpty()) {
             return parentPath + "/" + name;
@@ -67,12 +80,17 @@ public record MCRExternalStoreFileInfo(String name, String parentPath, boolean i
         @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private Set<FileFlag> flags = new HashSet<FileFlag>();
 
+        /**
+         * Constructs new builder with file name and empty parent path.
+         *
+         * @param name name
+         */
         public Builder(String name) {
             this(name, "");
         }
 
         /**
-         * Creates a {@link Builder} with file name and parent path.
+         * Constructs new builder with file name and parent path.
          *
          * @param name the file name
          * @param parentPath the parent path
@@ -152,7 +170,16 @@ public record MCRExternalStoreFileInfo(String name, String parentPath, boolean i
      * Defines optional flag for {@link MCRExternalStoreFileInfo}.
      */
     public enum FileFlag {
-        ARCHIVE, ARCHIVE_ENTRY
+
+        /**
+         * archive file
+         */
+        ARCHIVE,
+
+        /**
+         * archive entry file
+         */
+        ARCHIVE_ENTRY
     }
 
 }

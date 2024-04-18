@@ -45,7 +45,6 @@ import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.rest.dto.MCRDerivateInfoDto;
 import org.mycore.externalstore.rest.dto.MCRDerivateTitleDto;
 import org.mycore.externalstore.rest.dto.MCRExternalStoreFileInfoDto;
-import org.mycore.externalstore.rest.dto.MCRFileCapability;
 import org.mycore.externalstore.util.MCRExternalStoreUtils;
 import org.mycore.services.i18n.MCRTranslation;
 
@@ -54,6 +53,9 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 
+/**
+ * Provides helper methods for external store resource.
+ */
 public class MCRExternalStoreResourceHelper {
 
     /**
@@ -114,10 +116,10 @@ public class MCRExternalStoreResourceHelper {
      * @return file info dto
      */
     protected static MCRExternalStoreFileInfoDto toDto(MCRExternalStoreFileInfo fileInfo, boolean downloadable) {
-        final Set<MCRFileCapability> capabilities = new HashSet<>();
+        final Set<MCRExternalStoreFileInfoDto.MCRFileCapability> capabilities = new HashSet<>();
         if (downloadable && !fileInfo.isDirectory() && fileInfo.size() != null
             && fileInfo.size() <= MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
-            capabilities.add(MCRFileCapability.DOWNLOAD);
+            capabilities.add(MCRExternalStoreFileInfoDto.MCRFileCapability.DOWNLOAD);
         }
         return new MCRExternalStoreFileInfoDto(fileInfo.name(), fileInfo.parentPath(),
             fileInfo.isDirectory(), fileInfo.size(), fileInfo.checksum(), fileInfo.lastModified(), fileInfo.flags(),

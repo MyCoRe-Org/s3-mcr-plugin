@@ -21,10 +21,19 @@ package org.mycore.externalstore.rest.dto;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Dto for derivate info.
+ *
+ * @param id derivate id
+ * @param titles list over derivate title elements
+ * @param metadata map over metadata elements
+ * @param view user can view store
+ * @param delete user can delete store
+ * @param write user can update store
  */
-public record MCRDerivateInfoDto(String id, List<MCRDerivateTitleDto> titles, Map<String, String> metadata,
-    boolean view, boolean delete,
-    boolean write) {
+public record MCRDerivateInfoDto(@JsonProperty("id") String id,
+    @JsonProperty("titles") List<MCRDerivateTitleDto> titles, @JsonProperty("metadata") Map<String, String> metadata,
+    @JsonProperty("view") boolean view, @JsonProperty("delete") boolean delete, @JsonProperty("write") boolean write) {
 }

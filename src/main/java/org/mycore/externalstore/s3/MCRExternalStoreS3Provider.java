@@ -65,10 +65,10 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
 
     @Override
     public void init(Map<String, String> settings) {
-        final MCRS3Settings s3Settings = MCRS3Settings.fromMap(settings);
+        final MCRExternalStoreS3Settings s3Settings = MCRExternalStoreS3Settings.fromMap(settings);
         client = createClient(s3Settings);
-        bucket = s3Settings.getBucket();
-        directory = s3Settings.getDirectory();
+        bucket = s3Settings.bucket();
+        directory = s3Settings.directory();
     }
 
     @Override
@@ -132,19 +132,19 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
     }
 
     /**
-     * Builds {@link AmazonS3} instance by given {@link MCRS3Settings}.
+     * Builds {@link AmazonS3} instance by given {@link MCRExternalStoreS3Settings}.
      *
      * @param settings the settings
      * @return the client
      */
-    protected static AmazonS3 createClient(MCRS3Settings settings) {
+    protected static AmazonS3 createClient(MCRExternalStoreS3Settings settings) {
         final ClientConfiguration clientConfig = new ClientConfiguration()
-            .withProtocol(Protocol.valueOf(settings.getProtocol().toUpperCase(Locale.ROOT)));
-        final AWSCredentials credentials = new BasicAWSCredentials(settings.getAccessKey(), settings.getSecretKey());
+            .withProtocol(Protocol.valueOf(settings.protocol().toUpperCase(Locale.ROOT)));
+        final AWSCredentials credentials = new BasicAWSCredentials(settings.accessKey(), settings.secretKey());
         final AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard()
             .withEndpointConfiguration(
-                new AwsClientBuilder.EndpointConfiguration(settings.getEndpoint(), settings.getSigningRegion()))
-            .withPathStyleAccessEnabled(settings.isPathStyleAccess())
+                new AwsClientBuilder.EndpointConfiguration(settings.endpoint(), settings.signingRegion()))
+            .withPathStyleAccessEnabled(settings.pathStyleAccess())
             .withClientConfiguration(clientConfig)
             .withCredentials(new AWSStaticCredentialsProvider(credentials));
         return builder.build();
