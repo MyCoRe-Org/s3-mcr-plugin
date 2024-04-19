@@ -12,7 +12,7 @@ In addition, archives can be resolved to provide information about the files. It
 The plugin comes preconfigured with the following properties. 
 ```
 MCR.Crypt.Cipher.external-store-settings.class=org.mycore.crypt.MCRAESCipher
-MCR.Crypt.Cipher.external-store-settings.KeyFile=external_store_settings.key
+MCR.Crypt.Cipher.external-store-settings.KeyFile=%MCR.datadir%/external_store_settings.key
 MCR.Crypt.Cipher.external-store-settings.EnableACL=false
 
 MCR.ExternalStore.Service.StoreProviderSettings.Cipher=external-store-settings
