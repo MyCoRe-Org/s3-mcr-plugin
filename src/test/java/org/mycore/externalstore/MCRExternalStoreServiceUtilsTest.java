@@ -75,11 +75,10 @@ public class MCRExternalStoreServiceUtilsTest extends MCRStoreTestCase {
 
     @Test
     public void testGetStoreType() throws MCRPersistenceException, MCRAccessException, MCRException {
-        MCRDerivate derivate
-            = createDerivate(Arrays
-                .asList(new MCRMetaClassification("classification", 0, null,
-                    MCRExternalStoreService.CLASSIFICATION_ID,
-                    MCRExternalStoreService.CLASSIFICATION_CATEGORY_ID_PREFIX + "test")));
+        MCRDerivate derivate = createDerivate(Arrays
+            .asList(new MCRMetaClassification("classification", 0, null,
+                MCRExternalStoreService.CLASSIFICATION_ID,
+                MCRExternalStoreService.CLASSIFICATION_CATEGORY_ID_PREFIX + "test")));
         final String type = MCRExternalStoreServiceUtils.getStoreType(derivate);
         assertEquals("test", type);
     }

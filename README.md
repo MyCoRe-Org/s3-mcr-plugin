@@ -49,6 +49,23 @@ Sensitive information, such as settings for communication with the provider of t
 Information about the files is stored in files.json.
 Information about archives is stored separately in archives.json because it depends on the configuration of the resolvers.
 
+## Download
+Before a download, the integrity is checked and a download URL is generated.
+In the case of S3, this is a presigned url.
+It is possible that the provider endpoint cannot be reached publicly.
+In this case, a proxy can be activated when creating a store.
+A proxy servlet is available for this purpose. Download urls are adapted accordingly and routed through the servlet.
+Alternatively, an individual proxy url can be specified so that an independent proxy can also be used.
+
+### Activate proxy servlet
+The servlet must be defined in web-fragments.xml.
+An example is provided for this.
+Also, the path must be configured for this, for example:
+```
+MCR.ExternalStore.DownloadProxyServlet.Url=%MCR.baseurl%/esp
+```
+
+
 ## How can I test local?
 You can use minio for testing s3 with docker and docker-compose.
 Copy this to a docker-compose.yml and run `docker-compose up` to start a demo s3 server.

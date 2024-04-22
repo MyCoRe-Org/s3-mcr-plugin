@@ -19,16 +19,19 @@
 package org.mycore.externalstore.rest;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.mycore.access.MCRAccessManager;
+import org.mycore.common.config.MCRConfiguration2;
 import org.mycore.datamodel.metadata.MCRMetadataManager;
 import org.mycore.datamodel.metadata.MCRObjectID;
+import org.mycore.externalstore.MCRExternalStore;
 import org.mycore.externalstore.MCRExternalStoreConstants;
 import org.mycore.externalstore.MCRExternalStoreService;
 import org.mycore.externalstore.exception.MCRExternalStoreException;
@@ -39,11 +42,7 @@ import org.mycore.externalstore.model.MCRExternalStoreFileInfo.FileFlag;
 import org.mycore.externalstore.rest.dto.MCRDerivateInfoDto;
 import org.mycore.externalstore.rest.dto.MCRDerivateInfosDto;
 import org.mycore.externalstore.rest.dto.MCRExternalStoreFileInfoDto;
-import org.mycore.frontend.jersey.MCRJWTUtil;
 import org.mycore.restapi.annotations.MCRRequireTransaction;
-
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.interfaces.DecodedJWT;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
@@ -73,11 +72,10 @@ public class MCRExternalStoreResource {
 
     private static final String PARAM_PATH = "path";
 
-    private static final String PARAM_DOWNLOAD_TOKEN = "download_token";
-
     private static final String CREATE_DERIVATE_PERMISSION = "create-derivate";
 
-    private static final String TOKEN_DOWNLOAD_AUDIENCE = "mcr:es:download";
+    private static final Optional<String> DOWNLOD_PROXY_URL
+        = MCRConfiguration2.getString(MCRExternalStoreConstants.PROPERTY_PREFIX + "DownloadProxyServlet.Url");
 
     private static final MCRExternalStoreInfoIndex INDEX = MCRExternalStoreInfoIndexManager.getInfoIndex();
 
@@ -170,8 +168,7 @@ public class MCRExternalStoreResource {
         final MCRObjectID derivateId = MCRObjectID.getInstance(derivateIdStr);
         final List<MCRExternalStoreFileInfoDto> fileInfos = listFileInfos(derivateId, path);
         final List<MCRExternalStoreFileInfoDto> result = fileInfos.stream().skip(offset).limit(limit).toList();
-        return Response.ok(result)
-            .header("X-Total-Count", fileInfos.size()).build();
+        return Response.ok(result).header("X-Total-Count", fileInfos.size()).build();
     }
 
     private List<MCRExternalStoreFileInfoDto> listFileInfos(MCRObjectID derivateId, String path) {
@@ -192,28 +189,39 @@ public class MCRExternalStoreResource {
     }
 
     /**
-     * Returns file by download token.
+     * Creates download token for file.
      *
-     * @param token token
-     * @return response with file
+     * @param objectId object id
+     * @param base64DerivateId derivate id
+     * @param base64Path path
+     * @return response with download token
      */
     @GET
-    @Path("download/{" + PARAM_DOWNLOAD_TOKEN + "}")
-    @Produces("*/*")
-    public Response getFile(@PathParam(PARAM_DOWNLOAD_TOKEN) String token) {
-        final DecodedJWT jwt = JWT.require(MCRJWTUtil.getJWTAlgorithm()).acceptLeeway(0).build().verify(token);
-        if (!jwt.getAudience().contains(TOKEN_DOWNLOAD_AUDIENCE)) {
-            throw new ForbiddenException("Audience of token must be " + TOKEN_DOWNLOAD_AUDIENCE);
-        }
-        final String[] split = jwt.getSubject().split("/");
-        final String derivateIdString = decodeBase64(split[0]);
-        final String path = decodeBase64(split[1]);
-        final MCRObjectID derivateId = MCRObjectID.getInstance(derivateIdString);
+    @Path("{" + PARAM_OBJ_ID + "}/download/{" + PARAM_DER_ID + "}/{" + PARAM_PATH + "}")
+    @Produces({ "text/plain", MediaType.APPLICATION_JSON })
+    public String getDownloadUrl(@PathParam(PARAM_OBJ_ID) MCRObjectID objectId,
+        @PathParam(PARAM_DER_ID) String base64DerivateId, @PathParam(PARAM_PATH) String base64Path) {
+        ensureObjectExists(objectId);
+        final String derivateIdStr = decodeBase64(base64DerivateId);
+        ensureObjectHasChild(objectId, derivateIdStr);
+        ensureDerivateReadPermission(derivateIdStr);
+        final MCRObjectID derivateId = MCRObjectID.getInstance(derivateIdStr);
+        final String path = decodeBase64(base64Path);
         final MCRExternalStoreFileInfo fileInfo = INDEX.findFileInfo(derivateId, path)
             .orElseThrow(() -> new BadRequestException("File does not exist"));
+        ensureFileIsDownloadable(fileInfo);
         ensureAllowedFileSize(fileInfo);
         ensureFileIntegrity(derivateId, fileInfo);
-        return MCRExternalStoreResourceHelper.getFile(derivateId, path);
+        return getDownloadUrl(derivateId, path);
+    }
+
+    private void ensureFileIsDownloadable(MCRExternalStoreFileInfo fileInfo) {
+        if (fileInfo.isDirectory()) {
+            throw new BadRequestException("File is a directory");
+        }
+        if (fileInfo.flags().contains(MCRExternalStoreFileInfo.FileFlag.ARCHIVE_ENTRY)) {
+            throw new BadRequestException("File is part of an archive.");
+        }
     }
 
     private void ensureFileIntegrity(MCRObjectID derivateId, MCRExternalStoreFileInfo fileInfo) {
@@ -229,41 +237,23 @@ public class MCRExternalStoreResource {
         }
     }
 
-    /**
-     * Creates download token for file.
-     *
-     * @param objectId object id
-     * @param base64DerivateId derivate id
-     * @param base64Path path
-     * @return response with download token
-     */
-    @GET
-    @Path("{" + PARAM_OBJ_ID + "}/download/{" + PARAM_DER_ID + "}/{" + PARAM_PATH + "}")
-    @Produces("text/plain")
-    public String createToken(@PathParam(PARAM_OBJ_ID) MCRObjectID objectId,
-        @PathParam(PARAM_DER_ID) String base64DerivateId, @PathParam(PARAM_PATH) String base64Path) {
-        ensureObjectExists(objectId);
-        final String derivateIdStr = decodeBase64(base64DerivateId);
-        ensureObjectHasChild(objectId, derivateIdStr);
-        ensureDerivateReadPermission(derivateIdStr);
-        final MCRObjectID derivateId = MCRObjectID.getInstance(derivateIdStr);
-        final String path = decodeBase64(base64Path);
-        final MCRExternalStoreFileInfo fileInfo = INDEX.findFileInfo(derivateId, path)
-            .orElseThrow(() -> new BadRequestException("File does not exist"));
-        ensureFileIsDownloadable(fileInfo);
-        ensureAllowedFileSize(fileInfo);
-        return JWT.create().withIssuedAt(new Date()).withAudience(TOKEN_DOWNLOAD_AUDIENCE)
-            .withSubject(base64DerivateId + "/" + base64Path)
-            .sign(MCRJWTUtil.getJWTAlgorithm());
+    final String getDownloadUrl(MCRObjectID derivateId, String path) {
+        final MCRExternalStore store = MCRExternalStoreService.getInstance().getStore(derivateId);
+        final URL downloadUrl = store.getStoreProvider().getDownloadUrl(path);
+        if (store.useDownloadProxy()) {
+            final String downloadProxyUrl = store.getCustomDownloadProxyUrl();
+            if (downloadProxyUrl != null) {
+                return createProxyDownloadUrl(downloadProxyUrl, downloadUrl);
+            } else if (!DOWNLOD_PROXY_URL.isEmpty()) {
+                return createProxyDownloadUrl(DOWNLOD_PROXY_URL.get() + "/" + derivateId, downloadUrl);
+            }
+            throw new InternalServerErrorException("Internal proxy url is not set");
+        }
+        return downloadUrl.toString();
     }
 
-    private void ensureFileIsDownloadable(MCRExternalStoreFileInfo fileInfo) {
-        if (fileInfo.isDirectory()) {
-            throw new BadRequestException("File is a directory");
-        }
-        if (fileInfo.flags().contains(MCRExternalStoreFileInfo.FileFlag.ARCHIVE_ENTRY)) {
-            throw new BadRequestException("File is part of an archive.");
-        }
+    private String createProxyDownloadUrl(String proxy, URL downloadUrl) {
+        return String.format("%s%s?%s", proxy, downloadUrl.getPath(), downloadUrl.getQuery());
     }
 
     private void ensureAllowedFileSize(MCRExternalStoreFileInfo fileInfo) {

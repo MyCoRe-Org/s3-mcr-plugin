@@ -31,6 +31,10 @@ import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
  */
 public class MCRExternalStore {
 
+    private static final String USE_DOWNLOAD_PROXY = "useDownloadProxy";
+
+    private static final String CUSTOM_DOWNLOAD_PROXY_URL = "customDownloadProxyUrl";
+
     private final String storeType;
 
     private final Map<String, String> storeSettings;
@@ -66,8 +70,7 @@ public class MCRExternalStore {
         if (storeProvider == null) {
             synchronized (this) {
                 if (storeProvider == null) {
-                    storeProvider
-                        = MCRExternalStoreProviderFactory.createStoreProvider(storeType, storeSettings);
+                    storeProvider = MCRExternalStoreProviderFactory.createStoreProvider(storeType, storeSettings);
                 }
             }
         }
@@ -104,7 +107,7 @@ public class MCRExternalStore {
      * @throws IOException if an I/O error occurs
      */
     public InputStream newInputStream(String path) throws IOException {
-        checkFile(path);
+        ensureFileIsNoDirectory(path);
         return getStoreProvider().newInputStream(path);
     }
 
@@ -116,11 +119,26 @@ public class MCRExternalStore {
      * @throws IOException if an I/O error occurs
      */
     public SeekableByteChannel newByteChannel(String path) throws IOException {
-        checkFile(path);
+        ensureFileIsNoDirectory(path);
         return getStoreProvider().newByteChannel(path);
     }
 
-    private void checkFile(String path) throws IOException {
+    /**
+     * Returns if direct downloads should use proxy.
+     *
+     * @return true if should use proxy
+     */
+    public String getCustomDownloadProxyUrl() {
+        return storeSettings.containsKey(CUSTOM_DOWNLOAD_PROXY_URL) ? storeSettings.get(CUSTOM_DOWNLOAD_PROXY_URL)
+            : null;
+    }
+
+    public boolean useDownloadProxy() {
+        return storeSettings.containsKey(USE_DOWNLOAD_PROXY)
+            ? Boolean.parseBoolean(storeSettings.get(USE_DOWNLOAD_PROXY)) : false;
+    }
+
+    private void ensureFileIsNoDirectory(String path) throws IOException {
         final MCRExternalStoreFileInfo fileInfo = getStoreProvider().getFileInfo(path);
         if (fileInfo.isDirectory()) {
             throw new IOException("Object is a directory");
