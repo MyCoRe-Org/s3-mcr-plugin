@@ -30,6 +30,7 @@ import java.util.Optional;
 import org.mycore.access.MCRAccessManager;
 import org.mycore.datamodel.metadata.MCRMetadataManager;
 import org.mycore.datamodel.metadata.MCRObjectID;
+import org.mycore.externalstore.MCRExternalStoreConstants;
 import org.mycore.externalstore.MCRExternalStoreService;
 import org.mycore.externalstore.archive.MCRExternalStoreArchiveResolverFactory;
 import org.mycore.externalstore.exception.MCRExternalStoreException;
@@ -249,6 +250,9 @@ public class MCRExternalStoreResource {
         final MCRObjectID derivateId = MCRObjectID.getInstance(derivateIdString);
         final MCRExternalStoreFileInfo fileInfo = INDEX.findFileInfo(derivateId, path)
             .orElseThrow(() -> new BadRequestException("File does not exist"));
+        if (fileInfo.size() > MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
+            throw new BadRequestException("File size is not allowed to download");
+        }
         if (fileInfo.flags().contains(FileFlag.ARCHIVE_ENTRY)) {
             final MCRExternalStoreFileInfo archiveFileInfo = getNearestArchiveFileInfo(derivateId,
                 fileInfo.getAbsolutePath());
@@ -300,6 +304,9 @@ public class MCRExternalStoreResource {
             .orElseThrow(() -> new BadRequestException("File does not exist"));
         if (fileInfo.isDirectory()) {
             throw new BadRequestException("File is a directory");
+        }
+        if (fileInfo.size() > MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
+            throw new BadRequestException("File size is not allowed to download");
         }
         return JWT.create().withIssuedAt(new Date()).withAudience(TOKEN_DOWNLOAD_AUDIENCE)
             .withSubject(base64DerivateId + "/" + base64Path)
