@@ -101,12 +101,6 @@ public class MCRExternalStoreServiceHelper {
      */
     protected static MCRExternalStoreArchiveInfo createArchive(MCRExternalStoreProvider provider,
         MCRExternalStoreFileInfo fileInfo) {
-        if (fileInfo.isDirectory()) {
-            throw new MCRExternalStoreException("directory is not allowed");
-        }
-        if (fileInfo.size() > MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
-            throw new MCRExternalStoreException("file is too large");
-        }
         final Optional<String> resolverId = MCRExternalStoreArchiveResolverFactory.findResolverId(fileInfo.name());
         if (resolverId.isEmpty()) {
             throw new MCRExternalStoreException("there is no matching resolver");

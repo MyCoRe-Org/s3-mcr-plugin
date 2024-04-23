@@ -179,9 +179,10 @@ public class MCRExternalStoreService {
         final MCRExternalStoreProvider storeProvider = loadStoreProvider(derivateId);
         final List<MCRExternalStoreFileInfo> fileInfos = storeProvider.listFileInfosRecursive("");
         saveFileInfos(derivateId, fileInfos);
-        if (checkResolveArchives()) {
+        final int maxFileSize = getResolveArchiveMaxFileSize();
+        if (maxFileSize > 0) {
             final List<MCRExternalStoreArchiveInfo> archives = new ArrayList<>();
-            fileInfos.stream().filter(f -> !f.isDirectory())
+            fileInfos.stream().filter(f -> !f.isDirectory()).filter(f -> f.size() <= maxFileSize)
                 .filter(f -> MCRExternalStoreArchiveResolverFactory.checkResolvable(f.name())).forEach(f -> {
                     try {
                         final MCRExternalStoreArchiveInfo archive = MCRExternalStoreServiceHelper
@@ -201,8 +202,8 @@ public class MCRExternalStoreService {
         return MCRExternalStoreProviderFactory.createStoreProvider(storeType, storeProviderSettings);
     }
 
-    private static boolean checkResolveArchives() {
-        return MCRConfiguration2.getBoolean(PROPERTY_PEFIX + "ResolveArchives").orElseThrow();
+    private static int getResolveArchiveMaxFileSize() {
+        return MCRConfiguration2.getInt(PROPERTY_PEFIX + "ResolveArchives.MaxFileSize").orElseThrow();
     }
 
     /**
