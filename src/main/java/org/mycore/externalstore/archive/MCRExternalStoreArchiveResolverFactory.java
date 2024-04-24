@@ -78,17 +78,6 @@ public class MCRExternalStoreArchiveResolverFactory {
     }
 
     /**
-     * Checks if an {@link MCRExternalStoreArchiveResolver} exists for path that offers downloads.
-     *
-     * @param path path
-     * @return true if there is an archive resolver
-     */
-    public static boolean checkDownloadable(String path) {
-        return findResolverId(path)
-            .map(id -> MCRConfiguration2.getBoolean(CONFIG_PREFIX + id + ".Download").orElseThrow()).orElse(false);
-    }
-
-    /**
      * Returns a resolver id for given path.
      *
      * @param path path

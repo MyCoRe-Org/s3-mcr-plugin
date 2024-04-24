@@ -25,16 +25,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 import org.mycore.access.MCRAccessManager;
 import org.mycore.datamodel.metadata.MCRMetadataManager;
 import org.mycore.datamodel.metadata.MCRObjectID;
 import org.mycore.externalstore.MCRExternalStoreConstants;
 import org.mycore.externalstore.MCRExternalStoreService;
-import org.mycore.externalstore.archive.MCRExternalStoreArchiveResolverFactory;
 import org.mycore.externalstore.exception.MCRExternalStoreException;
-import org.mycore.externalstore.exception.MCRExternalStoreIndexInconsistentException;
 import org.mycore.externalstore.index.MCRExternalStoreInfoIndex;
 import org.mycore.externalstore.index.MCRExternalStoreInfoIndexManager;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
@@ -42,7 +39,6 @@ import org.mycore.externalstore.model.MCRExternalStoreFileInfo.FileFlag;
 import org.mycore.externalstore.rest.dto.MCRDerivateInfoDto;
 import org.mycore.externalstore.rest.dto.MCRDerivateInfosDto;
 import org.mycore.externalstore.rest.dto.MCRExternalStoreFileInfoDto;
-import org.mycore.externalstore.util.MCRExternalStoreUtils;
 import org.mycore.frontend.jersey.MCRJWTUtil;
 import org.mycore.restapi.annotations.MCRRequireTransaction;
 
@@ -182,52 +178,17 @@ public class MCRExternalStoreResource {
         final MCRExternalStoreFileInfo fileInfo = path.isEmpty()
             ? new MCRExternalStoreFileInfo.Builder("", "").directory(true).build()
             : INDEX.findFileInfo(derivateId, path).orElseThrow(() -> new BadRequestException("Path does not exist"));
-        if (fileInfo.isDirectory() || fileInfo.flags().contains(FileFlag.ARCHIVE)) {
-            try {
-                final boolean childrenDownloadable = checkChildrenDownloadable(derivateId, fileInfo);
-                return INDEX.listFileInfos(derivateId, path).stream()
-                    .map(i -> MCRExternalStoreResourceHelper.toDto(i, childrenDownloadable)).toList();
-            } catch (MCRExternalStoreIndexInconsistentException e) {
-                throw new InternalServerErrorException(e);
-            }
+
+        if (fileInfo.isDirectory() && !fileInfo.flags().contains(FileFlag.ARCHIVE_ENTRY)) {
+            return INDEX.listFileInfos(derivateId, path).stream()
+                .map(i -> MCRExternalStoreResourceHelper.toDto(i, true)).toList();
+        }
+        if (fileInfo.flags().contains(FileFlag.ARCHIVE)
+            || (fileInfo.isDirectory() && fileInfo.flags().contains(FileFlag.ARCHIVE_ENTRY))) {
+            return INDEX.listFileInfos(derivateId, path).stream()
+                .map(i -> MCRExternalStoreResourceHelper.toDto(i, false)).toList();
         }
         throw new BadRequestException("Path is not a directory or archive");
-    }
-
-    private boolean checkChildrenDownloadable(MCRObjectID derivateId, MCRExternalStoreFileInfo fileInfo) {
-        if (fileInfo.flags().contains(FileFlag.ARCHIVE)) {
-            return MCRExternalStoreArchiveResolverFactory.checkDownloadable(fileInfo.name());
-        }
-        if (fileInfo.flags().contains(FileFlag.ARCHIVE_ENTRY)) {
-            final MCRExternalStoreFileInfo archiveFileInfo = getNearestArchiveFileInfo(derivateId,
-                fileInfo.getAbsolutePath());
-            return MCRExternalStoreArchiveResolverFactory.checkDownloadable(archiveFileInfo.name());
-        }
-        return true;
-    }
-
-    /**
-     * Lookups index to find nearest archive file info.
-     *
-     * @param derivateId the derivate id
-     * @param archiveEntryPath the archive entry path
-     * @return nearest archive file info
-     * @throws MCRExternalStoreIndexInconsistentException if index is inconsistent
-     */
-    private MCRExternalStoreFileInfo getNearestArchiveFileInfo(MCRObjectID derivateId, String archiveEntryPath) {
-        String currentPath = MCRExternalStoreUtils.getParentPath(archiveEntryPath);
-        while (!currentPath.isEmpty()) {
-            final Optional<MCRExternalStoreFileInfo> currentFileInfoOpt = INDEX.findFileInfo(derivateId, currentPath);
-            if (currentFileInfoOpt.isEmpty()) {
-                throw new MCRExternalStoreIndexInconsistentException();
-            }
-            final MCRExternalStoreFileInfo currentFileInfo = currentFileInfoOpt.get();
-            if (currentFileInfo.flags().contains(FileFlag.ARCHIVE)) {
-                return currentFileInfo;
-            }
-            currentPath = MCRExternalStoreUtils.getParentPath(currentPath);
-        }
-        throw new MCRExternalStoreIndexInconsistentException();
     }
 
     /**
@@ -250,20 +211,7 @@ public class MCRExternalStoreResource {
         final MCRObjectID derivateId = MCRObjectID.getInstance(derivateIdString);
         final MCRExternalStoreFileInfo fileInfo = INDEX.findFileInfo(derivateId, path)
             .orElseThrow(() -> new BadRequestException("File does not exist"));
-        if (fileInfo.size() > MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
-            throw new BadRequestException("File size is not allowed to download");
-        }
-        if (fileInfo.flags().contains(FileFlag.ARCHIVE_ENTRY)) {
-            final MCRExternalStoreFileInfo archiveFileInfo = getNearestArchiveFileInfo(derivateId,
-                fileInfo.getAbsolutePath());
-            ensureFileIntegrity(derivateId, archiveFileInfo);
-            if (!MCRExternalStoreArchiveResolverFactory.checkDownloadable(archiveFileInfo.name())) {
-                throw new BadRequestException("Download is not available");
-            }
-            final String archiveEntryPath = path.substring(archiveFileInfo.getAbsolutePath().length() + 1);
-            return MCRExternalStoreResourceHelper.getArchiveFile(derivateId, archiveFileInfo.getAbsolutePath(),
-                archiveEntryPath);
-        }
+        ensureAllowedFileSize(fileInfo);
         ensureFileIntegrity(derivateId, fileInfo);
         return MCRExternalStoreResourceHelper.getFile(derivateId, path);
     }
@@ -302,15 +250,26 @@ public class MCRExternalStoreResource {
         final String path = decodeBase64(base64Path);
         final MCRExternalStoreFileInfo fileInfo = INDEX.findFileInfo(derivateId, path)
             .orElseThrow(() -> new BadRequestException("File does not exist"));
-        if (fileInfo.isDirectory()) {
-            throw new BadRequestException("File is a directory");
-        }
-        if (fileInfo.size() > MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
-            throw new BadRequestException("File size is not allowed to download");
-        }
+        ensureFileIsDownloadable(fileInfo);
+        ensureAllowedFileSize(fileInfo);
         return JWT.create().withIssuedAt(new Date()).withAudience(TOKEN_DOWNLOAD_AUDIENCE)
             .withSubject(base64DerivateId + "/" + base64Path)
             .sign(MCRJWTUtil.getJWTAlgorithm());
+    }
+
+    private void ensureFileIsDownloadable(MCRExternalStoreFileInfo fileInfo) {
+        if (fileInfo.isDirectory()) {
+            throw new BadRequestException("File is a directory");
+        }
+        if (fileInfo.flags().contains(MCRExternalStoreFileInfo.FileFlag.ARCHIVE_ENTRY)) {
+            throw new BadRequestException("File is part of an archive.");
+        }
+    }
+
+    private void ensureAllowedFileSize(MCRExternalStoreFileInfo fileInfo) {
+        if (fileInfo.size() > MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
+            throw new BadRequestException("File size is not allowed to download");
+        }
     }
 
     private void ensureObjectExists(MCRObjectID objectId) {

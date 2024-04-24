@@ -18,16 +18,12 @@
 
 package org.mycore.externalstore.archive;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.mycore.externalstore.exception.MCRExternalStoreException;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 
 /**
@@ -42,17 +38,5 @@ public class MCRExternalStoreZipArchiveResolver extends MCRExternalStoreArchiveR
             zipFile.getEntries().asIterator().forEachRemaining(list::add);
         }
         return list.stream().map(MCRExternalStoreArchiveUtils::mapToFileInfo).toList();
-    }
-
-    @Override
-    public InputStream getInputStream(String path) throws IOException {
-        try (ZipFile zipFile = new ZipFile(getContent().getSeekableByteChannel())) {
-            final ZipArchiveEntry entry = zipFile.getEntry(path);
-            if (entry != null) {
-                return new ByteArrayInputStream(zipFile.getInputStream(entry).readAllBytes());
-            } else {
-                throw new MCRExternalStoreException("Path does not exist.");
-            }
-        }
     }
 }

@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -37,10 +36,8 @@ import org.mycore.datamodel.metadata.MCRObject;
 import org.mycore.datamodel.metadata.MCRObjectID;
 import org.mycore.externalstore.MCRExternalStore;
 import org.mycore.externalstore.MCRExternalStoreConstants;
-import org.mycore.externalstore.MCRExternalStoreFileContent;
 import org.mycore.externalstore.MCRExternalStoreService;
 import org.mycore.externalstore.MCRExternalStoreServiceUtils;
-import org.mycore.externalstore.archive.MCRExternalStoreArchiveResolverFactory;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.rest.dto.MCRDerivateInfoDto;
 import org.mycore.externalstore.rest.dto.MCRDerivateTitleDto;
@@ -48,7 +45,6 @@ import org.mycore.externalstore.rest.dto.MCRExternalStoreFileInfoDto;
 import org.mycore.externalstore.util.MCRExternalStoreUtils;
 import org.mycore.services.i18n.MCRTranslation;
 
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
@@ -72,35 +68,6 @@ public class MCRExternalStoreResourceHelper {
             public void write(OutputStream outputStream) throws IOException, WebApplicationException {
                 try (InputStream inputStream = MCRExternalStoreService.getInstance().getStore(derivateId)
                     .newInputStream(path)) {
-                    inputStream.transferTo(outputStream);
-                }
-            }
-        })
-            .header("Content-Disposition", "attachment; filename=" + fileName).build();
-    }
-
-    /**
-     * Returns an input stream response with file specified by archive path.
-     *
-     * @param derivateId derivate id
-     * @param archivePath archive path
-     * @param archiveEntryPath archive entry path
-     * @return response
-     */
-    protected static Response getArchiveFile(MCRObjectID derivateId, String archivePath, String archiveEntryPath) {
-        final Optional<String> resolverId = MCRExternalStoreArchiveResolverFactory.findResolverId(archivePath);
-        if (resolverId.isEmpty()) {
-            throw new BadRequestException("Cannot resolve archive");
-        }
-        final MCRExternalStore store = MCRExternalStoreService.getInstance().getStore(derivateId);
-        final MCRExternalStoreFileContent fileContent = new MCRExternalStoreFileContent(store.getStoreProvider(),
-            archivePath);
-        final String fileName = MCRExternalStoreUtils.getFileName(archiveEntryPath);
-        return Response.ok(new StreamingOutput() {
-            @Override
-            public void write(OutputStream outputStream) throws IOException, WebApplicationException {
-                try (InputStream inputStream = MCRExternalStoreArchiveResolverFactory
-                    .createResolver(resolverId.get(), fileContent).getInputStream(archiveEntryPath)) {
                     inputStream.transferTo(outputStream);
                 }
             }

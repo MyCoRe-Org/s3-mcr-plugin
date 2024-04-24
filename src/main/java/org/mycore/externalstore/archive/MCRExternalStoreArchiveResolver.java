@@ -19,7 +19,6 @@
 package org.mycore.externalstore.archive;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 
 import org.mycore.common.content.MCRSeekableChannelContent;
@@ -57,14 +56,5 @@ public abstract class MCRExternalStoreArchiveResolver {
      * @throws IOException if there is an exception while reading
      */
     public abstract List<MCRExternalStoreFileInfo> listFileInfos() throws IOException;
-
-    /**
-     * Opens and returns an {@link InputStream} for file specified by path.
-     *
-     * @param path the path
-     * @return input stream
-     * @throws IOException if an I/O error occurs
-     */
-    public abstract InputStream getInputStream(String path) throws IOException;
 
 }
