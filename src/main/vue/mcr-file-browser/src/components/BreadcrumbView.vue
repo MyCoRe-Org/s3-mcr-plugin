@@ -1,42 +1,60 @@
+<!--
+  - This file is part of ***  M y C o R e  ***
+  - See http://www.mycore.de/ for details.
+  -
+  - MyCoRe is free software: you can redistribute it and/or modify
+  - it under the terms of the GNU General Public License as published by
+  - the Free Software Foundation, either version 3 of the License, or
+  - (at your option) any later version.
+  -
+  - MyCoRe is distributed in the hope that it will be useful,
+  - but WITHOUT ANY WARRANTY; without even the implied warranty of
+  - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  - GNU General Public License for more details.
+  -
+  - You should have received a copy of the GNU General Public License
+  - along with MyCoRe.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
 <template>
   <div class="mcr-breadcrumb-view">
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
-        <li v-for="crumb in crumbs"
-            v-bind:key="crumb.id"
-            class="breadcrumb-item"
-            :class="{active: crumbs[crumbs.length-1]===crumb}"
-            :aria-current="{page: crumbs[crumbs.length-1]===crumb}">
-          <a href="#" v-if="crumbs[crumbs.length-1]!==crumb" v-on:click.prevent="crumbClicked(crumb)">{{ crumb.label }}</a>
+        <li v-for="crumb in crumbs" v-bind:key="crumb.id" class="breadcrumb-item"
+          :class="{active: crumbs[crumbs.length - 1] === crumb}"
+          :aria-current="(crumbs[crumbs.length - 1] === crumb) ? 'page': undefined">
+          <a href="#" v-if="crumbs[crumbs.length - 1] !== crumb"
+            v-on:click.prevent="crumbClicked(crumb)">{{ crumb.label }}</a>
           <template v-else>{{crumb.label}}</template>
         </li>
-
       </ol>
     </nav>
   </div>
 </template>
 
 <script lang="ts">
-import {Component, Prop, Vue} from 'vue-property-decorator';
-
-@Component
-export default class BreadcrumbView extends Vue {
-  @Prop() private crumbs!: Crumb[];
-
-  private crumbClicked(crumb: Crumb) {
-    this.$emit("crumbClicked", crumb);
-  }
-}
+import { Component, Prop, Vue } from 'vue-property-decorator';
 
 export interface Crumb {
   id: string;
   label: string;
 }
-</script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-  .breadcrumb {
-    margin-bottom: 0px;
+@Component
+export default class BreadcrumbView extends Vue {
+  @Prop({
+    required: true,
+  })
+  crumbs!: Crumb[];
+
+  crumbClicked(crumb: Crumb): void {
+    this.$emit('crumbClicked', crumb);
   }
+}
+
+</script>
+<style scoped>
+.breadcrumb {
+  margin-bottom: 0px;
+}
 </style>

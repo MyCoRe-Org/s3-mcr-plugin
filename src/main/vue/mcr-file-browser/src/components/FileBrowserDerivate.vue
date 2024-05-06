@@ -14,117 +14,121 @@
   -
   - You should have received a copy of the GNU General Public License
   - along with MyCoRe.  If not, see <http://www.gnu.org/licenses/>.
-  -->
+-->
 
 <template>
   <div>
-    <div v-if="this.currentDirectory!=null && this.currentDirectory.path!=='/' && this.currentDirectory.path!==''">
-      <BreadcrumbView :crumbs="this.crumbs" v-on:crumbClicked="crumbClickedBreadCrumbView"/>
+    <div>
+      <BreadcrumbView :crumbs="crumbs" v-on:crumbClicked="crumbClickedBreadCrumbView"/>
     </div>
     <div v-if="loading" class="text-center">
       <b-spinner label="Spinning"></b-spinner>
     </div>
-    <div v-if="currentDirectory!=null && !loading">
-      <FileTableView :fs="currentDirectory"
-                     v-on:backButtonClicked="backButtonClickedFileTableView"
-                     v-on:childClicked="childClickedFileTableView"
-                     v-on:childDownloadClicked="childDownloadClickedFileTableView"
-
-      />
-    </div>
+    <FileTableView v-else :fs="files" :isRoot="crumbs.length === 1"
+      v-on:backButtonClicked="backButtonClickedFileTableView"
+      v-on:fileClicked="fileClickedFileTableView"
+      v-on:fileDownloadClicked="fileDownloadClickedFileTableView"
+    />
   </div>
 </template>
 
 <script lang="ts">
-import {Component, Prop, Vue, Watch} from 'vue-property-decorator';
-import FileTableView from "@/components/FileTableView.vue";
-import {FileBase} from "@/model/FileBase";
-import BreadcrumbView, {Crumb} from "@/components/BreadcrumbView.vue";
-import {TokenResponse} from "@/model/TokenResponse";
-import {BSpinner} from "bootstrap-vue";
+import {
+  Component,
+  Prop,
+  Vue,
+  Watch,
+} from 'vue-property-decorator';
+import FileTableView from '@/components/FileTableView.vue';
+import BreadcrumbView, { Crumb } from '@/components/BreadcrumbView.vue';
+import {
+  FileInfo,
+  FileCapability,
+  FileFlag,
+  Token,
+} from '@/model';
+import { BSpinner } from 'bootstrap-vue';
+import { getDownloadToken, listDirectory } from '@/api/Client';
 
 @Component({
   components: {
     BreadcrumbView,
     FileTableView,
-    BSpinner
+    BSpinner,
   },
 })
 export default class FileBrowserDerivate extends Vue {
+  @Prop({
+    required: true,
+  })
+  objectId!: string;
 
-  @Prop() private objectId?: string;
-  @Prop() private baseUrl?: string;
-  @Prop() private derivateId?: string;
-  @Prop() private token?: TokenResponse;
-  @Prop() private title?: string;
+  @Prop({
+    required: true,
+  })
+  baseUrl!: string;
 
-  private breadcrumbChange() {
-    while (this.crumbs.length > 0) {
-      this.crumbs.pop();
-    }
+  @Prop({
+    required: true,
+  })
+  derivateId!: string;
 
-    if (this.currentRequestedPath == null) {
-      return;
-    }
+  @Prop({
+    required: true,
+  })
+  title!: string;
 
-    let until = [];
-    for (const crumbLabel of this.currentRequestedPath.split("/")) {
-      if (crumbLabel !== "") {
-        until.push(crumbLabel);
+  @Prop({
+    required: false,
+  })
+  token?: Token;
+
+  directoryPath = '';
+
+  files: FileInfo[] = [];
+
+  crumbs: Crumb[] = [];
+
+  loading = false;
+
+  breadcrumbChange(path: string): void {
+    this.crumbs = [];
+    const until = [];
+    const crumbLabels = path.split('/');
+    for (let i = 0; i < crumbLabels.length; i += 1) {
+      if (crumbLabels[i] !== '') {
+        until.push(crumbLabels[i]);
         this.crumbs.push({
-          id: until.join("/") + "/",
-          label: until.length == 1 && this.title != undefined ? this.title : crumbLabel
-        })
-      }
-    }
-  }
-
-  private directoryPath?: string | null = "";
-  private url: string | null = null;
-  private loading = false;
-  private currentDirectory: FileBase | null = null;
-  private currentRequestedPath: string | null = null;
-  private crumbs: Crumb[] = [];
-
-  childDownloadClickedFileTableView(child: FileBase): void {
-    if(child.capabilities.indexOf("DOWNLOAD")!==-1 && this.derivateId!=undefined && this.token!=undefined){
-      const resp = fetch(`${this.baseUrl}api/v2/fs/${this.objectId}/download/${btoa(this.derivateId)}/${btoa(child.path)}`, {
-        headers: {
-          "Authorization": `${this.token.token_type} ${this.token.access_token}`,
-        }
-      });
-
-      resp.then((result)=> {
-        result.text().then((dlToken)=>{
-          window.open(`${this.baseUrl}api/v2/fs/download/${dlToken}`);
+          id: `${until.join('/')}`,
+          label: until.length === 1 && this.title !== undefined ? this.title : crumbLabels[i],
         });
-      });
-    }
-  }
-
-  childClickedFileTableView(child: FileBase): void {
-    if (child.type == "DIRECTORY" || child.type == "BROWSABLE_FILE") {
-      this.directoryPath = child.path;
-      this.onDirectoryChange();
-    } else if (child.type == "FILE") {
-      if (this.derivateId != null) {
-        //window.open(`${this.baseUrl}api/v2/fs/${this.objectId}/download/${btoa(this.rootId)}/${btoa(path)}`);
       }
     }
   }
 
-  crumbClickedBreadCrumbView(crumb: Crumb): void {
-    this.directoryPath = crumb.id.substr((this.derivateId + "/").length);
-    this.onDirectoryChange();
-  }
-
-  backButtonClickedFileTableView(): void {
-    if (this.directoryPath != null) {
-      let parts = this.directoryPath.split("/");
-      parts.pop();
-      parts.pop();
-      this.directoryPath = parts.length > 0 ? parts.join("/") + "/" : null;
-      this.onDirectoryChange();
+  async onDirectoryChange(): Promise<void> {
+    this.loading = true;
+    this.files = [];
+    try {
+      if (this.directoryPath !== '') {
+        this.breadcrumbChange(`${this.derivateId}/${this.directoryPath}`);
+      } else {
+        this.breadcrumbChange(this.derivateId);
+      }
+      const resp = await listDirectory(
+        this.baseUrl,
+        this.objectId,
+        this.derivateId,
+        this.directoryPath,
+        this.token,
+      );
+      if (!resp.ok) {
+        console.error('Error while loading directory');
+        return;
+      }
+      this.files = await resp.json();
+    } finally {
+      this.loading = false;
     }
   }
 
@@ -139,61 +143,54 @@ export default class FileBrowserDerivate extends Vue {
     this.onDirectoryChange();
   }
 
-  @Watch("derivateId")
+  @Watch('derivateId')
   onDerivateChange(): void {
-    this.currentDirectory = null;
-    this.directoryPath = "";
+    this.files = [];
+    this.directoryPath = '';
     this.onDirectoryChange();
   }
 
-  private async onDirectoryChange() {
-    if (!this.token || this.derivateId == null || this.objectId == null || this.baseUrl == null) {
-      return;
-    }
-    try {
-      this.loading = true;
-      let loadingURL;
-      if (this.currentDirectory != null) {
-        // shortcut to disable requests to directories which are already present in json.
+  crumbClickedBreadCrumbView(crumb: Crumb): void {
+    this.directoryPath = crumb.id.substring((`${this.derivateId}/`).length);
+    this.onDirectoryChange();
+  }
 
-        let matchingFile = this.currentDirectory.children
-            .filter(child => this.directoryPath == child.path && child.children != null && child.children.length > 0);
-        if (matchingFile.length == 1) {
-          this.currentRequestedPath = this.derivateId + "/" + this.directoryPath;
-          this.breadcrumbChange();
-          this.currentDirectory = matchingFile[0];
-          this.loading = false;
-          return;
-        }
-      }
-      if (this.directoryPath != null) {
-        loadingURL = `${this.baseUrl}api/v2/fs/${this.objectId}/list/${btoa(this.derivateId)}/${btoa(this.directoryPath)}`;
-        this.currentRequestedPath = this.derivateId + "/" + this.directoryPath;
-        this.breadcrumbChange();
-      } else {
-        loadingURL = `${this.baseUrl}api/v2/fs/${this.objectId}/list/${btoa(this.derivateId)}`;
-        this.currentRequestedPath = this.derivateId + "/";
-        this.breadcrumbChange();
-      }
-
-
-      this.url = loadingURL;
-      let response = await fetch(this.url, {
-        headers: {
-          "Authorization": `${this.token.token_type} ${this.token.access_token}`,
-        },
-      });
-      if (this.url == loadingURL) {
-        this.currentDirectory = await response.json();
-      }
-    } finally {
-      this.loading = false;
+  backButtonClickedFileTableView(): void {
+    if (this.directoryPath != null) {
+      const parts = this.directoryPath.split('/');
+      parts.pop();
+      this.directoryPath = parts.length > 0 ? parts.join('/') : '';
+      this.onDirectoryChange();
     }
   }
 
+  async fileDownloadClickedFileTableView(file: FileInfo): Promise<void> {
+    if (file.capabilities.indexOf(FileCapability.DOWNLOAD) !== -1) {
+      const resp = await getDownloadToken(
+        this.baseUrl,
+        this.objectId,
+        this.derivateId,
+        this.getPath(file),
+        this.token,
+      );
+      if (!resp.ok) {
+        console.error('Error while downloading file');
+        return;
+      }
+      const downloadToken = await resp.text();
+      window.open(`${this.baseUrl}api/v2/es/download/${downloadToken}`);
+    }
+  }
+
+  getPath(file: FileInfo): string {
+    return (file.parentPath !== '') ? `${file.parentPath}/${file.name}` : file.name;
+  }
+
+  fileClickedFileTableView(file: FileInfo): void {
+    if (file.isDirectory || file.flags.indexOf(FileFlag.ARCHIVE) !== -1) {
+      this.directoryPath = this.getPath(file);
+      this.onDirectoryChange();
+    }
+  }
 }
 </script>
-
-<style>
-
-</style>

@@ -8,7 +8,7 @@ module.exports = {
         output: {
             libraryExport: 'default'
         }, performance: {
-            maxAssetSize: 512000, maxEntrypointSize: 512000, hints: "warning"
+            maxAssetSize: 5512000, maxEntrypointSize: 5512000, hints: "warning"
         }
     }
 }
