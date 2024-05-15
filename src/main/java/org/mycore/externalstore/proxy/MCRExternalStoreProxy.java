@@ -25,10 +25,13 @@ import java.util.Optional;
 
 import org.apache.http.client.utils.URIUtils;
 import org.mitre.dsmiley.httpproxy.ProxyServlet;
+import org.mycore.common.config.MCRConfiguration2;
 import org.mycore.datamodel.metadata.MCRObjectID;
 import org.mycore.externalstore.MCRExternalStoreService;
 
+import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.UnavailableException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -40,6 +43,16 @@ public class MCRExternalStoreProxy extends ProxyServlet {
     private static final long serialVersionUID = 1L;
 
     @Override
+    public void init(ServletConfig config) throws ServletException {
+        final boolean disabled
+            = MCRConfiguration2.getBoolean("MCR.ExternalStore.ProxyServlet.Disabled").orElseThrow();
+        if (disabled) {
+            throw new UnavailableException("ProxyServlet is disabled in configuration");
+        }
+        super.init(config);
+    }
+
+    @Override
     protected void initTarget() throws ServletException {
         // Nothing to do
     }
@@ -49,7 +62,8 @@ public class MCRExternalStoreProxy extends ProxyServlet {
         throws ServletException, IOException {
         final MCRObjectID derivateId = Optional.ofNullable(servletRequest.getPathInfo()).map(s -> s.split("/", 3)[1])
             .map(MCRObjectID::getInstance).orElseThrow();
-        final URL baseUrl = MCRExternalStoreService.getInstance().getStore(derivateId).getStoreProvider().getEndpointUrl();
+        final URL baseUrl
+            = MCRExternalStoreService.getInstance().getStore(derivateId).getStoreProvider().getEndpointUrl();
         servletRequest.setAttribute(ATTR_TARGET_URI, baseUrl.toString());
         servletRequest.setAttribute(ATTR_TARGET_HOST, URIUtils.extractHost(URI.create(baseUrl.toString())));
         super.service(servletRequest, servletResponse);

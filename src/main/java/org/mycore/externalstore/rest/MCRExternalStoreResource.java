@@ -75,7 +75,7 @@ public class MCRExternalStoreResource {
     private static final String CREATE_DERIVATE_PERMISSION = "create-derivate";
 
     private static final Optional<String> DOWNLOD_PROXY_URL
-        = MCRConfiguration2.getString(MCRExternalStoreConstants.PROPERTY_PREFIX + "DownloadProxyServlet.Url");
+        = MCRConfiguration2.getString(MCRExternalStoreConstants.PROPERTY_PREFIX + "ProxyServlet.Url");
 
     private static final MCRExternalStoreInfoIndex INDEX = MCRExternalStoreInfoIndexManager.getInfoIndex();
 

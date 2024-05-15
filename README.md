@@ -26,6 +26,9 @@ MCR.ExternalStore.InfoIndex.Class=org.mycore.externalstore.index.db.MCRExternalS
 
 MCR.ExternalStore.ArchiveResolver.zip.Download=true
 MCR.ExternalStore.ArchiveResolver.tar.Download=false
+
+MCR.ExternalStore.ProxyServlet.Disabled=true
+MCR.ExternalStore.ProxyServlet.Url=%MCR.baseurl%/esp
 ```
 ### Create key file
 You need to create the external-store-settings key with the CLI command:
@@ -54,15 +57,16 @@ Before a download, the integrity is checked and a download URL is generated.
 In the case of S3, this is a presigned url.
 It is possible that the provider endpoint cannot be reached publicly.
 In this case, a proxy can be activated when creating a store.
-A proxy servlet is available for this purpose. Download urls are adapted accordingly and routed through the servlet.
+A proxy servlet is available for this purpose.
+Download urls are adapted accordingly and routed through the servlet.
 Alternatively, an individual proxy url can be specified so that an independent proxy can also be used.
 
 ### Activate proxy servlet
-The servlet must be defined in web-fragments.xml.
-An example is provided for this.
-Also, the path must be configured for this, for example:
+The proxy servlet is deactivated by default and can be activated as follows.
+Alternatively, the path can also be adapted.
 ```
-MCR.ExternalStore.DownloadProxyServlet.Url=%MCR.baseurl%/esp
+MCR.ExternalStore.ProxyServlet.Disabled=false
+MCR.ExternalStore.ProxyServlet.Url=%MCR.baseurl%/esp
 ```
 
 

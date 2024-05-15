@@ -3,7 +3,6 @@
 >
     <name>externalstore_plugin</name>
 
-    <!--
     <servlet>
         <servlet-name>ExternalStoreProxyServlet</servlet-name>
         <servlet-class>org.mycore.externalstore.proxy.MCRExternalStoreProxy</servlet-class>
@@ -12,6 +11,5 @@
         <servlet-name>ExternalStoreProxyServlet</servlet-name>
         <url-pattern>/esp/*</url-pattern>
     </servlet-mapping>
-    -->
 
 </web-fragment>
