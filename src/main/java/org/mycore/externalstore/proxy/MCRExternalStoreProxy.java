@@ -37,11 +37,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * Proxies path to download url.
+ * Proxy servlet for external store.
  */
 public class MCRExternalStoreProxy extends ProxyServlet {
 
     private static final long serialVersionUID = 1L;
+
+    @Override
+    public String getServletInfo() {
+        return "Proxy servlet for external store";
+    }
 
     @Override
     public void init(ServletConfig config) throws ServletException {
