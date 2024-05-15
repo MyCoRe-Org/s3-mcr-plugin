@@ -21,13 +21,14 @@ package org.mycore.externalstore.proxy;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
-import java.util.Optional;
 
 import org.apache.http.client.utils.URIUtils;
 import org.mitre.dsmiley.httpproxy.ProxyServlet;
 import org.mycore.common.config.MCRConfiguration2;
 import org.mycore.datamodel.metadata.MCRObjectID;
 import org.mycore.externalstore.MCRExternalStoreService;
+import org.mycore.externalstore.exception.MCRExternalStoreException;
+import org.mycore.externalstore.exception.MCRExternalStoreNotExistsException;
 
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
@@ -60,13 +61,23 @@ public class MCRExternalStoreProxy extends ProxyServlet {
     @Override
     protected void service(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
         throws ServletException, IOException {
-        final MCRObjectID derivateId = Optional.ofNullable(servletRequest.getPathInfo()).map(s -> s.split("/", 3)[1])
-            .map(MCRObjectID::getInstance).orElseThrow();
-        final URL baseUrl
-            = MCRExternalStoreService.getInstance().getStore(derivateId).getStoreProvider().getEndpointUrl();
-        servletRequest.setAttribute(ATTR_TARGET_URI, baseUrl.toString());
-        servletRequest.setAttribute(ATTR_TARGET_HOST, URIUtils.extractHost(URI.create(baseUrl.toString())));
-        super.service(servletRequest, servletResponse);
+        final String[] pathSplit = servletRequest.getPathInfo().split("/", 3);
+        if (pathSplit.length < 3 || !MCRObjectID.isValid(pathSplit[1])) {
+            servletResponse.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+        final MCRObjectID derivateId = MCRObjectID.getInstance(pathSplit[1]);
+        try {
+            final URL baseUrl
+                = MCRExternalStoreService.getInstance().getStore(derivateId).getStoreProvider().getEndpointUrl();
+            servletRequest.setAttribute(ATTR_TARGET_URI, baseUrl.toString());
+            servletRequest.setAttribute(ATTR_TARGET_HOST, URIUtils.extractHost(URI.create(baseUrl.toString())));
+            super.service(servletRequest, servletResponse);
+        } catch (MCRExternalStoreNotExistsException e) {
+            servletResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
+        } catch (MCRExternalStoreException e) {
+            servletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
     }
 
     @Override

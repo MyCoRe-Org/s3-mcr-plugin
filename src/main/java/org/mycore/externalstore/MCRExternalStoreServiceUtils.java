@@ -31,6 +31,7 @@ import org.mycore.datamodel.metadata.MCRObject;
 import org.mycore.datamodel.metadata.MCRObjectID;
 import org.mycore.datamodel.niofs.MCRPath;
 import org.mycore.externalstore.exception.MCRExternalStoreException;
+import org.mycore.externalstore.exception.MCRExternalStoreNotExistsException;
 
 /**
  * This class provides utility methods for {@link MCRExternalStoreService}.
@@ -84,7 +85,7 @@ public class MCRExternalStoreServiceUtils {
         if (types.size() == 1) {
             return types.get(0).substring(MCRExternalStoreService.CLASSIFICATION_CATEGORY_ID_PREFIX.length());
         } else if (types.size() == 0) {
-            throw new MCRExternalStoreException("Type does not exist");
+            throw new MCRExternalStoreNotExistsException("Type does not exist");
         }
         throw new MCRExternalStoreException("Type is not unique");
     }
@@ -94,11 +95,11 @@ public class MCRExternalStoreServiceUtils {
      *
      * @param derivateId derivate id
      * @return store type
-     * @throws MCRExternalStoreException if store type cannot be determined
+     * @throws MCRExternalStoreNotExistsException if store type cannot be determined
      */
     public static String getStoreType(MCRObjectID derivateId) {
         if (!MCRMetadataManager.exists(derivateId)) {
-            throw new MCRExternalStoreException("Derivate does not exist");
+            throw new MCRExternalStoreNotExistsException("Derivate does not exist");
         }
         return getStoreType(MCRMetadataManager.retrieveMCRDerivate(derivateId));
     }
