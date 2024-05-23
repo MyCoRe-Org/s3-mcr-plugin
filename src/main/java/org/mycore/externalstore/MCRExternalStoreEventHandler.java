@@ -46,8 +46,7 @@ public class MCRExternalStoreEventHandler extends MCREventHandlerBase {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
-    private static final MCRExternalStoreInfoIndex STORE_INFO_INDEX
-        = MCRExternalStoreInfoIndexManager.getInfoIndex();
+    private static final MCRExternalStoreInfoIndex STORE_INFO_INDEX = MCRExternalStoreInfoIndexManager.getInfoIndex();
 
     @Override
     protected void handlePathCreated(MCREvent evt, Path path, BasicFileAttributes attrs) {

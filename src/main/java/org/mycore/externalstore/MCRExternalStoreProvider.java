@@ -20,6 +20,8 @@ package org.mycore.externalstore;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.channels.SeekableByteChannel;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +86,22 @@ public interface MCRExternalStoreProvider {
      * @throws IOException if an I/O error occurs
      */
     public List<MCRExternalStoreFileInfo> listFileInfosRecursive(String path) throws IOException;
+
+    /**
+     * Generates and returns url to download file.
+     *
+     * @param path path to file
+     * @return download url
+     */
+    public URL getDownloadUrl(String path);
+
+    /**
+     * Returns base url.
+     *
+     * @return base url
+     * @throws MalformedURLException if url is malformed
+     */
+    public URL getEndpointUrl() throws MalformedURLException;
 
     /**
      * Ensures that the provider is able to read.

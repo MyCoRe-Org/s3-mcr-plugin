@@ -38,7 +38,7 @@ import org.mycore.datamodel.metadata.MCRDerivate;
 import org.mycore.datamodel.metadata.MCRMetaClassification;
 import org.mycore.datamodel.metadata.MCRObjectID;
 import org.mycore.datamodel.niofs.MCRPath;
-import org.mycore.externalstore.exception.MCRExternalStoreException;
+import org.mycore.externalstore.exception.MCRExternalStoreNotExistsException;
 
 public class MCRExternalStoreServiceUtilsTest extends MCRStoreTestCase {
 
@@ -67,7 +67,7 @@ public class MCRExternalStoreServiceUtilsTest extends MCRStoreTestCase {
         assertFalse(MCRExternalStoreServiceUtils.checkPathIsFileInfosFile(path));
     }
 
-    @Test(expected = MCRExternalStoreException.class)
+    @Test(expected = MCRExternalStoreNotExistsException.class)
     public void testGetStoreType_noTypeExists() throws MCRPersistenceException, MCRAccessException {
         MCRDerivate derivate = createDerivate(Collections.emptyList());
         MCRExternalStoreServiceUtils.getStoreType(derivate);
@@ -75,11 +75,9 @@ public class MCRExternalStoreServiceUtilsTest extends MCRStoreTestCase {
 
     @Test
     public void testGetStoreType() throws MCRPersistenceException, MCRAccessException, MCRException {
-        MCRDerivate derivate
-            = createDerivate(Arrays
-                .asList(new MCRMetaClassification("classification", 0, null,
-                    MCRExternalStoreService.CLASSIFICATION_ID,
-                    MCRExternalStoreService.CLASSIFICATION_CATEGORY_ID_PREFIX + "test")));
+        MCRDerivate derivate = createDerivate(Arrays
+            .asList(new MCRMetaClassification("classification", 0, null, MCRExternalStoreService.CLASSIFICATION_ID,
+                MCRExternalStoreService.CLASSIFICATION_CATEGORY_ID_PREFIX + "test")));
         final String type = MCRExternalStoreServiceUtils.getStoreType(derivate);
         assertEquals("test", type);
     }

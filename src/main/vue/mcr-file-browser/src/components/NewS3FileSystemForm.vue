@@ -106,7 +106,7 @@
           {{ i18n.helpDirectory }}
         </b-tooltip>
       </div>
-      <div id="pta" class="form-check">
+      <div id="pta" class="form-check form-group">
         <input id="pathStyleAccess" v-model="bucketSettings.pathStyleAccess"
           class="form-check-input" type="checkbox">
         <label class="form-check-label" for="pathStyleAccess">
@@ -114,6 +114,27 @@
         </label>
         <b-tooltip target="pta" placement="left" triggers="focus hover">
           {{ i18n.helpPathStyleAccess }}
+        </b-tooltip>
+      </div>
+      <hr>
+      <div id="useDownloadProxy" class="form-check form-group">
+        <input id="useDownloadProxy" v-model="bucketSettings.useDownloadProxy"
+          class="form-check-input" type="checkbox">
+        <label class="form-check-label" for="useDownloadProxy">
+          {{ i18n.useDownloadProxy }}
+        </label>
+        <b-tooltip target="useDownloadProxy" placement="left" triggers="focus hover">
+          {{ i18n.helpUseDownloadProxy }}
+        </b-tooltip>
+      </div>
+      <div class="form-group">
+        <label for="customDownloadProxyUrl">
+          {{ i18n.customDownloadProxyUrl }}
+        </label>
+        <input id="customDownloadProxyUrl" v-model="bucketSettings.customDownloadProxyUrl"
+          class="form-control" :disabled="!bucketSettings.useDownloadProxy" type="text">
+        <b-tooltip target="customDownloadProxyUrl" placement="left" triggers="hover focus">
+          {{ i18n.helpCustomDownloadProxyUrl }}
         </b-tooltip>
       </div>
       <button class="btn btn-primary" type="submit" v-on:click="save()">
@@ -124,7 +145,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Vue, Watch } from 'vue-property-decorator';
 import { S3BucketSettings } from '@/model';
 import I18n from '@/i18n';
 import { BTooltip } from 'bootstrap-vue';
@@ -144,6 +165,8 @@ export default class NewS3FileSystemForm extends Vue {
     scretKey: '',
     pathStyleAccess: '',
     directory: '',
+    useDownloadProxy: '',
+    customDownloadProxyUrl: '',
     validationOk: '',
     validationEndpointFail: '',
     validationBucketFail: '',
@@ -157,6 +180,8 @@ export default class NewS3FileSystemForm extends Vue {
     helpProtocol: '',
     helpDirectory: '',
     helpPathStyleAccess: '',
+    helpUseDownloadProxy: '',
+    helpCustomDownloadProxyUrl: '',
   };
 
   bucketSettings: S3BucketSettings = {
@@ -166,7 +191,9 @@ export default class NewS3FileSystemForm extends Vue {
     secretKey: '',
     accessKey: '',
     pathStyleAccess: true,
-    directory: '',
+    directory: undefined,
+    useDownloadProxy: false,
+    customDownloadProxyUrl: undefined,
   }
 
   isValid = {
@@ -179,6 +206,11 @@ export default class NewS3FileSystemForm extends Vue {
 
   async created(): Promise<void> {
     await I18n.loadToObject(this.i18n);
+  }
+
+  @Watch('bucketSettings.useDownloadProxy')
+  useDownloadProxyChanged(): void {
+    this.bucketSettings.customDownloadProxyUrl = undefined;
   }
 
   save(): void {
@@ -212,7 +244,9 @@ export default class NewS3FileSystemForm extends Vue {
       secretKey: '',
       accessKey: '',
       pathStyleAccess: true,
-      directory: '',
+      directory: undefined,
+      useDownloadProxy: false,
+      customDownloadProxyUrl: undefined,
     };
   }
 }

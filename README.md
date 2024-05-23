@@ -26,6 +26,9 @@ MCR.ExternalStore.InfoIndex.Class=org.mycore.externalstore.index.db.MCRExternalS
 
 MCR.ExternalStore.ArchiveResolver.zip.Download=true
 MCR.ExternalStore.ArchiveResolver.tar.Download=false
+
+MCR.ExternalStore.ProxyServlet.Disabled=true
+MCR.ExternalStore.ProxyServlet.Url=%MCR.baseurl%/esp
 ```
 ### Create key file
 You need to create the external-store-settings key with the CLI command:
@@ -48,6 +51,24 @@ The relevant data is stored in associated derivate.
 Sensitive information, such as settings for communication with the provider of the store, is stored in encrypted form in provider_settings.json.
 Information about the files is stored in files.json.
 Information about archives is stored separately in archives.json because it depends on the configuration of the resolvers.
+
+## Download
+Before a download, the integrity is checked and a download URL is generated.
+In the case of S3, this is a presigned url.
+It is possible that the provider endpoint cannot be reached publicly.
+In this case, a proxy can be activated when creating a store.
+A proxy servlet is available for this purpose.
+Download urls are adapted accordingly and routed through the servlet.
+Alternatively, an individual proxy url can be specified so that an independent proxy can also be used.
+
+### Activate proxy servlet
+The proxy servlet is deactivated by default and can be activated as follows.
+Alternatively, the path can also be adapted.
+```
+MCR.ExternalStore.ProxyServlet.Disabled=false
+MCR.ExternalStore.ProxyServlet.Url=%MCR.baseurl%/esp
+```
+
 
 ## How can I test local?
 You can use minio for testing s3 with docker and docker-compose.

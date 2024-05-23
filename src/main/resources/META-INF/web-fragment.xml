@@ -1,0 +1,15 @@
+<web-fragment xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-fragment_3_0.xsd" version="3.0" metadata-complete="true"
+>
+    <name>externalstore_plugin</name>
+
+    <servlet>
+        <servlet-name>ExternalStoreProxyServlet</servlet-name>
+        <servlet-class>org.mycore.externalstore.proxy.MCRExternalStoreProxy</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ExternalStoreProxyServlet</servlet-name>
+        <url-pattern>/esp/*</url-pattern>
+    </servlet-mapping>
+
+</web-fragment>

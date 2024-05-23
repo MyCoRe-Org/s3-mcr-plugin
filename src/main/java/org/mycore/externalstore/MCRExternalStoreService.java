@@ -45,6 +45,7 @@ import org.mycore.datamodel.metadata.MCRObjectID;
 import org.mycore.datamodel.niofs.MCRPath;
 import org.mycore.externalstore.archive.MCRExternalStoreArchiveResolverFactory;
 import org.mycore.externalstore.exception.MCRExternalStoreException;
+import org.mycore.externalstore.exception.MCRExternalStoreNotExistsException;
 import org.mycore.externalstore.model.MCRExternalStoreArchiveInfo;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.model.MCRExternalStoreSettingsWrapper;
@@ -255,7 +256,7 @@ public class MCRExternalStoreService {
 
     private MCRExternalStore loadStore(MCRObjectID derivateId) {
         if (!MCRMetadataManager.exists(derivateId)) {
-            throw new MCRExternalStoreException("Store does not exist");
+            throw new MCRExternalStoreNotExistsException("Store does not exist");
         }
         final String storeType = MCRExternalStoreServiceUtils.getStoreType(derivateId);
         final Map<String, String> storeProviderSettings = loadStoreProviderSettings(derivateId);

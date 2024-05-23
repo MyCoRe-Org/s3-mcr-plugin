@@ -178,7 +178,7 @@ export default class FileBrowserDerivate extends Vue {
         return;
       }
       const downloadToken = await resp.text();
-      window.open(`${this.baseUrl}api/v2/es/download/${downloadToken}`);
+      window.open(downloadToken);
     }
   }
 

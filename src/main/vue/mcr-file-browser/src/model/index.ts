@@ -81,5 +81,7 @@ export type S3BucketSettings = {
   secretKey: string;
   protocol: string;
   bucket: string;
-  directory?: string
+  directory?: string;
+  useDownloadProxy: boolean;
+  customDownloadProxyUrl?: string;
 }

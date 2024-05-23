@@ -156,7 +156,7 @@ export default class FileBrowser extends Vue {
   baseUrl!: string;
 
   @Prop({
-    default: 'mir_mods_00000028',
+    default: 'mir_mods_00000005',
   })
   objectId!: string;
 
@@ -192,6 +192,8 @@ export default class FileBrowser extends Vue {
     pathStyleAccess: '',
     directory: '',
     protocol: '',
+    useDownloadProxy: '',
+    customDownloadProxyUrl: '',
   };
 
   async loadContents(): Promise<void> {

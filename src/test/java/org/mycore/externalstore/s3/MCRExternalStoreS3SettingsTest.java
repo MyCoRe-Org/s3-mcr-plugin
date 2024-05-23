@@ -81,7 +81,7 @@ public class MCRExternalStoreS3SettingsTest {
         assertFalse(settings.pathStyleAccess());
     }
 
-    private Map<String, String> getSettingsMap() {
+    protected static Map<String, String> getSettingsMap() {
         final Map<String, String> settingsMap = new HashMap<>();
         settingsMap.put(MCRExternalStoreS3Settings.ACCESS_KEY, ACCESS_KEY);
         settingsMap.put(MCRExternalStoreS3Settings.BUCKET, BUCKET);

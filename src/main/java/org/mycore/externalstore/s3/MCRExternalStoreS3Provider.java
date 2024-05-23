@@ -20,12 +20,16 @@ package org.mycore.externalstore.s3;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.channels.SeekableByteChannel;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
@@ -37,6 +41,7 @@ import org.mycore.externalstore.util.MCRExternalStoreUtils;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.HttpMethod;
 import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -44,6 +49,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.services.s3.model.HeadBucketRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
@@ -57,28 +63,24 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
+    private MCRExternalStoreS3Settings settings;
+
     private AmazonS3 client;
 
-    private String bucket;
-
-    private String directory;
-
     @Override
-    public void init(Map<String, String> settings) {
-        final MCRExternalStoreS3Settings s3Settings = MCRExternalStoreS3Settings.fromMap(settings);
-        client = createClient(s3Settings);
-        bucket = s3Settings.bucket();
-        directory = s3Settings.directory();
+    public void init(Map<String, String> settingsMap) {
+        settings = MCRExternalStoreS3Settings.fromMap(settingsMap);
+        client = createClient(settings);
     }
 
     @Override
     public InputStream newInputStream(String path) throws IOException {
-        return client.getObject(bucket, getKey(path)).getObjectContent();
+        return client.getObject(settings.bucket(), getKey(path)).getObjectContent();
     }
 
     @Override
     public SeekableByteChannel newByteChannel(String path) throws IOException {
-        return new MCRS3SeekableFileChannel(client, bucket, getKey(path));
+        return new MCRS3SeekableFileChannel(client, settings.bucket(), getKey(path));
     }
 
     @Override
@@ -97,7 +99,7 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
     @Override
     public List<MCRExternalStoreFileInfo> listFileInfos(String path) throws IOException {
         final ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request()
-            .withBucketName(bucket)
+            .withBucketName(settings.bucket())
             .withPrefix(getKey(path))
             .withDelimiter("/");
         return list(listObjectsV2Request);
@@ -106,7 +108,7 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
     @Override
     public List<MCRExternalStoreFileInfo> listFileInfosRecursive(String path) throws IOException {
         final ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request()
-            .withBucketName(bucket)
+            .withBucketName(settings.bucket())
             .withPrefix(getKey(path));
         final List<MCRExternalStoreFileInfo> result = list(listObjectsV2Request);
         final Set<MCRExternalStoreFileInfo> directories = new HashSet<MCRExternalStoreFileInfo>();
@@ -115,13 +117,27 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
         }
         result.addAll(directories);
         return result;
+    }
 
+    @Override
+    public URL getDownloadUrl(String path) {
+        final GeneratePresignedUrlRequest generatePresignedUrlRequest
+            = new GeneratePresignedUrlRequest(settings.bucket(), getKey(path)).withMethod(HttpMethod.GET)
+                .withExpiration(getExpirationDate());
+        return client.generatePresignedUrl(generatePresignedUrlRequest);
+    }
+
+    private Date getExpirationDate() {
+        final Date expiration = new Date();
+        final long expTimeMillis = expiration.getTime() + 1000 * 60 * 60;
+        expiration.setTime(expTimeMillis);
+        return expiration;
     }
 
     @Override
     public void ensureReadAccess() {
         try {
-            client.headBucket(new HeadBucketRequest(bucket));
+            client.headBucket(new HeadBucketRequest(settings.bucket()));
         } catch (AmazonServiceException amazonServiceException) {
             LOGGER.warn("Bucket head request failed", amazonServiceException);
             if (amazonServiceException.getStatusCode() == 403) {
@@ -129,6 +145,17 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
             }
             throw new MCRExternalStoreNoAccessException("Test failed.");
         }
+    }
+
+    @Override
+    public URL getEndpointUrl() throws MalformedURLException {
+        String url = null;
+        if (settings.pathStyleAccess()) {
+            url = settings.protocol() + "://" + settings.endpoint();
+        } else {
+            url = settings.protocol() + "://" + settings.bucket() + "." + settings.endpoint();
+        }
+        return new URL(url);
     }
 
     /**
@@ -192,19 +219,19 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
     }
 
     private ObjectMetadata getObjectMetadata(String path) {
-        return client.getObjectMetadata(bucket, getKey(path));
+        return client.getObjectMetadata(settings.bucket(), getKey(path));
     }
 
     private String getKey(String path) {
-        return (directory != null) ? MCRExternalStoreUtils.concatPaths(directory, path) : path;
+        return Optional.ofNullable(settings.directory())
+            .map(d -> MCRExternalStoreUtils.concatPaths(d, path)).orElse(path);
     }
 
     private String removeDirectory(String path) {
-        if (directory != null) {
-            final String fixedPath = path.substring(directory.length());
+        return Optional.ofNullable(settings.directory()).map(d -> {
+            final String fixedPath = path.substring(d.length());
             return (fixedPath.startsWith("/")) ? fixedPath.substring(1) : fixedPath;
-        }
-        return path;
+        }).orElse(path);
     }
 
 }
