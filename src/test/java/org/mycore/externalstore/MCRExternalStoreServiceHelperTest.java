@@ -30,6 +30,7 @@ import org.mycore.common.MCRPersistenceException;
 import org.mycore.common.MCRStoreTestCase;
 import org.mycore.datamodel.common.MCRActiveLinkException;
 import org.mycore.datamodel.metadata.MCRDerivate;
+import org.mycore.datamodel.metadata.MCRMetadataManager;
 import org.mycore.datamodel.metadata.MCRObject;
 import org.mycore.datamodel.metadata.MCRObjectID;
 
@@ -50,13 +51,12 @@ public class MCRExternalStoreServiceHelperTest extends MCRStoreTestCase {
     @Test
     public void testCreateDerivate() throws MCRPersistenceException, MCRAccessException, MCRActiveLinkException {
         MCRObjectID objectId = createObject();
-        final MCRDerivate derivate
-            = MCRExternalStoreServiceHelper.createDerivate(objectId, Collections.emptyList());
+        final MCRDerivate derivate = MCRExternalStoreServiceHelper.createDerivate(objectId, Collections.emptyList());
         assertEquals(objectId, derivate.getDerivate().getMetaLink().getXLinkHrefID());
     }
 
     protected static MCRObjectID createObject() throws MCRPersistenceException, MCRAccessException {
-        final MCRObjectID objectId = MCRObjectID.getNextFreeId("mycore_object");
+        final MCRObjectID objectId = MCRMetadataManager.getMCRObjectIDGenerator().getNextFreeId("mycore_object");
         final MCRObject object = new MCRObject();
         object.setSchema("noSchema");
         object.setId(objectId);

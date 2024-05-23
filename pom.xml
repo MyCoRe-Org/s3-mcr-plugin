@@ -22,13 +22,13 @@
   <parent>
     <groupId>org.mycore</groupId>
     <artifactId>mycore-parent</artifactId>
-    <version>51</version>
+    <version>53</version>
   </parent>
   <artifactId>mcr-external-store-plugin</artifactId>
-  <version>2022.06.1-SNAPSHOT</version>
+  <version>2023.06-SNAPSHOT</version>
   <properties>
     <aws.version>1.12.651</aws.version>
-    <mycore.version>2022.06.3-SNAPSHOT</mycore.version>
+    <mycore.version>2023.06.2-SNAPSHOT</mycore.version>
     <node.version>v16.10.0</node.version>
     <yarn.version>v1.22.10</yarn.version>
   </properties>
@@ -136,6 +136,48 @@
       </plugin>
     </plugins>
   </build>
+  <repositories>
+    <repository>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>central</id>
+      <name>Central Repository</name>
+      <url>https://repo.maven.apache.org/maven2</url>
+    </repository>
+    <repository>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <id>ossrhs01</id>
+      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+    </repository>
+    <repository>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </repository>
+  </repositories>
+  <pluginRepositories>
+    <pluginRepository>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <id>ossrh</id>
+      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+    </pluginRepository>
+  </pluginRepositories>
   <dependencies>
     <dependency>
       <groupId>com.amazonaws</groupId>
@@ -180,6 +222,10 @@
       <groupId>org.mycore</groupId>
       <artifactId>mycore-base</artifactId>
       <type>test-jar</type>
+    </dependency>
+    <dependency>
+      <groupId>org.mycore</groupId>
+      <artifactId>mycore-jobqueue</artifactId>
     </dependency>
     <dependency>
       <groupId>org.webjars</groupId>

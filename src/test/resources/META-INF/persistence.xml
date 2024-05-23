@@ -7,6 +7,7 @@
     <!-- http://stackoverflow.com/questions/15026302/multiple-jars-single-persistence-unit-solution -->
     <mapping-file>META-INF/mycore-base-mappings.xml</mapping-file>
     <mapping-file>META-INF/mcr-external-store-plugin-mappings.xml</mapping-file>
+    <mapping-file>META-INF/mycore-jobqueue-mappings.xml</mapping-file>
     <properties>
       <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver" />
       <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:mycore" />

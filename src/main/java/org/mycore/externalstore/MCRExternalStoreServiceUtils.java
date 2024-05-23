@@ -57,7 +57,7 @@ public class MCRExternalStoreServiceUtils {
      */
     public static boolean checkExternalStoreClassification(MCRCategoryID categoryId) {
         return Objects.equals(MCRExternalStoreService.CLASSIFICATION_ID, categoryId.getRootID())
-            && categoryId.getID().startsWith(MCRExternalStoreService.CLASSIFICATION_CATEGORY_ID_PREFIX);
+            && categoryId.getId().startsWith(MCRExternalStoreService.CLASSIFICATION_CATEGORY_ID_PREFIX);
     }
 
     /**
@@ -80,8 +80,8 @@ public class MCRExternalStoreServiceUtils {
      * @throws MCRExternalStoreException if store type cannot be determined
      */
     public static String getStoreType(MCRDerivate derivate) {
-        List<String> types
-            = derivate.getDerivate().getClassifications().stream().map(MCRMetaClassification::getCategId).toList();
+        List<String> types = derivate.getDerivate().getClassifications().stream().map(MCRMetaClassification::getCategId)
+            .toList();
         if (types.size() == 1) {
             return types.get(0).substring(MCRExternalStoreService.CLASSIFICATION_CATEGORY_ID_PREFIX.length());
         } else if (types.size() == 0) {

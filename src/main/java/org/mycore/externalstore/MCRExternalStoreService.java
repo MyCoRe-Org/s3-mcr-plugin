@@ -51,6 +51,7 @@ import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.model.MCRExternalStoreSettingsWrapper;
 import org.mycore.services.queuedjob.MCRJob;
 import org.mycore.services.queuedjob.MCRJobQueue;
+import org.mycore.services.queuedjob.MCRJobQueueManager;
 
 /**
  * This service manages stores and can store and provide info about anyone.
@@ -88,8 +89,8 @@ public class MCRExternalStoreService {
 
     private static final MCRCache<String, MCRExternalStore> STORE_CACHE = new MCRCache<>(100, "MCRExternalStore cache");
 
-    private static final MCRJobQueue CREATE_STORE_INFO_QUEUE = MCRJobQueue
-        .getInstance(MCRExternalStoreCreateInfoJobAction.class);
+    private static final MCRJobQueue CREATE_STORE_INFO_QUEUE = MCRJobQueueManager.getInstance()
+        .getJobQueue(MCRExternalStoreCreateInfoJobAction.class);
 
     private MCRExternalStoreService() {
     }
