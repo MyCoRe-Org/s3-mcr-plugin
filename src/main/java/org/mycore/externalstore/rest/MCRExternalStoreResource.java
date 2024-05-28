@@ -23,6 +23,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -253,7 +254,7 @@ public class MCRExternalStoreResource {
     }
 
     private String createProxyDownloadUrl(String proxy, URL downloadUrl) {
-        return String.format("%s%s?%s", proxy, downloadUrl.getPath(), downloadUrl.getQuery());
+        return String.format(Locale.ROOT, "%s%s?%s", proxy, downloadUrl.getPath(), downloadUrl.getQuery());
     }
 
     private void ensureAllowedFileSize(MCRExternalStoreFileInfo fileInfo) {
