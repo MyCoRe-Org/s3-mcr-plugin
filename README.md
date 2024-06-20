@@ -44,7 +44,7 @@ If not you can take a look at the file **src/main/resources/xsl/metadata/extende
 
 
 ### Derivate types
-You need to add `derivate_types:extension_<type>` to the derivate_types classification, for s3 buckets it is `derivate_types:extension_s3`.
+You need to add `derivate_types:external_store_<type>` to the derivate_types classification, for s3 buckets it is `derivate_types:external_store_s3`.
 
 ## How are settings and information saved?
 The relevant data is stored in associated derivate.
