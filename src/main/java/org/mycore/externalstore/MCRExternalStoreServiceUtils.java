@@ -125,9 +125,6 @@ public class MCRExternalStoreServiceUtils {
     }
 
     private static boolean checkFileName(Path file, String fileName) {
-        if (!(file instanceof MCRPath)) {
-            return false;
-        }
-        return Objects.equals(fileName, file.getFileName().toString());
+        return file instanceof MCRPath && Objects.equals(fileName, file.getFileName().toString());
     }
 }

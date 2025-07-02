@@ -84,7 +84,7 @@ public class MCRExternalStoreArchiveResolverFactory {
      * @return resolver id
      */
     public static Optional<String> findResolverId(String path) {
-        return MCRExternalStoreArchiveResolverFactory.listAvailableSuffixes().stream().filter(path::endsWith).findAny();
+        return listAvailableSuffixes().stream().filter(path::endsWith).findAny();
     }
 
     private static List<String> listAvailableSuffixes() {
