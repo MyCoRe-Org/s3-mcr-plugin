@@ -18,14 +18,14 @@
 
 package org.mycore.externalstore.exception;
 
+import java.io.Serial;
+
 /**
  * Indicates a file name collision.
  */
 public class MCRExternalStoreFileNameCollisionException extends MCRExternalStoreException {
 
-    /**
-     *
-     */
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

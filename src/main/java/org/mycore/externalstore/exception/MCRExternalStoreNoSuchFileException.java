@@ -18,11 +18,14 @@
 
 package org.mycore.externalstore.exception;
 
+import java.io.Serial;
+
 /**
  * Indicates that a file does not exist.
  */
 public class MCRExternalStoreNoSuchFileException extends MCRExternalStoreException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

@@ -140,7 +140,7 @@ public class MCRExternalStoreEventHandler extends MCREventHandlerBase {
 
     private static boolean checkDerivateClassification(MCRDerivate derivate) {
         return derivate.getDerivate().getClassifications().stream()
-            .anyMatch(c -> MCRExternalStoreServiceUtils.checkExternalStoreClassification(c));
+            .anyMatch(MCRExternalStoreServiceUtils::checkExternalStoreClassification);
     }
 
 }

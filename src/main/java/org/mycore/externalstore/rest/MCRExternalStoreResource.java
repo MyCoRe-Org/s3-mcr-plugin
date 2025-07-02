@@ -231,7 +231,7 @@ public class MCRExternalStoreResource {
             storeArchiveChecksum = MCRExternalStoreService.getInstance().getStore(derivateId)
                 .getFileInfo(fileInfo.getAbsolutePath()).checksum();
         } catch (IOException e) {
-            throw new InternalServerErrorException("Detected integrity violation");
+            throw new InternalServerErrorException("Detected integrity violation", e);
         }
         if (!Objects.equals(fileInfo.checksum(), storeArchiveChecksum)) {
             throw new InternalServerErrorException("Detected integrity violation");

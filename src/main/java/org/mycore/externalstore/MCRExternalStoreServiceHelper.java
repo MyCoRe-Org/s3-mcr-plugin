@@ -113,7 +113,7 @@ public class MCRExternalStoreServiceHelper {
                 .peek(a -> a.flags().add(MCRExternalStoreFileInfo.FileFlag.ARCHIVE_ENTRY)).toList();
             return new MCRExternalStoreArchiveInfo(fileInfo.getAbsolutePath(), fileInfos);
         } catch (IOException e) {
-            throw new MCRExternalStoreException("error while resolving archive");
+            throw new MCRExternalStoreException("error while resolving archive", e);
         }
     }
 

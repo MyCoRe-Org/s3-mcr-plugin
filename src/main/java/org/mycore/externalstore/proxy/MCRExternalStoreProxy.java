@@ -19,6 +19,7 @@
 package org.mycore.externalstore.proxy;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -42,6 +43,7 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class MCRExternalStoreProxy extends ProxyServlet {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Override

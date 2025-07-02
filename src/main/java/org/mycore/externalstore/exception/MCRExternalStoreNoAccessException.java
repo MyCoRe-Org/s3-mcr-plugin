@@ -18,11 +18,14 @@
 
 package org.mycore.externalstore.exception;
 
+import java.io.Serial;
+
 /**
  * Indicates that no access to a store is possible.
  */
 public class MCRExternalStoreNoAccessException extends MCRExternalStoreException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
@@ -30,8 +33,8 @@ public class MCRExternalStoreNoAccessException extends MCRExternalStoreException
      *
      * @param message the message
      */
-    public MCRExternalStoreNoAccessException(String message) {
-        super(message);
+    public MCRExternalStoreNoAccessException(String message, Throwable cause) {
+        super(message, cause);
     }
 
 }

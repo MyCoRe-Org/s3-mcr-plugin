@@ -41,7 +41,7 @@ public interface MCRExternalStoreProvider {
      *
      * @param settingsMap settings map
      */
-    public void init(Map<String, String> settingsMap);
+    void init(Map<String, String> settingsMap);
 
     /**
      * Opens and returns a {@link SeekableByteChannel} for a path.
@@ -50,7 +50,7 @@ public interface MCRExternalStoreProvider {
      * @return byte channel
      * @throws IOException if am I/O error occurs
      */
-    public SeekableByteChannel newByteChannel(String path) throws IOException;
+    SeekableByteChannel newByteChannel(String path) throws IOException;
 
     /**
      * Opens and returns an {@link InputStream} for a path.
@@ -59,7 +59,7 @@ public interface MCRExternalStoreProvider {
      * @return input stream
      * @throws IOException if an I/O error occurs
      */
-    public InputStream newInputStream(String path) throws IOException;
+    InputStream newInputStream(String path) throws IOException;
 
     /**
      * Returns an {@link MCRExternalStoreFileInfo} for a path.
@@ -68,7 +68,7 @@ public interface MCRExternalStoreProvider {
      * @return file info
      * @throws IOException if an I/O error occurs
      */
-    public MCRExternalStoreFileInfo getFileInfo(String path) throws IOException;
+    MCRExternalStoreFileInfo getFileInfo(String path) throws IOException;
 
     /**
      * Returns a list over {@link MCRExternalStoreFileInfo} elements for a path.
@@ -77,7 +77,7 @@ public interface MCRExternalStoreProvider {
      * @return list of file info elements
      * @throws IOException if an I/O error occurs
      */
-    public List<MCRExternalStoreFileInfo> listFileInfos(String path) throws IOException;
+    List<MCRExternalStoreFileInfo> listFileInfos(String path) throws IOException;
 
     /**
      * Returns a list over {@link MCRExternalStoreFileInfo} elements for a path (recursive).
@@ -86,7 +86,7 @@ public interface MCRExternalStoreProvider {
      * @return list of all files or directories
      * @throws IOException if an I/O error occurs
      */
-    public List<MCRExternalStoreFileInfo> listFileInfosRecursive(String path) throws IOException;
+    List<MCRExternalStoreFileInfo> listFileInfosRecursive(String path) throws IOException;
 
     /**
      * Generates and returns url to download file.
@@ -94,7 +94,7 @@ public interface MCRExternalStoreProvider {
      * @param path path to file
      * @return download url
      */
-    public URL getDownloadUrl(String path);
+    URL getDownloadUrl(String path);
 
     /**
      * Returns base url.
@@ -102,13 +102,13 @@ public interface MCRExternalStoreProvider {
      * @return base url
      * @throws MalformedURLException if url is malformed
      */
-    public URL getEndpointUrl() throws MalformedURLException, URISyntaxException;
+    URL getEndpointUrl() throws MalformedURLException, URISyntaxException;
 
     /**
      * Ensures that the provider is able to read.
      *
      * @throws MCRExternalStoreNoAccessException if an access problem occurs
      */
-    public void ensureReadAccess();
+    void ensureReadAccess();
 
 }

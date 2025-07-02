@@ -39,7 +39,7 @@ public class MCRExternalStoreArchiveResolverFactory {
 
     private static final String CONFIG_PREFIX = "MCR.ExternalStore.ArchiveResolver.";
 
-    private static final Map<String, String> SUFFIX_MAP = new HashMap<String, String>();
+    private static final Map<String, String> SUFFIX_MAP = new HashMap<>();
 
     static {
         final Map<String, String> properties = MCRConfiguration2.getSubPropertiesMap(CONFIG_PREFIX);
@@ -49,7 +49,9 @@ public class MCRExternalStoreArchiveResolverFactory {
                     throw new MCRExternalStoreException("Suffix required for resolver: " + t);
                 });
             });
-        LOGGER.debug("Found {} configured archive resolver", SUFFIX_MAP.keySet().size());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Found {} configured archive resolver", SUFFIX_MAP.keySet().size());
+        }
     }
 
     /**
