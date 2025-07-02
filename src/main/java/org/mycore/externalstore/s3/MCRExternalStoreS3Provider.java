@@ -21,6 +21,8 @@ package org.mycore.externalstore.s3;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.SeekableByteChannel;
 import java.util.ArrayList;
@@ -148,14 +150,14 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
     }
 
     @Override
-    public URL getEndpointUrl() throws MalformedURLException {
+    public URL getEndpointUrl() throws MalformedURLException, URISyntaxException {
         String url = null;
         if (settings.pathStyleAccess()) {
             url = settings.protocol() + "://" + settings.endpoint();
         } else {
             url = settings.protocol() + "://" + settings.bucket() + "." + settings.endpoint();
         }
-        return new URL(url);
+        return new URI(url).toURL();
     }
 
     /**

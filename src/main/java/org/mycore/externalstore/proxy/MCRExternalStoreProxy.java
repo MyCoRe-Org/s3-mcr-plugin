@@ -20,6 +20,7 @@ package org.mycore.externalstore.proxy;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 import org.apache.hc.client5.http.utils.URIUtils;
@@ -80,7 +81,7 @@ public class MCRExternalStoreProxy extends ProxyServlet {
             super.service(servletRequest, servletResponse);
         } catch (MCRExternalStoreNotExistsException e) {
             servletResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
-        } catch (MCRExternalStoreException e) {
+        } catch (MCRExternalStoreException | URISyntaxException e) {
             servletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }

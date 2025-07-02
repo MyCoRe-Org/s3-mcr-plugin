@@ -59,25 +59,18 @@ public record MCRExternalStoreFileInfo(String name, String parentPath, boolean i
      */
     public static final class Builder {
 
-        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private final String parentPath;
 
-        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private final String name;
 
-        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private boolean isDirectory = false;
 
-        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private Long size;
 
-        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private Date lastModified;
 
-        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private String checksum;
 
-        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private Set<FileFlag> flags = new HashSet<FileFlag>();
 
         /**

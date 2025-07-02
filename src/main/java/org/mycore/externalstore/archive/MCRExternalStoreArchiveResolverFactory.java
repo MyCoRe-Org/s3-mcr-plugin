@@ -61,8 +61,7 @@ public class MCRExternalStoreArchiveResolverFactory {
      */
     public static MCRExternalStoreArchiveResolver createResolver(String resolverId, MCRSeekableChannelContent content) {
         final MCRExternalStoreArchiveResolver resolver = MCRConfiguration2
-            .<MCRExternalStoreArchiveResolver>getInstanceOf(CONFIG_PREFIX + resolverId + ".Class")
-            .orElseThrow();
+            .getInstanceOfOrThrow(MCRExternalStoreArchiveResolver.class, CONFIG_PREFIX + resolverId + ".Class");
         resolver.setContent(content);
         return resolver;
     }

@@ -63,7 +63,7 @@ public class MCRExternalStoreEventHandler extends MCREventHandlerBase {
         if (!MCRExternalStoreServiceUtils.checkPathIsFileInfosFile(path)) {
             return;
         }
-        final String derivateIdString = MCRPath.toMCRPath(path).getOwner();
+        final String derivateIdString = MCRPath.ofPath(path).getOwner();
         final MCRObjectID derivateId = MCRObjectID.getInstance(derivateIdString);
         final MCRDerivate derivate = MCRMetadataManager.retrieveMCRDerivate(derivateId);
         deleteFileInfosFromIndex(derivate);
@@ -106,7 +106,7 @@ public class MCRExternalStoreEventHandler extends MCREventHandlerBase {
     }
 
     private void handlePathCreatedUpdated(Path path) {
-        final String derivateIdString = MCRPath.toMCRPath(path).getOwner();
+        final String derivateIdString = MCRPath.ofPath(path).getOwner();
         final MCRObjectID derivateId = MCRObjectID.getInstance(derivateIdString);
         final MCRDerivate derivate = MCRMetadataManager.retrieveMCRDerivate(derivateId);
         if (!checkDerivateClassification(derivate)) {

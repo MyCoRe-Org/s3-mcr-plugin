@@ -21,6 +21,7 @@ package org.mycore.externalstore;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.SeekableByteChannel;
 import java.util.List;
@@ -101,7 +102,7 @@ public interface MCRExternalStoreProvider {
      * @return base url
      * @throws MalformedURLException if url is malformed
      */
-    public URL getEndpointUrl() throws MalformedURLException;
+    public URL getEndpointUrl() throws MalformedURLException, URISyntaxException;
 
     /**
      * Ensures that the provider is able to read.
