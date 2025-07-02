@@ -62,6 +62,18 @@
     </pluginManagement>
     <plugins>
       <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <useIncrementalCompilation>true</useIncrementalCompilation>
+          <compilerArgs>
+            <arg>${maven.compiler.arg}</arg>
+            <arg>-Xpkginfo:always</arg>
+          </compilerArgs>
+          <showWarnings>false</showWarnings>
+          <showDeprecation>false</showDeprecation>
+        </configuration>
+      </plugin>
+      <plugin>
         <artifactId>maven-shade-plugin</artifactId>
         <configuration>
           <artifactSet>
