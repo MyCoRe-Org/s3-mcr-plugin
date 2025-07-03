@@ -21,17 +21,17 @@
   <parent>
     <groupId>org.mycore</groupId>
     <artifactId>mycore-parent</artifactId>
-    <version>57</version>
+    <version>58-SNAPSHOT</version>
   </parent>
   <artifactId>mcr-external-store-plugin</artifactId>
-  <version>2024.06-SNAPSHOT</version>
+  <version>2025.06-SNAPSHOT</version>
   <properties>
     <aws.version>1.12.651</aws.version>
     <java.target.version>21</java.target.version>
     <maven.compiler.target>${java.target.version}</maven.compiler.target>
-    <mycore.version>2024.06.1-SNAPSHOT</mycore.version>
+    <mycore.version>2025.06.1-SNAPSHOT</mycore.version>
     <nodeVersion>${node.version}</nodeVersion>
-    <pmd.version>7.11.0</pmd.version>
+    <pmd.version>7.13.0</pmd.version>
     <yarnVersion>${yarn.version}</yarnVersion>
   </properties>
   <build>
