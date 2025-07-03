@@ -28,11 +28,11 @@
   <properties>
     <aws.version>1.12.651</aws.version>
     <java.target.version>21</java.target.version>
+    <maven.compiler.target>${java.target.version}</maven.compiler.target>
     <mycore.version>2024.06.1-SNAPSHOT</mycore.version>
     <nodeVersion>${node.version}</nodeVersion>
-    <yarnVersion>${yarn.version}</yarnVersion>
     <pmd.version>7.11.0</pmd.version>
-    <maven.compiler.target>${java.target.version}</maven.compiler.target>
+    <yarnVersion>${yarn.version}</yarnVersion>
   </properties>
   <build>
     <pluginManagement>
