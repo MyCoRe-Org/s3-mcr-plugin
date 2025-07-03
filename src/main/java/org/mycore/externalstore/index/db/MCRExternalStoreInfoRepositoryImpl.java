@@ -75,7 +75,7 @@ public class MCRExternalStoreInfoRepositoryImpl extends MCRExternalStoreInfoRepo
 
     @Override
     public void cleanByDerivateId(MCRObjectID derivateId) {
-        findByDerivateId(derivateId).ifPresent(s -> delete(s));
+        findByDerivateId(derivateId).ifPresent(this::delete);
     }
 
     @Override

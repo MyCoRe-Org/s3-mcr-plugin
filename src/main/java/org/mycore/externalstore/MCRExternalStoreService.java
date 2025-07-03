@@ -56,7 +56,7 @@ import org.mycore.services.queuedjob.MCRJobQueueManager;
 /**
  * This service manages stores and can store and provide info about anyone.
  */
-public class MCRExternalStoreService {
+public final class MCRExternalStoreService {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
@@ -65,29 +65,31 @@ public class MCRExternalStoreService {
     /**
      * Store provider settings filename.
      */
-    protected static final String STORE_PROVIDER_SETTINGS_FILENAME = "provider_settings.json";
+    public static final String STORE_PROVIDER_SETTINGS_FILENAME = "provider_settings.json";
 
     /**
      * File infos filename.
      */
-    protected static final String FILE_INFOS_FILENAME = "files.json";
+    public static final String FILE_INFOS_FILENAME = "files.json";
 
     /**
      * Archive infos filename.
      */
-    protected static final String ARCHIVE_INFOS_FILENAME = "archives.json";
+    public static final String ARCHIVE_INFOS_FILENAME = "archives.json";
 
     /**
      * Derivate types classification id.
      */
-    protected static String CLASSIFICATION_ID = "derivate_types";
+    public static final String CLASSIFICATION_ID = "derivate_types";
 
     /**
      * External store classification id prefix.
      */
-    protected static String CLASSIFICATION_CATEGORY_ID_PREFIX = "external_store_";
+    public static final String CLASSIFICATION_CATEGORY_ID_PREFIX = "external_store_";
 
     private static final MCRCache<String, MCRExternalStore> STORE_CACHE = new MCRCache<>(100, "MCRExternalStore cache");
+
+    private static final Object STORE_CACHE_LOCK = new Object();
 
     private static final MCRJobQueue CREATE_STORE_INFO_QUEUE = MCRJobQueueManager.getInstance()
         .getJobQueue(MCRExternalStoreCreateInfoJobAction.class);
@@ -152,7 +154,7 @@ public class MCRExternalStoreService {
      * @param storeProviderSettings map over store provider setting elements
      * @throws IOException if an I/O error occurs
      */
-    protected static void saveStoreProviderSettings(MCRObjectID derivateId, Map<String, String> storeProviderSettings)
+    public static void saveStoreProviderSettings(MCRObjectID derivateId, Map<String, String> storeProviderSettings)
         throws IOException {
         MCRExternalStoreSettingsWrapper wrapper;
         try {
@@ -177,7 +179,7 @@ public class MCRExternalStoreService {
      * @param derivateId derivate id
      * @throws IOException if an I/O error occurs
      */
-    protected static void createStoreInfo(MCRObjectID derivateId) throws IOException {
+    public static void createStoreInfo(MCRObjectID derivateId) throws IOException {
         final MCRExternalStoreProvider storeProvider = loadStoreProvider(derivateId);
         final List<MCRExternalStoreFileInfo> fileInfos = storeProvider.listFileInfosRecursive("");
         saveFileInfos(derivateId, fileInfos);
@@ -215,7 +217,7 @@ public class MCRExternalStoreService {
      * @param fileInfos list of file info elements
      * @throws IOException if an I/O error occurs
      */
-    protected static void saveFileInfos(MCRObjectID derivateId, List<MCRExternalStoreFileInfo> fileInfos)
+    public static void saveFileInfos(MCRObjectID derivateId, List<MCRExternalStoreFileInfo> fileInfos)
         throws IOException {
         final MCRPath path = MCRPath.getPath(derivateId.toString(), FILE_INFOS_FILENAME);
         MCRExternalStoreServiceHelper.saveFileInfos(path, fileInfos);
@@ -228,7 +230,7 @@ public class MCRExternalStoreService {
      * @param archiveInfos list over archive info elements
      * @throws IOException if an I/O error occurs
      */
-    protected static void saveArchiveInfos(MCRObjectID derivateId, List<MCRExternalStoreArchiveInfo> archiveInfos)
+    public static void saveArchiveInfos(MCRObjectID derivateId, List<MCRExternalStoreArchiveInfo> archiveInfos)
         throws IOException {
         final MCRPath path = MCRPath.getPath(derivateId.toString(), ARCHIVE_INFOS_FILENAME);
         MCRExternalStoreServiceHelper.saveArchiveInfos(path, archiveInfos);
@@ -242,17 +244,19 @@ public class MCRExternalStoreService {
      * @throws MCRExternalStoreException if an error occurs while loading store
      */
     public MCRExternalStore getStore(MCRObjectID derivateId) {
-        MCRExternalStore store = STORE_CACHE.get(derivateId.toString());
-        if (store == null) {
-            synchronized (STORE_CACHE) {
-                store = STORE_CACHE.get(derivateId.toString());
-                if (store == null) {
-                    store = loadStore(derivateId);
-                    STORE_CACHE.put(derivateId.toString(), store);
-                }
-            }
+        final String key = derivateId.toString();
+        MCRExternalStore store = STORE_CACHE.get(key);
+        if (store != null) {
+            return store;
         }
-        return store;
+        synchronized (STORE_CACHE_LOCK) {
+            store = STORE_CACHE.get(key);
+            if (store == null) {
+                store = loadStore(derivateId);
+                STORE_CACHE.put(key, store);
+            }
+            return store;
+        }
     }
 
     private MCRExternalStore loadStore(MCRObjectID derivateId) {
@@ -313,7 +317,7 @@ public class MCRExternalStoreService {
         STORE_CACHE.remove(derivateId.toString());
     }
 
-    private static class InstanceHolder {
+    private static final class InstanceHolder {
         private static final MCRExternalStoreService INSTANCE = new MCRExternalStoreService();
     }
 

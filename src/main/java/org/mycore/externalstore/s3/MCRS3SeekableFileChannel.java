@@ -49,7 +49,7 @@ public class MCRS3SeekableFileChannel implements SeekableByteChannel {
 
     private final String key;
 
-    private long position = 0;
+    private long position;
 
     private final ByteBuffer internalBuffer = ByteBuffer.allocate(BUFFER_SIZE);
 
@@ -87,12 +87,12 @@ public class MCRS3SeekableFileChannel implements SeekableByteChannel {
         final long left = left();
         final long bytesToRead = Math.min(left, remaining);
 
-        final long from = this.position;
-        final long to = this.position + bytesToRead;
+        final long from = position;
+        final long to = position + bytesToRead;
 
         final long startChunk = Math.floorDiv(from, BUFFER_SIZE);
         final long endChunk = Math.floorDiv(to, BUFFER_SIZE);
-        LOGGER.debug("Reading {} at pos {}", bytesToRead, this.position);
+        LOGGER.debug("Reading {} at pos {}", bytesToRead, position);
 
         long written = 0;
         for (long i = startChunk; i <= endChunk; i++) {
@@ -104,13 +104,13 @@ public class MCRS3SeekableFileChannel implements SeekableByteChannel {
 
             final long length = endInChunk - startInChunk;
             final byte[] bytes = new byte[(int) length];
-            this.internalBuffer.position((int) startInChunk);
-            this.internalBuffer.get(bytes);
+            internalBuffer.position((int) startInChunk);
+            internalBuffer.get(bytes);
             dst.put(bytes);
             written += bytes.length;
         }
 
-        this.position += written;
+        position += written;
 
         return (int) written;
     }
@@ -121,18 +121,20 @@ public class MCRS3SeekableFileChannel implements SeekableByteChannel {
         final long end = Math.min((chunck + 1) * BUFFER_SIZE, size);
         objectRequest.setRange(start, end - 1);
 
-        LOGGER.debug("Fill chunck {} with {} bytes", chunck, end - start);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Fill chunck {} with {} bytes", chunck, end - start);
+        }
 
-        final S3Object object = this.client.getObject(objectRequest);
+        final S3Object object = client.getObject(objectRequest);
         try (InputStream is = object.getObjectContent()) {
             final byte[] src = is.readAllBytes();
-            this.internalBuffer.rewind().put(src);
+            internalBuffer.rewind().put(src);
         }
         this.chunck = chunck;
     }
 
     private void ensureOpen() throws IOException {
-        if (!this.open) {
+        if (!open) {
             throw new IOException("Channel already closed!");
         }
     }
@@ -150,7 +152,7 @@ public class MCRS3SeekableFileChannel implements SeekableByteChannel {
     @Override
     public SeekableByteChannel position(long newPosition) throws IOException {
         LOGGER.debug("Set pos from {} to {}", position, newPosition);
-        this.position = newPosition;
+        position = newPosition;
         return this;
     }
 
@@ -171,7 +173,7 @@ public class MCRS3SeekableFileChannel implements SeekableByteChannel {
 
     @Override
     public void close() throws IOException {
-        this.open = false;
+        open = false;
     }
 
 }

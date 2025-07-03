@@ -31,7 +31,6 @@ public class MCRExternalStoreInfoIndexManager {
      * @return store info index
      */
     public static MCRExternalStoreInfoIndex getInfoIndex() {
-        return MCRConfiguration2.<MCRExternalStoreInfoIndex>getSingleInstanceOf("MCR.ExternalStore.InfoIndex.Class")
-            .orElseThrow();
+        return MCRConfiguration2.getSingleInstanceOfOrThrow(MCRExternalStoreInfoIndex.class, "MCR.ExternalStore.InfoIndex.Class");
     }
 }

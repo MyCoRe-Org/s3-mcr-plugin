@@ -80,7 +80,7 @@ public class MCRExternalStoreUtils {
      */
     public static List<String> getPaths(String path) {
         return Optional.of(path).filter(p -> !p.isEmpty()).map(p -> p.split("/")).map(List::of)
-            .orElseGet(() -> Collections.emptyList());
+            .orElseGet(Collections::emptyList);
     }
 
     /**
@@ -94,12 +94,12 @@ public class MCRExternalStoreUtils {
             return Collections.emptyList();
         }
         final List<String> paths = getPaths(path);
-        final List<MCRExternalStoreFileInfo> result = new ArrayList<MCRExternalStoreFileInfo>();
-        String currentPath = paths.get(0);
-        result.add(createDirectory(currentPath));
+        final List<MCRExternalStoreFileInfo> result = new ArrayList<>();
+        final StringBuilder currentPath = new StringBuilder(paths.get(0));
+        result.add(createDirectory(currentPath.toString()));
         for (int i = 1; i < paths.size(); i++) {
-            currentPath = currentPath + "/" + paths.get(i);
-            result.add(createDirectory(currentPath));
+            currentPath.append('/').append(paths.get(i));
+            result.add(createDirectory(currentPath.toString()));
         }
         return result;
     }

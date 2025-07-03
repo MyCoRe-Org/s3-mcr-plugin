@@ -10,7 +10,7 @@ import jakarta.persistence.EntityManager;
 /**
  * {@link MCRExternalStoreInfoRepository} implementation.
  */
-public class MCRExternalStoreFileInfoRepositoryImpl extends MCRExternalStoreFileInfoRepository {
+public class MCRExternalStoreFileInfoRepositoryImpl extends MCRBaseRepository<MCRExternalStoreFileInfoData> {
 
     @Override
     public Optional<MCRExternalStoreFileInfoData> find(long id) {

@@ -77,7 +77,7 @@ public class MCRExternalStoreFileInfoData {
     @ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)
     @CollectionTable(name = "MCRExternalStoreFile_Flag")
     @Column(name = "flag")
-    private Set<String> flags = new HashSet<String>();
+    private Set<String> flags = new HashSet<>();
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "store_info_id")

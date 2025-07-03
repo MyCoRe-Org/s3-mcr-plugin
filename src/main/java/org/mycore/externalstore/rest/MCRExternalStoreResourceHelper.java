@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -83,7 +83,8 @@ public class MCRExternalStoreResourceHelper {
      * @return file info dto
      */
     protected static MCRExternalStoreFileInfoDto toDto(MCRExternalStoreFileInfo fileInfo, boolean downloadable) {
-        final Set<MCRExternalStoreFileInfoDto.MCRFileCapability> capabilities = new HashSet<>();
+        final Set<MCRExternalStoreFileInfoDto.MCRFileCapability> capabilities
+            = EnumSet.noneOf(MCRExternalStoreFileInfoDto.MCRFileCapability.class);
         if (downloadable && !fileInfo.isDirectory() && fileInfo.size() != null
             && fileInfo.size() <= MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
             capabilities.add(MCRExternalStoreFileInfoDto.MCRFileCapability.DOWNLOAD);
@@ -120,9 +121,7 @@ public class MCRExternalStoreResourceHelper {
 
                 final MCRExternalStore store = MCRExternalStoreService.getInstance().getStore(der.getId());
                 final Map<String, String> metadataMap = canEdit ? store.getStoreSettings() : Collections.emptyMap();
-                final MCRDerivateInfoDto derivateInfo = new MCRDerivateInfoDto(der.getId().toString(), titles,
-                    metadataMap, canView, canDelete, canEdit);
-                return derivateInfo;
+                return new MCRDerivateInfoDto(der.getId().toString(), titles, metadataMap, canView, canDelete, canEdit);
             })
             .collect(Collectors.toList());
     }

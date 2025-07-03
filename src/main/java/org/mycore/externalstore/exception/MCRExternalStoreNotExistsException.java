@@ -18,6 +18,8 @@
 
 package org.mycore.externalstore.exception;
 
+import java.io.Serial;
+
 import org.mycore.common.MCRException;
 
 /**
@@ -25,6 +27,7 @@ import org.mycore.common.MCRException;
  */
 public class MCRExternalStoreNotExistsException extends MCRException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

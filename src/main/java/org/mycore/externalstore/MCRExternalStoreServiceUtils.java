@@ -68,7 +68,8 @@ public class MCRExternalStoreServiceUtils {
      */
     public static List<String> listExternalStoreDerivateIds(MCRObject object) {
         return object.getStructure().getDerivates().stream()
-            .filter(der -> der.getClassifications().stream().anyMatch(clazz -> checkExternalStoreClassification(clazz)))
+            .filter(der -> der.getClassifications().stream()
+                .anyMatch(MCRExternalStoreServiceUtils::checkExternalStoreClassification))
             .map(MCRMetaLink::getXLinkHref).toList();
     }
 
@@ -80,14 +81,15 @@ public class MCRExternalStoreServiceUtils {
      * @throws MCRExternalStoreException if store type cannot be determined
      */
     public static String getStoreType(MCRDerivate derivate) {
-        List<String> types = derivate.getDerivate().getClassifications().stream().map(MCRMetaClassification::getCategId)
-            .toList();
-        if (types.size() == 1) {
-            return types.get(0).substring(MCRExternalStoreService.CLASSIFICATION_CATEGORY_ID_PREFIX.length());
-        } else if (types.size() == 0) {
+        final List<String> types
+            = derivate.getDerivate().getClassifications().stream().map(MCRMetaClassification::getCategId).toList();
+        if (types.isEmpty()) {
             throw new MCRExternalStoreNotExistsException("Type does not exist");
+        } else if (types.size() > 1) {
+            throw new MCRExternalStoreException("Type is not unique");
+        } else {
+            return types.getFirst().substring(MCRExternalStoreService.CLASSIFICATION_CATEGORY_ID_PREFIX.length());
         }
-        throw new MCRExternalStoreException("Type is not unique");
     }
 
     /**

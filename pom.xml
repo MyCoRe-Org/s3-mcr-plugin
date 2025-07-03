@@ -24,13 +24,15 @@
     <version>57</version>
   </parent>
   <artifactId>mcr-external-store-plugin</artifactId>
-  <version>2023.06-SNAPSHOT</version>
+  <version>2024.06-SNAPSHOT</version>
   <properties>
     <aws.version>1.12.651</aws.version>
-    <java.target.version>17</java.target.version>
-    <mycore.version>2023.06.3-SNAPSHOT</mycore.version>
-    <node.version>v16.10.0</node.version>
-    <yarn.version>v1.22.10</yarn.version>
+    <java.target.version>21</java.target.version>
+    <maven.compiler.target>${java.target.version}</maven.compiler.target>
+    <mycore.version>2024.06.1-SNAPSHOT</mycore.version>
+    <nodeVersion>${node.version}</nodeVersion>
+    <pmd.version>7.11.0</pmd.version>
+    <yarnVersion>${yarn.version}</yarnVersion>
   </properties>
   <build>
     <pluginManagement>
@@ -59,6 +61,18 @@
       </plugins>
     </pluginManagement>
     <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <useIncrementalCompilation>true</useIncrementalCompilation>
+          <compilerArgs>
+            <arg>${maven.compiler.arg}</arg>
+            <arg>-Xpkginfo:always</arg>
+          </compilerArgs>
+          <showWarnings>false</showWarnings>
+          <showDeprecation>false</showDeprecation>
+        </configuration>
+      </plugin>
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
         <configuration>
@@ -98,8 +112,8 @@
         <groupId>com.github.eirslett</groupId>
         <artifactId>frontend-maven-plugin</artifactId>
         <configuration>
-          <nodeVersion>${node.version}</nodeVersion>
-          <yarnVersion>${yarn.version}</yarnVersion>
+          <nodeVersion>${nodeVersion}</nodeVersion>
+          <yarnVersion>${yarnVersion}</yarnVersion>
           <installDirectory>${settings.localRepository}/node-yarn-${node.version}-${yarn.version}</installDirectory>
         </configuration>
         <executions>
@@ -181,12 +195,12 @@
       <artifactId>commons-compress</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
+      <groupId>org.apache.httpcomponents.client5</groupId>
+      <artifactId>httpclient5</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpcore</artifactId>
+      <groupId>org.apache.httpcomponents.core5</groupId>
+      <artifactId>httpcore5</artifactId>
     </dependency>
     <dependency>
       <groupId>org.mitre.dsmiley.httpproxy</groupId>

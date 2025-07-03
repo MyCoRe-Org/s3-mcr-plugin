@@ -19,7 +19,7 @@
 package org.mycore.externalstore.model;
 
 import java.util.Date;
-import java.util.HashSet;
+import java.util.EnumSet;
 import java.util.Set;
 
 /**
@@ -59,26 +59,19 @@ public record MCRExternalStoreFileInfo(String name, String parentPath, boolean i
      */
     public static final class Builder {
 
-        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private final String parentPath;
 
-        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private final String name;
 
-        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
-        private boolean isDirectory = false;
+        private boolean isDirectory;
 
-        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private Long size;
 
-        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private Date lastModified;
 
-        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
         private String checksum;
 
-        @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
-        private Set<FileFlag> flags = new HashSet<FileFlag>();
+        private Set<FileFlag> flags = EnumSet.noneOf(FileFlag.class);
 
         /**
          * Constructs new builder with file name and empty parent path.
@@ -140,7 +133,9 @@ public record MCRExternalStoreFileInfo(String name, String parentPath, boolean i
          * @return builder instance
          */
         public Builder flags(Set<FileFlag> flags) {
-            this.flags = flags;
+            this.flags = (flags == null || flags.isEmpty())
+                ? EnumSet.noneOf(FileFlag.class)
+                : EnumSet.copyOf(flags);
             return this;
         }
 

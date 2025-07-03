@@ -18,11 +18,14 @@
 
 package org.mycore.externalstore.exception;
 
+import java.io.Serial;
+
 /**
  * Indicates an inconsistency in the index.
  */
 public class MCRExternalStoreIndexInconsistentException extends MCRExternalStoreException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

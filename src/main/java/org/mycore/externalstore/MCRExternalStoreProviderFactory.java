@@ -37,7 +37,7 @@ public class MCRExternalStoreProviderFactory {
     public static MCRExternalStoreProvider createStoreProvider(String storeType,
         Map<String, String> storeProviderSettings) {
         final MCRExternalStoreProvider provider
-            = MCRConfiguration2.<MCRExternalStoreProvider>getInstanceOf(getProperty(storeType)).orElseThrow();
+            = MCRConfiguration2.getInstanceOfOrThrow(MCRExternalStoreProvider.class, getProperty(storeType));
         provider.init(storeProviderSettings);
         return provider;
     }

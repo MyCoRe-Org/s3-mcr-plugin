@@ -24,12 +24,13 @@ public class MCRExternalStoreDbMapper {
      */
     public static MCRExternalStoreFileInfo toDomain(MCRExternalStoreFileInfoData fileInfoData) {
         final Set<MCRExternalStoreFileInfo.FileFlag> flags
-            = fileInfoData.getFlags().stream().map(f -> toDomain(f)).collect(Collectors.toSet());
+            = fileInfoData.getFlags().stream().map(MCRExternalStoreDbMapper::toDomain).collect(Collectors.toSet());
         final MCRExternalStoreFileInfo.Builder result
             = new MCRExternalStoreFileInfo.Builder(fileInfoData.getName(), fileInfoData.getParentPath())
                 .checksum(fileInfoData.getChecksum()).directory(fileInfoData.isDirectory()).size(fileInfoData.getSize())
                 .flags(flags);
-        Optional.ofNullable(fileInfoData.getLastModified()).map(d -> convertToDate(d)).ifPresent(result::lastModified);
+        Optional.ofNullable(fileInfoData.getLastModified()).map(MCRExternalStoreDbMapper::convertToDate)
+            .ifPresent(result::lastModified);
         return result.build();
     }
 
@@ -45,10 +46,11 @@ public class MCRExternalStoreDbMapper {
         data.setName(fileInfo.name());
         data.setChecksum(fileInfo.checksum());
         data.setDirectory(fileInfo.isDirectory());
-        Optional.ofNullable(fileInfo.lastModified()).map(d -> convertToLocalDateTime(d))
+        Optional.ofNullable(fileInfo.lastModified()).map(MCRExternalStoreDbMapper::convertToLocalDateTime)
             .ifPresent(data::setLastModified);
         data.setSize(fileInfo.size());
-        final Set<String> flags = fileInfo.flags().stream().map(f -> toData(f)).collect(Collectors.toSet());
+        final Set<String> flags
+            = fileInfo.flags().stream().map(MCRExternalStoreDbMapper::toData).collect(Collectors.toSet());
         data.setFlags(flags);
         return data;
     }

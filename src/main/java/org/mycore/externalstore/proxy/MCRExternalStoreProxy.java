@@ -19,10 +19,12 @@
 package org.mycore.externalstore.proxy;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
-import org.apache.http.client.utils.URIUtils;
+import org.apache.hc.client5.http.utils.URIUtils;
 import org.mitre.dsmiley.httpproxy.ProxyServlet;
 import org.mycore.common.config.MCRConfiguration2;
 import org.mycore.datamodel.metadata.MCRObjectID;
@@ -41,6 +43,7 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class MCRExternalStoreProxy extends ProxyServlet {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Override
@@ -80,7 +83,7 @@ public class MCRExternalStoreProxy extends ProxyServlet {
             super.service(servletRequest, servletResponse);
         } catch (MCRExternalStoreNotExistsException e) {
             servletResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
-        } catch (MCRExternalStoreException e) {
+        } catch (MCRExternalStoreException | URISyntaxException e) {
             servletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }

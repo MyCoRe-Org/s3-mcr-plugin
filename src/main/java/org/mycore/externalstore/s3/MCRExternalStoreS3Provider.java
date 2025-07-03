@@ -21,6 +21,8 @@ package org.mycore.externalstore.s3;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.SeekableByteChannel;
 import java.util.ArrayList;
@@ -111,7 +113,7 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
             .withBucketName(settings.bucket())
             .withPrefix(getKey(path));
         final List<MCRExternalStoreFileInfo> result = list(listObjectsV2Request);
-        final Set<MCRExternalStoreFileInfo> directories = new HashSet<MCRExternalStoreFileInfo>();
+        final Set<MCRExternalStoreFileInfo> directories = new HashSet<>();
         for (MCRExternalStoreFileInfo file : result) {
             directories.addAll(MCRExternalStoreUtils.getDirectories(file.parentPath()));
         }
@@ -141,21 +143,22 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
         } catch (AmazonServiceException amazonServiceException) {
             LOGGER.warn("Bucket head request failed", amazonServiceException);
             if (amazonServiceException.getStatusCode() == 403) {
-                throw new MCRExternalStoreNoAccessException(amazonServiceException.getErrorMessage());
+                throw new MCRExternalStoreNoAccessException(amazonServiceException.getErrorMessage(),
+                    amazonServiceException);
             }
-            throw new MCRExternalStoreNoAccessException("Test failed.");
+            throw new MCRExternalStoreNoAccessException("Test failed.", amazonServiceException);
         }
     }
 
     @Override
-    public URL getEndpointUrl() throws MalformedURLException {
-        String url = null;
+    public URL getEndpointUrl() throws MalformedURLException, URISyntaxException {
+        String url;
         if (settings.pathStyleAccess()) {
             url = settings.protocol() + "://" + settings.endpoint();
         } else {
             url = settings.protocol() + "://" + settings.bucket() + "." + settings.endpoint();
         }
-        return new URL(url);
+        return new URI(url).toURL();
     }
 
     /**
@@ -185,8 +188,8 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
                 listObjectsV2Request.setContinuationToken(listObjectsV2Result.getNextContinuationToken());
             }
             listObjectsV2Result = client.listObjectsV2(listObjectsV2Request);
-            listObjectsV2Result.getObjectSummaries().stream().map(s -> toFileInfo(s)).forEach(fileInfos::add);
-            listObjectsV2Result.getCommonPrefixes().stream().map(p -> toDirectoryInfo(p)).forEach(fileInfos::add);
+            listObjectsV2Result.getObjectSummaries().stream().map(this::toFileInfo).forEach(fileInfos::add);
+            listObjectsV2Result.getCommonPrefixes().stream().map(this::toDirectoryInfo).forEach(fileInfos::add);
         } while (listObjectsV2Result.isTruncated());
         return fileInfos;
     }
