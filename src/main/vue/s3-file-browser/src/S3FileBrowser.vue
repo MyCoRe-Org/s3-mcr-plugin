@@ -29,9 +29,9 @@
             v-if="current?.write || current?.delete"
             class="col-auto options"
           >
-            <b-dropdown variant="link" toggle-class="text-decoration-none">
+            <b-dropdown>
               <template #button-content>
-                <span class="fas fa-cog"></span><span> Aktionen</span>
+                <span class="fas fa-cog"></span><span>Aktionen</span>
               </template>
               <b-dropdown-item
                 v-if="canCreate"
@@ -87,26 +87,27 @@
     </div>
   </div>
 
-  <base-modal
-    v-if="current"
+  <b-modal
     id="modal-3"
-    :visible="showInfoModal"
+    v-model="showInfoModal"
     :title="i18n.displayInfo"
     hide-footer
     hide-backdrop
-    @cancel="showInfoModal = false"
+    @hide="showInfoModal = false"
   >
-    <dl v-for="(value, name) in current.metadata" :key="name">
-      <dt>{{ i18n[name] }}</dt>
-      <dd>{{ value }}</dd>
-    </dl>
-  </base-modal>
+    <template v-if="current">
+      <dl v-for="(value, name) in current.metadata" :key="name">
+        <dt>{{ i18n[name] }}</dt>
+        <dd>{{ value }}</dd>
+      </dl>
+    </template>
+  </b-modal>
 
-  <base-modal
+  <b-modal
     id="modal-1"
+    v-model="showAddBucketModal"
     :title="i18n.addBucket"
-    :visible="showAddBucketModal"
-    @cancel="showAddBucketModal = false"
+    @hide="showAddBucketModal = false"
   >
     <new-s3-file-system-form @save-bucket="saveBucket">
       <div v-if="showAddBucketError" class="alert alert-danger" role="alert">
@@ -114,13 +115,13 @@
         {{ addBucketErrorMessage }}
       </div>
     </new-s3-file-system-form>
-  </base-modal>
+  </b-modal>
 
-  <base-modal
+  <b-modal
     id="modal-2"
+    v-model="showDeleteBucketModal"
     :title="i18n.deleteBucket"
-    :visible="showDeleteBucketModal"
-    @cancel="showDeleteBucketModal = false"
+    @hide="showDeleteBucketModal = false"
   >
     <div v-if="showDeleteBucketError" class="alert alert-danger" role="alert">
       {{ i18n.deleteBucketError }}
@@ -130,25 +131,24 @@
     <button v-if="current" variant="danger" @click="removeBucket(current)">
       {{ i18n.deleteBucket }}
     </button>
-  </base-modal>
+  </b-modal>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, provide } from 'vue';
+import { ref, onMounted } from 'vue';
 import { DerivateInfo, S3BucketSettings } from './types';
 import { S3ApiClient } from './api/client';
 import { AuthStrategy } from '@jsr/mycore__js-common/auth';
-import { BaseModal } from '@mycore-org/vue-components';
 import NewS3FileSystemForm from './components/NewS3FileSystemForm.vue';
 import FileBrowserDerivate from './components/FileBrowserDerivate.vue';
+import { BDropdown, BDropdownItem, BModal } from 'bootstrap-vue-next';
+import I18n from './i18n';
 
 interface Props {
   baseUrl: string;
   objectId: string;
 }
 const props = defineProps<Props>();
-
-provide('baseUrl', props.baseUrl);
 
 const loaded = ref(true);
 const canCreate = ref(true);
@@ -225,20 +225,20 @@ const saveBucket = async (bucketSettings: S3BucketSettings): Promise<void> => {
   }
 };
 
-const authStrategy: AuthStrategy | undefined = import.meta.env.DEV
-  ? new (class implements AuthStrategy {
-      async getHeaders(): Promise<Record<string, string>> {
-        return {
-          Authorization: `Basic ${import.meta.env.VITE_APP_API_TOKEN}`,
-        };
-      }
-    })()
-  : undefined;
+const authStrategy: AuthStrategy | undefined = new (class
+  implements AuthStrategy
+{
+  async getHeaders(): Promise<Record<string, string>> {
+    return {
+      Authorization: `Basic YWRtaW5pc3RyYXRvcjphbGxlc3dpcmRndXQ=`,
+    };
+  }
+})();
 
 const client = new S3ApiClient(props.baseUrl, authStrategy);
 
 onMounted(async () => {
-  // TODO await I18n.loadToObject(this.i18n);
+  await I18n.loadToObject(i18n);
   await loadContents();
 });
 

@@ -19,12 +19,9 @@
           <option>http</option>
           <option>https</option>
         </select>
-        <simple-tooltip
-          target="protocol"
-          placement="left"
-          triggers="hover focus"
-          :title="i18n.helpProtocol"
-        />
+        <b-tooltip target="protocol" placement="left" triggers="hover focus">
+          {{ i18n.helpProtocol }}
+        </b-tooltip>
         <div
           v-if="!isValid.protocol.clean && !isValid.protocol.valid"
           class="invalid-feedback"
@@ -46,12 +43,9 @@
           class="form-control"
           type="text"
         />
-        <simple-tooltip
-          target="endpoint"
-          placement="left"
-          triggers="hover focus"
-          :title="i18n.helpEndpoint"
-        />
+        <b-tooltip target="endpoint" placement="left" triggers="hover focus">
+          {{ i18n.helpEndpoint }}
+        </b-tooltip>
         <div
           v-if="!isValid.endpoint.clean && !isValid.endpoint.valid"
           class="invalid-feedback"
@@ -73,12 +67,9 @@
           class="form-control"
           type="text"
         />
-        <simple-tooltip
-          target="bucket"
-          placement="left"
-          triggers="hover focus"
-          :title="i18n.helpBucket"
-        />
+        <b-tooltip target="bucket" placement="left" triggers="hover focus">
+          {{ i18n.helpBucket }}
+        </b-tooltip>
         <div
           v-if="!isValid.bucket.clean && !isValid.bucket.valid"
           class="invalid-feedback"
@@ -100,12 +91,9 @@
           class="form-control"
           type="text"
         />
-        <simple-tooltip
-          target="accessKey"
-          placement="left"
-          triggers="hover focus"
-          :title="i18n.helpAccessKey"
-        />
+        <b-tooltip target="accessKey" placement="left" triggers="hover focus">
+          {{ i18n.helpAccessKey }}
+        </b-tooltip>
         <div
           v-if="!isValid.accessKey.clean && !isValid.accessKey.valid"
           class="invalid-feedback"
@@ -124,13 +112,11 @@
           }"
           class="form-control"
           type="password"
+          autocomplete="false"
         />
-        <simple-tooltip
-          target="secretKey"
-          placement="left"
-          triggers="hover focus"
-          :title="i18n.helpSecretKey"
-        />
+        <b-tooltip target="secretKey" placement="left" triggers="hover focus">
+          {{ i18n.helpSecretKey }}
+        </b-tooltip>
         <div
           v-if="!isValid.secretKey.clean && !isValid.secretKey.valid"
           class="invalid-feedback"
@@ -148,12 +134,9 @@
           class="form-control"
           type="text"
         />
-        <simple-tooltip
-          target="directory"
-          placement="left"
-          triggers="hover focus"
-          :title="i18n.helpDirectory"
-        />
+        <b-tooltip target="directory" placement="left" triggers="hover focus">
+          {{ i18n.helpDirectory }}
+        </b-tooltip>
       </div>
       <div id="pta" class="form-check form-group">
         <input
@@ -165,15 +148,12 @@
         <label class="form-check-label" for="pathStyleAccess">
           {{ i18n.pathStyleAccess }}
         </label>
-        <simple-tooltip
-          target="pta"
-          placement="left"
-          triggers="focus hover"
-          :title="i18n.helpPathStyleAccess"
-        />
+        <b-tooltip target="pta" placement="left" triggers="focus hover">
+          {{ i18n.helpPathStyleAccess }}
+        </b-tooltip>
       </div>
       <hr />
-      <div id="useDownloadProxy" class="form-check form-group">
+      <div id="pta" class="form-check form-group">
         <input
           id="useDownloadProxy"
           v-model="bucketSettings.useDownloadProxy"
@@ -183,12 +163,13 @@
         <label class="form-check-label" for="useDownloadProxy">
           {{ i18n.useDownloadProxy }}
         </label>
-        <simple-tooltip
+        <b-tooltip
           target="useDownloadProxy"
           placement="left"
           triggers="focus hover"
-          :title="i18n.helpUseDownloadProxy"
-        />
+        >
+          {{ i18n.helpUseDownloadProxy }}
+        </b-tooltip>
       </div>
       <div class="form-group">
         <label for="customDownloadProxyUrl">
@@ -201,12 +182,13 @@
           :disabled="!bucketSettings.useDownloadProxy"
           type="text"
         />
-        <simple-tooltip
+        <b-tooltip
           target="customDownloadProxyUrl"
           placement="left"
           triggers="focus hover"
-          :title="i18n.helpCustomDownloadProxyUrl"
-        />
+        >
+          {{ i18n.helpCustomDownloadProxyUrl }}
+        </b-tooltip>
       </div>
       <button class="btn btn-primary" type="submit" @click="save()">
         {{ i18n.save }}
@@ -216,9 +198,10 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, watch } from 'vue';
+import { reactive, watch, onMounted } from 'vue';
 import { S3BucketSettings } from '@/types';
-import SimpleTooltip from './SimpleTooltip.vue';
+import { BTooltip } from 'bootstrap-vue-next';
+import I18n from '@/i18n';
 
 const emit = defineEmits(['saveBucket']);
 
@@ -228,7 +211,7 @@ const i18n: Record<string, string> = {
   endpoint: 'endpoint',
   bucket: 'bucket',
   accessKey: 'accessKey',
-  scretKey: 'scretKey',
+  secretKey: 'secretKey',
   pathStyleAccess: 'pathStyleAccess',
   directory: 'directory',
   useDownloadProxy: 'useDownloadProxy',
@@ -270,11 +253,9 @@ const isValid = reactive({
   accessKey: { clean: true, valid: false },
 });
 
-/*
 onMounted(async () => {
   await I18n.loadToObject(i18n);
 });
-*/
 
 const save = (): void => {
   isValid.endpoint.clean = false;

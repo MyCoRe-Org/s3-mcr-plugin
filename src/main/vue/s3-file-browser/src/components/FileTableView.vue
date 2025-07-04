@@ -71,19 +71,20 @@
       </template>
     </b-table>
 
-    <SimplePagination
+    <b-pagination
       v-model="currentPage"
       :per-page="perPage"
       :total-rows="fs.length"
     >
-    </SimplePagination>
+    </b-pagination>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { FileInfo } from '@/types';
-import { SimplePagination } from '@mycore-org/vue-components';
+import { BTable, BPagination } from 'bootstrap-vue-next';
+import I18n from '@/i18n';
 
 interface Props {
   fs: FileInfo[];
@@ -124,6 +125,10 @@ const fields = [
     sortable: true,
   },
 ];
+
+onMounted(async () => {
+  await I18n.loadToObject(i18n);
+});
 
 const fileClicked = (file: FileInfo): void => {
   emit('fileClicked', file);

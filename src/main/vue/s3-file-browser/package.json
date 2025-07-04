@@ -10,11 +10,8 @@
   },
   "dependencies": {
     "@jsr/mycore__js-common": "^0.0.7",
-    "@mycore-org/vue-components": "^0.1.5",
-    "@types/bootstrap": "^5.2.10",
-    "vue": "^3.5.13",
-    "vue-i18n": "^11.1.0",
-    "bootstrap": "^5.3.3"
+    "bootstrap-vue-next": "^0.30.3",
+    "vue": "^3.5.13"
   },
   "devDependencies": {
     "@popperjs/core": "^2.11.8",
