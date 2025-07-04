@@ -164,21 +164,21 @@ const showAddBucketModal = ref(false);
 const showInfoModal = ref(false);
 
 const i18n: Record<string, string> = {
-  addBucketError: 'addBucketError',
-  addBucket: 'addBucket',
-  deleteBucket: 'deleteBucket',
-  deleteBucketModal: 'deleteBucketModal',
-  headline: 'headline',
-  displayInfo: 'displayInfo',
-  endpoint: 'endpoint',
-  bucket: 'bucket',
-  accessKey: 'accessKey',
-  scretKey: 'scretKey',
-  pathStyleAccess: 'pathStyleAccess',
-  directory: 'directory',
-  protocol: 'protocol',
-  useDownloadProxy: 'useDownloadProxy',
-  customDownloadProxyUrl: 'customDownloadProxyUrl',
+  addBucketError: '',
+  addBucket: '',
+  deleteBucket: '',
+  deleteBucketModal: '',
+  headline: '',
+  displayInfo: '',
+  endpoint: '',
+  bucket: '',
+  accessKey: '',
+  scretKey: '',
+  pathStyleAccess: '',
+  directory: '',
+  protocol: '',
+  useDownloadProxy: '',
+  customDownloadProxyUrl: '',
 };
 
 const loadContents = async (): Promise<void> => {

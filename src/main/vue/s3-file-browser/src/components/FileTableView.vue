@@ -96,9 +96,9 @@ const perPage = ref(8);
 const currentPage = ref(1);
 
 const i18n: Record<string, string> = {
-  fileSize: 'fileSize',
-  fileDate: 'fileDate',
-  fileName: 'fileName',
+  fileSize: '',
+  fileDate: '',
+  fileName: '',
 };
 
 const emit = defineEmits([
