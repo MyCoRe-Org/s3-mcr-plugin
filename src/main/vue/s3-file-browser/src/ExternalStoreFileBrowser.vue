@@ -1,7 +1,9 @@
 <template>
   <!-- Loading bar -->
-  <div v-if="!loaded" class="mb-3">
-    <b-spinner label="Spinning"></b-spinner>
+  <div v-if="!loaded" class="d-flex justify-content-center mb-3">
+    <div class="spinner-border" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
   </div>
   <!-- Normal viewer-->
   <div v-else-if="derivateInfos.length > 0" class="mb-3">
@@ -92,15 +94,13 @@
     v-model="showInfoModal"
     :derivate-info="derivateInfo"
   />
-
   <new-s3-external-store-modal
     v-if="objectId"
     v-model="showAddS3ExternalStoreModal"
     :object-id="objectId"
     :client="client"
     @bucket-created="onBucketCreated"
-  ></new-s3-external-store-modal>
-
+  />
   <delete-external-store-modal
     v-if="objectId && derivateInfo"
     v-model="showDeleteExternalStoreModal"
@@ -108,7 +108,7 @@
     :derivate-id="derivateInfo.id"
     :client="client"
     @store-deleted="onStoreDeleted"
-  ></delete-external-store-modal>
+  />
 </template>
 
 <script setup lang="ts">
@@ -120,7 +120,7 @@ import NewS3ExternalStoreModal from './components/CreateS3ExternalStoreModal.vue
 import FileBrowserDerivate from './components/FileBrowserDerivate.vue';
 import S3ExternalStoreInfoModal from './components/InfoS3ExternalStoreModal.vue';
 import DeleteExternalStoreModal from './components/DeleteExternalStoreModal.vue';
-import { BDropdown, BDropdownItem, BSpinner } from 'bootstrap-vue-next';
+import { BDropdown, BDropdownItem } from 'bootstrap-vue-next';
 import I18n from './i18n';
 
 interface Props {

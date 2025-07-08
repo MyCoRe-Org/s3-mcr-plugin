@@ -1,15 +1,17 @@
 <template>
   <div>
     <div>
-      <BreadcrumbView
+      <breadcrumb-view
         :crumbs="crumbs"
         @crumb-clicked="crumbClickedBreadCrumbView"
       />
     </div>
-    <div v-if="loading" class="text-center">
-      <b-spinner label="Spinning"></b-spinner>
+    <div v-if="loading" class="d-flex justify-content-center">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
     </div>
-    <FileTableView
+    <file-table-view
       v-else
       :fs="files"
       :is-root="crumbs.length === 1"
@@ -26,7 +28,6 @@ import FileTableView from '@/components/FileTableView.vue';
 import BreadcrumbView, { Crumb } from '@/components/BreadcrumbView.vue';
 import { FileInfo, FileCapability, FileFlag } from '@/types';
 import { ApiClient } from '@/api/client';
-import { BSpinner } from 'bootstrap-vue-next';
 
 interface Props {
   baseUrl: string;

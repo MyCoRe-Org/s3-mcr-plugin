@@ -35,7 +35,6 @@ const i18n: Record<string, string> = {
   addBucket: '',
   deleteBucket: '',
   deleteBucketModal: '',
-  headline: '',
   displayInfo: '',
   endpoint: '',
   bucket: '',
