@@ -50,7 +50,9 @@ export class ApiClient {
     }
   }
 
-  public async getInfo(objectId: string): Promise<DerivateInformations> {
+  public async getDerivateInfo(
+    objectId: string
+  ): Promise<DerivateInformations> {
     try {
       const response = await fetch(
         `${this.baseUrl}api/v2/es/${objectId}/info`,

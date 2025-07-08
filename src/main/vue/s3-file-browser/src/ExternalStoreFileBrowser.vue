@@ -12,7 +12,7 @@
           <div class="col">
             <select
               v-if="derivateInfos.length > 1"
-              v-model="current"
+              v-model="derivateInfo"
               class="form-control"
             >
               <option
@@ -26,7 +26,7 @@
             <span v-else class="title">{{ getTitle(derivateInfos[0]) }}</span>
           </div>
           <div
-            v-if="current?.write || current?.delete"
+            v-if="derivateInfo?.write || derivateInfo?.delete"
             class="col-auto options"
           >
             <b-dropdown :aria-label="i18n.actions">
@@ -35,29 +35,29 @@
               </template>
               <b-dropdown-item
                 v-if="canCreate"
-                @click="showAddBucketModal = true"
+                @click="showAddS3ExternalStoreModal = true"
               >
                 {{ i18n.addBucket }}
               </b-dropdown-item>
               <b-dropdown-item
-                v-if="current.write"
+                v-if="derivateInfo.write"
                 @click="showInfoModal = true"
               >
                 {{ i18n.displayInfo }}
               </b-dropdown-item>
               <b-dropdown-item
-                v-if="current.write"
+                v-if="derivateInfo.write"
                 :href="
                   baseUrl +
                   'editor/editor-derivate.xed?derivateid=' +
-                  current.id
+                  derivateInfo.id
                 "
               >
                 {{ i18n.manageDerivate }}
               </b-dropdown-item>
               <b-dropdown-item
-                v-if="current.delete"
-                @click="showDeleteBucketModal = true"
+                v-if="derivateInfo.delete"
+                @click="showDeleteExternalStoreModal = true"
               >
                 {{ i18n.deleteBucket }}
               </b-dropdown-item>
@@ -67,65 +67,48 @@
       </div>
       <div class="card-body p-0">
         <file-browser-derivate
-          v-if="current !== undefined"
+          v-if="derivateInfo !== undefined"
           :base-url="baseUrl"
           :client="client"
           :object-id="objectId"
-          :derivate-id="current.id"
-          :title="getTitle(current)"
+          :derivate-id="derivateInfo.id"
+          :title="getTitle(derivateInfo)"
         />
       </div>
     </div>
   </div>
   <!-- creation dialog, without viewer -->
-  <div v-else-if="derivateInfos.length == 0 && canCreate">
+  <div v-else-if="derivateInfos.length === 0 && canCreate">
     <h3>{{ i18n.headline }}</h3>
     <div class="jumbotron text-center">
-      <a v-if="canCreate" @click="showAddBucketModal = true">
+      <a v-if="canCreate" @click="showAddS3ExternalStoreModal = true">
         {{ i18n.addBucket }}
       </a>
     </div>
   </div>
 
-  <b-modal
-    id="modal-3"
+  <s3-external-store-info-modal
+    v-if="derivateInfo"
     v-model="showInfoModal"
-    :title="i18n.displayInfo"
-    ok-only
-    hide-footer
-    hide-backdrop
-    @hide="showInfoModal = false"
-  >
-    <template v-if="current">
-      <dl v-for="(value, name) in current.metadata" :key="name">
-        <dt>{{ i18n[name] }}</dt>
-        <dd>{{ value }}</dd>
-      </dl>
-    </template>
-  </b-modal>
+    :derivate-info="derivateInfo"
+  />
 
   <new-s3-external-store-modal
-    v-model="showAddBucketModal"
+    v-if="objectId"
+    v-model="showAddS3ExternalStoreModal"
     :object-id="objectId"
     :client="client"
     @bucket-created="onBucketCreated"
   ></new-s3-external-store-modal>
 
-  <b-modal
-    id="modal-2"
-    v-model="showDeleteBucketModal"
-    :title="i18n.deleteBucket"
-    @hide="showDeleteBucketModal = false"
-  >
-    <div v-if="showDeleteBucketError" class="alert alert-danger" role="alert">
-      {{ i18n.deleteBucketError }}
-      {{ deleteErrorMessage }}
-    </div>
-    <p>{{ i18n.deleteBucketModal }}</p>
-    <button v-if="current" variant="danger" @click="removeBucket(current)">
-      {{ i18n.deleteBucket }}
-    </button>
-  </b-modal>
+  <delete-external-store-modal
+    v-if="objectId && derivateInfo"
+    v-model="showDeleteExternalStoreModal"
+    :object-id="objectId"
+    :derivate-id="derivateInfo.id"
+    :client="client"
+    @store-deleted="onStoreDeleted"
+  ></delete-external-store-modal>
 </template>
 
 <script setup lang="ts">
@@ -133,9 +116,11 @@ import { ref, onMounted } from 'vue';
 import { DerivateInfo } from './types';
 import { ApiClient } from './api/client';
 import { AuthStrategy } from '@jsr/mycore__js-common/auth';
-import NewS3ExternalStoreModal from './components/NewS3ExternalStoreModal.vue';
+import NewS3ExternalStoreModal from './components/CreateS3ExternalStoreModal.vue';
 import FileBrowserDerivate from './components/FileBrowserDerivate.vue';
-import { BDropdown, BDropdownItem, BModal, BSpinner } from 'bootstrap-vue-next';
+import S3ExternalStoreInfoModal from './components/InfoS3ExternalStoreModal.vue';
+import DeleteExternalStoreModal from './components/DeleteExternalStoreModal.vue';
+import { BDropdown, BDropdownItem, BSpinner } from 'bootstrap-vue-next';
 import I18n from './i18n';
 
 interface Props {
@@ -147,67 +132,18 @@ const props = defineProps<Props>();
 const loaded = ref(true);
 const canCreate = ref(true);
 const derivateInfos = ref<DerivateInfo[]>([]);
-const showDeleteBucketError = ref(false);
-const deleteErrorMessage = ref('');
-const current = ref<DerivateInfo>();
+const derivateInfo = ref<DerivateInfo>();
 
-const showDeleteBucketModal = ref(false);
-const showAddBucketModal = ref(false);
+const showDeleteExternalStoreModal = ref(false);
+const showAddS3ExternalStoreModal = ref(false);
 const showInfoModal = ref(false);
 
 const i18n: Record<string, string> = {
   actions: '',
   addBucket: '',
   deleteBucket: '',
-  deleteBucketModal: '',
   headline: '',
   displayInfo: '',
-  endpoint: '',
-  bucket: '',
-  accessKey: '',
-  scretKey: '',
-  pathStyleAccess: '',
-  directory: '',
-  protocol: '',
-  useDownloadProxy: '',
-  customDownloadProxyUrl: '',
-};
-
-const loadContents = async (): Promise<void> => {
-  loaded.value = false;
-  const newInfos = await client.getInfo(props.objectId);
-  while (derivateInfos.value.length > 0) {
-    derivateInfos.value.pop();
-  }
-  canCreate.value = newInfos.create;
-  newInfos.derivates
-    .filter(info => info.view)
-    .forEach(info => {
-      derivateInfos.value.push(info);
-    });
-
-  if (derivateInfos.value.length > 0) {
-    const [derivateInfo] = derivateInfos.value;
-    current.value = derivateInfo;
-  }
-  loaded.value = true;
-};
-
-const removeBucket = async (info: DerivateInfo): Promise<void> => {
-  showDeleteBucketError.value = false;
-  try {
-    await client.removeStore(props.objectId, info.id);
-    await loadContents();
-    showDeleteBucketModal.value = false;
-  } catch {
-    showDeleteBucketError.value = true;
-    deleteErrorMessage.value = 'Error while removing bucket';
-  }
-};
-
-const onBucketCreated = async () => {
-  showAddBucketModal.value = false;
-  await loadContents();
 };
 
 const authStrategy: AuthStrategy | undefined = new (class
@@ -222,10 +158,39 @@ const authStrategy: AuthStrategy | undefined = new (class
 
 const client = new ApiClient(props.baseUrl, authStrategy);
 
+const loadContents = async (): Promise<void> => {
+  loaded.value = false;
+  const newInfos = await client.getDerivateInfo(props.objectId);
+  while (derivateInfos.value.length > 0) {
+    derivateInfos.value.pop();
+  }
+  canCreate.value = newInfos.create;
+  newInfos.derivates
+    .filter(info => info.view)
+    .forEach(info => {
+      derivateInfos.value.push(info);
+    });
+
+  if (derivateInfos.value.length > 0) {
+    const [d] = derivateInfos.value;
+    derivateInfo.value = d;
+  }
+  loaded.value = true;
+};
+
+const onBucketCreated = async () => {
+  showAddS3ExternalStoreModal.value = false;
+  await loadContents();
+};
+
 onMounted(async () => {
   await I18n.loadToObject(i18n);
   await loadContents();
 });
+
+const onStoreDeleted = async () => {
+  await loadContents();
+};
 
 const getTitle = (info: DerivateInfo): string => {
   if (info.titles.length > 0) {
