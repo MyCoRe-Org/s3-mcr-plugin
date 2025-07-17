@@ -89,10 +89,12 @@
   <rule ref="category/java/codestyle.xml/FormalParameterNamingConventions"/>
   <rule ref="category/java/codestyle.xml/IdenticalCatchBranches"/>
   <rule ref="category/java/codestyle.xml/LambdaCanBeMethodReference"/>
-  <!-- TODO: Create PR to fix this rule -->
-  <!--
-  <rule ref="category/java/codestyle.xml/LinguisticNaming"/>
-  -->
+  <rule ref="category/java/codestyle.xml/LinguisticNaming">
+    <properties>
+      <!-- we use some setters as 'fluent api' -->
+      <property name="checkSetters" value="false"/>
+    </properties>
+  </rule>
   <rule ref="category/java/codestyle.xml/LocalVariableNamingConventions"/>
   <rule ref="category/java/codestyle.xml/MethodNamingConventions"/>
   <rule ref="category/java/codestyle.xml/NoPackage"/>
@@ -164,10 +166,7 @@
   -->
 
   <!-- Error Prone Rules -->
-  <!-- TODO: Create PR to fix this rule -->
-  <!--
   <rule ref="category/java/errorprone.xml/AssignmentInOperand"/>
-  -->
   <rule ref="category/java/errorprone.xml/AssignmentToNonFinalStatic"/>
   <rule ref="category/java/errorprone.xml/AvoidBranchingStatementAsLastInLoop"/>
   <rule ref="category/java/errorprone.xml/AvoidCatchingNPE"/>
@@ -203,10 +202,11 @@
   <rule ref="category/java/errorprone.xml/DoNotThrowExceptionInFinally"/>
   <rule ref="category/java/errorprone.xml/DontImportSun"/>
   <rule ref="category/java/errorprone.xml/DontUseFloatTypeForLoopIndices"/>
-  <!-- TODO: Create PR to fix this rule -->
-  <!--
-  <rule ref="category/java/errorprone.xml/EmptyCatchBlock"/>
-  -->
+  <rule ref="category/java/errorprone.xml/EmptyCatchBlock">
+    <properties>
+      <property name="allowCommentedBlocks" value="true" />
+    </properties>
+  </rule>
   <rule ref="category/java/errorprone.xml/EmptyFinalizer"/>
   <rule ref="category/java/errorprone.xml/EqualsNull"/>
   <rule ref="category/java/errorprone.xml/IdempotentOperations"/>
@@ -223,14 +223,8 @@
   <rule ref="category/java/errorprone.xml/NonCaseLabelInSwitch"/>
   <rule ref="category/java/errorprone.xml/NonSerializableClass"/>
   <rule ref="category/java/errorprone.xml/NonStaticInitializer"/>
-  <!-- TODO: Create PR to fix this rule -->
-  <!--
   <rule ref="category/java/errorprone.xml/OverrideBothEqualsAndHashcode"/>
-  -->
-  <!-- TODO: Create PR to fix this rule -->
-  <!--
   <rule ref="category/java/errorprone.xml/ProperCloneImplementation"/>
-  -->
   <!-- to be evaluated -->
   <!-- TODO: Create PR to fix this rule -->
   <!--

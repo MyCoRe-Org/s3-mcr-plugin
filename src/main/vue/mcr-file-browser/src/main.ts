@@ -1,8 +1,15 @@
-import Vue from 'vue';
-import FileBrowser from './App.vue';
+import { defineCustomElement } from 'vue';
+import { createBootstrap } from 'bootstrap-vue-next';
+import ExternalStorageViewer from './ExternalStorageViewer.vue';
+if (import.meta.env.DEV) {
+  import('bootstrap/dist/css/bootstrap.min.css');
+  import('font-awesome/css/font-awesome.min.css');
+}
 
-Vue.config.productionTip = false;
-
-new Vue({
-  render: (h) => h(FileBrowser),
-}).$mount('#app');
+const el = defineCustomElement(ExternalStorageViewer, {
+  configureApp(app) {
+    app.use(createBootstrap());
+  },
+  shadowRoot: false,
+});
+customElements.define('file-browser', el);

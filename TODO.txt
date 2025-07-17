@@ -1,0 +1,6 @@
+- checksum handling. save checksum type in storage information?
+  - display checksum type in esv
+- status processing. add proccessing feedback to esv when creating new link to storage
+- split esv into two components? (multi) storage viewer and add storage dialog?
+- refactor code
+- kill extended file browser and only add example to docs
