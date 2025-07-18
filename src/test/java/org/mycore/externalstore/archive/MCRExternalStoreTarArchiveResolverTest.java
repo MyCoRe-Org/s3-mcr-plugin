@@ -7,12 +7,11 @@ import java.nio.channels.SeekableByteChannel;
 import java.util.List;
 
 import org.apache.commons.compress.utils.SeekableInMemoryByteChannel;
+import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.mycore.common.MCRTestCase;
 import org.mycore.common.content.MCRURLContent;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
-
-import com.amazonaws.util.IOUtils;
 
 public class MCRExternalStoreTarArchiveResolverTest extends MCRTestCase {
 
