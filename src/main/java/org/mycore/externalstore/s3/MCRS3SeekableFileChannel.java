@@ -27,9 +27,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectAttributesRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.ObjectAttributes;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 
 /**
  * {@link SeekableByteChannel} implementation for s3 object.
@@ -69,9 +68,7 @@ public class MCRS3SeekableFileChannel implements SeekableByteChannel {
         this.key = key;
         LOGGER.debug(bucket);
         LOGGER.debug(key);
-        final GetObjectAttributesRequest request = GetObjectAttributesRequest.builder().bucket(bucket).key(key)
-            .objectAttributes(ObjectAttributes.OBJECT_SIZE).build();
-        size = client.getObjectAttributes(request).objectSize();
+        size = getContentLength(bucket, key);
         open = true;
     }
 
@@ -177,6 +174,12 @@ public class MCRS3SeekableFileChannel implements SeekableByteChannel {
     @Override
     public void close() throws IOException {
         open = false;
+    }
+
+    private long getContentLength(String bucket, String key) {
+        final HeadObjectRequest headObjectRequest
+            = HeadObjectRequest.builder().bucket(bucket).key(key).build();
+        return client.headObject(headObjectRequest).contentLength();
     }
 
 }

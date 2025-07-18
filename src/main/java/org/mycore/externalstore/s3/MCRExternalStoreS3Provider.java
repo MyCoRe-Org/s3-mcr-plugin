@@ -47,18 +47,16 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
-import software.amazon.awssdk.services.s3.model.GetObjectAttributesRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectAttributesResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
-import software.amazon.awssdk.services.s3.model.ObjectAttributes;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
-import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 /**
  * An {@link MCRExternalStoreProvider} for s3 bucket.
@@ -79,8 +77,10 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
 
     @Override
     public InputStream newInputStream(String path) throws IOException {
-        final GetObjectRequest objectRequest
-            = GetObjectRequest.builder().bucket(settings.bucket()).key(getKey(path)).build();
+        final GetObjectRequest objectRequest = GetObjectRequest.builder()
+            .bucket(settings.bucket())
+            .key(getKey(path))
+            .build();
         return client.getObject(objectRequest);
     }
 
@@ -91,28 +91,33 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
 
     @Override
     public MCRExternalStoreFileInfo getFileInfo(String path) {
-        final GetObjectAttributesResponse attributes = getObjectAttributes(path);
+        final HeadObjectResponse object = headObject(path);
         final String parentPath = MCRExternalStoreUtils.getParentPath(path);
         final String name = MCRExternalStoreUtils.getFileName(path);
         return new MCRExternalStoreFileInfo.Builder(name, parentPath)
-            .checksum(attributes.eTag())
-            .size(attributes.objectSize())
-            .lastModified(Date.from(attributes.lastModified()))
+            .checksum(object.eTag().replace("\"", ""))
+            .size(object.contentLength())
+            .lastModified(Date.from(object.lastModified()))
             .directory(false)
             .build();
     }
 
     @Override
     public List<MCRExternalStoreFileInfo> listFileInfos(String path) throws IOException {
-        final ListObjectsV2Request listObjectsV2Request
-            = ListObjectsV2Request.builder().bucket(settings.bucket()).prefix(getKey(path)).delimiter("/").build();
+        final ListObjectsV2Request listObjectsV2Request = ListObjectsV2Request.builder()
+            .bucket(settings.bucket())
+            .prefix(getKey(path))
+            .delimiter("/")
+            .build();
         return list(listObjectsV2Request);
     }
 
     @Override
     public List<MCRExternalStoreFileInfo> listFileInfosRecursive(String path) throws IOException {
-        final ListObjectsV2Request listObjectsV2Request
-            = ListObjectsV2Request.builder().bucket(settings.bucket()).prefix(getKey(path)).build();
+        final ListObjectsV2Request listObjectsV2Request = ListObjectsV2Request.builder()
+            .bucket(settings.bucket())
+            .prefix(getKey(path))
+            .build();
         final List<MCRExternalStoreFileInfo> result = list(listObjectsV2Request);
         final Set<MCRExternalStoreFileInfo> directories = new HashSet<>();
         for (MCRExternalStoreFileInfo file : result) {
@@ -125,14 +130,15 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
     @Override
     public URL getDownloadUrl(String path) {
         try (S3Presigner presigner = S3Presigner.create()) {
-            GetObjectRequest objectRequest
-                = GetObjectRequest.builder().bucket(settings.bucket()).key(getKey(path)).build();
-
-            GetObjectPresignRequest presignRequest
-                = GetObjectPresignRequest.builder().getObjectRequest(objectRequest)
-                    .signatureDuration(Duration.ofMinutes(60)).build();
-            PresignedGetObjectRequest presignedRequest = presigner.presignGetObject(presignRequest);
-            return presignedRequest.url();
+            final GetObjectRequest objectRequest = GetObjectRequest.builder()
+                .bucket(settings.bucket())
+                .key(getKey(path))
+                .build();
+            final GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .getObjectRequest(objectRequest)
+                .signatureDuration(Duration.ofMinutes(60))
+                .build();
+            return presigner.presignGetObject(presignRequest).url();
         }
     }
 
@@ -142,7 +148,6 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
             HeadBucketRequest headBucketRequest = HeadBucketRequest.builder()
                 .bucket(settings.bucket())
                 .build();
-
             client.headBucket(headBucketRequest);
         } catch (S3Exception exception) {
             LOGGER.warn("Bucket head request failed", exception);
@@ -174,7 +179,6 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
         final AwsBasicCredentials awsCreds = AwsBasicCredentials.create(settings.accessKey(), settings.secretKey());
         final S3Configuration serviceConfiguration
             = S3Configuration.builder().pathStyleAccessEnabled(settings.pathStyleAccess()).build();
-
         return S3Client.builder()
             .endpointOverride(URI.create(settings.protocol() + "://" + settings.endpoint()))
             .region(Region.of(settings.signingRegion()))
@@ -194,7 +198,8 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
                 done = true;
             }
             listObjectsV2Request = listObjectsV2Request.toBuilder()
-                .continuationToken(listObjectsV2response.nextContinuationToken()).build();
+                .continuationToken(listObjectsV2response.nextContinuationToken())
+                .build();
         }
         return fileInfos;
     }
@@ -209,8 +214,11 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
         final String fileName = MCRExternalStoreUtils.getFileName(object.key());
         final String parentPath = removeDirectory(MCRExternalStoreUtils.getParentPath(object.key()));
         return new MCRExternalStoreFileInfo.Builder(fileName, parentPath)
-            .size(object.size()).directory(false).lastModified(Date.from(object.lastModified()))
-            .checksum(object.eTag()).build();
+            .size(object.size())
+            .directory(false)
+            .lastModified(Date.from(object.lastModified()))
+            .checksum(object.eTag().replace("\"", ""))
+            .build();
     }
 
     /**
@@ -222,20 +230,21 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
     protected MCRExternalStoreFileInfo toDirectoryInfo(CommonPrefix prefix) {
         final String fileName = MCRExternalStoreUtils.getFileName(prefix.prefix());
         final String parentPath = removeDirectory(MCRExternalStoreUtils.getParentPath(prefix.prefix()));
-        return new MCRExternalStoreFileInfo.Builder(fileName, parentPath).directory(true)
-            .build();
+        return new MCRExternalStoreFileInfo.Builder(fileName, parentPath).directory(true).build();
     }
 
-    private GetObjectAttributesResponse getObjectAttributes(String path) {
-        final GetObjectAttributesRequest getObjectAttributesRequest
-            = GetObjectAttributesRequest.builder().bucket(settings.bucket()).key(getKey(path))
-                .objectAttributes(ObjectAttributes.E_TAG, ObjectAttributes.OBJECT_SIZE).build();
-        return client.getObjectAttributes(getObjectAttributesRequest);
+    private HeadObjectResponse headObject(String path) {
+        final HeadObjectRequest headObjectRequest = HeadObjectRequest.builder()
+            .bucket(settings.bucket())
+            .key(getKey(path))
+            .build();
+        return client.headObject(headObjectRequest);
     }
 
     private String getKey(String path) {
         return Optional.ofNullable(settings.directory())
-            .map(d -> MCRExternalStoreUtils.concatPaths(d, path)).orElse(path);
+            .map(d -> MCRExternalStoreUtils.concatPaths(d, path))
+            .orElse(path);
     }
 
     private String removeDirectory(String path) {
