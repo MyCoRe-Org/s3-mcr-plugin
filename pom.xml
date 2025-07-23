@@ -206,7 +206,6 @@
       <groupId>org.mycore</groupId>
       <artifactId>mycore-jobqueue</artifactId>
     </dependency>
-
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>auth</artifactId>
