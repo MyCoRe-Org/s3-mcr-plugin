@@ -170,7 +170,7 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
     }
 
     /**
-     * Builds {@link AmazonS3} instance by given {@link MCRExternalStoreS3Settings}.
+     * Builds {@link S3Client} instance by given {@link MCRExternalStoreS3Settings}.
      *
      * @param settings the settings
      * @return the client
@@ -205,9 +205,9 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
     }
 
     /**
-     * Maps {@link S3ObjectSummary} to {@link MCRExternalStoreFileInfo}.
+     * Maps {@link S3Object} to {@link MCRExternalStoreFileInfo}.
      *
-     * @param summary the object summary
+     * @param object the object
      * @return file info
      */
     protected MCRExternalStoreFileInfo toFileInfo(S3Object object) {
@@ -222,9 +222,9 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
     }
 
     /**
-     * Maps key to {@link MCRExternalStoreFileInfo}.
+     * Maps prefix to {@link MCRExternalStoreFileInfo}.
      *
-     * @param key key
+     * @param prefix prefix 
      * @return directory info
      */
     protected MCRExternalStoreFileInfo toDirectoryInfo(CommonPrefix prefix) {

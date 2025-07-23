@@ -56,7 +56,7 @@ public class MCRS3SeekableFileChannel implements SeekableByteChannel {
     private long chunck = -1;
 
     /**
-     * Creates {@link MCRS3SeekableFileChannel} by specified {@link AmazonS3}, bucket name and object key.
+     * Creates {@link MCRS3SeekableFileChannel} by specified {@link S3Client}, bucket name and object key.
      *
      * @param client the client
      * @param bucket the bucket
