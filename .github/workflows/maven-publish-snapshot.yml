@@ -8,6 +8,7 @@ on:
     branches:
       - 'main'
       - '2022.06.x'
+      - '2023.06.x'
 
 jobs:
   build:
