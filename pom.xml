@@ -28,7 +28,7 @@
   <properties>
     <aws.version>1.12.651</aws.version>
     <java.target.version>17</java.target.version>
-    <mycore.version>2023.06.4-SNAPSHOT</mycore.version>
+    <mycore.version>2023.06.4</mycore.version>
     <node.version>v16.10.0</node.version>
     <yarn.version>v1.22.10</yarn.version>
   </properties>
