@@ -281,9 +281,21 @@ public class MCRExternalStoreResource {
             && MCRAccessManager.checkPermission(objectIdStr, MCRAccessManager.PERMISSION_WRITE);
     }
 
+    /**
+     * Ensures that the current user may access the content of a derivate.
+     * <p>
+     * Only {@link MCRAccessManager#PERMISSION_READ} is accepted here. {@code PERMISSION_VIEW} would be the natural
+     * permission for browsing the file structure without downloading, but MIR applies its embargo check in
+     * {@code MIRStrategy} to {@code read} only, while granting {@code view} to everyone through the
+     * {@code default_mods} default rule. Accepting {@code view} would therefore bypass the embargo as well as the
+     * {@code mir_access:intern} and {@code state:blocked}/{@code state:deleted} restrictions. Once MIR applies those
+     * restrictions to {@code view} too, this check can be relaxed again.
+     *
+     * @param derivateIdStr derivate id
+     * @throws ForbiddenException if the current user has no read permission
+     */
     private void ensureDerivateReadPermission(String derivateIdStr) {
-        if (!MCRAccessManager.checkPermission(derivateIdStr, MCRAccessManager.PERMISSION_READ)
-            && !MCRAccessManager.checkPermission(derivateIdStr, MCRAccessManager.PERMISSION_VIEW)) {
+        if (!MCRAccessManager.checkPermission(derivateIdStr, MCRAccessManager.PERMISSION_READ)) {
             throw new ForbiddenException();
         }
     }

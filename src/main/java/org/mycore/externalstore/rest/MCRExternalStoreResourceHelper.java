@@ -104,8 +104,9 @@ public class MCRExternalStoreResourceHelper {
             .map(MCRObjectID::getInstance)
             .map(MCRMetadataManager::retrieveMCRDerivate)
             .map(der -> {
-                final boolean canView = MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_VIEW)
-                    || MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_READ);
+                // read only, see MCRExternalStoreResource#ensureDerivateReadPermission
+                final boolean canView = MCRAccessManager.checkPermission(der.getId(),
+                    MCRAccessManager.PERMISSION_READ);
                 final boolean canDelete = MCRAccessManager.checkPermission(der.getId(),
                     MCRAccessManager.PERMISSION_DELETE);
                 final boolean canEdit = MCRAccessManager.checkPermission(der.getId(),
