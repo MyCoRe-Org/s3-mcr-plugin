@@ -26,9 +26,9 @@ import java.nio.channels.SeekableByteChannel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 
 /**
  * {@link SeekableByteChannel} implementation for s3 object.
@@ -43,7 +43,7 @@ public class MCRS3SeekableFileChannel implements SeekableByteChannel {
 
     private boolean open;
 
-    private final AmazonS3 client;
+    private final S3Client client;
 
     private final String bucket;
 
@@ -56,19 +56,19 @@ public class MCRS3SeekableFileChannel implements SeekableByteChannel {
     private long chunck = -1;
 
     /**
-     * Creates {@link MCRS3SeekableFileChannel} by specified {@link AmazonS3}, bucket name and object key.
+     * Creates {@link MCRS3SeekableFileChannel} by specified {@link S3Client}, bucket name and object key.
      *
      * @param client the client
      * @param bucket the bucket
      * @param key the key
      */
-    public MCRS3SeekableFileChannel(AmazonS3 client, String bucket, String key) {
+    public MCRS3SeekableFileChannel(S3Client client, String bucket, String key) {
         this.client = client;
         this.bucket = bucket;
         this.key = key;
         LOGGER.debug(bucket);
         LOGGER.debug(key);
-        size = client.getObjectMetadata(bucket, key).getContentLength();
+        size = getContentLength(bucket, key);
         open = true;
     }
 
@@ -116,17 +116,17 @@ public class MCRS3SeekableFileChannel implements SeekableByteChannel {
     }
 
     private void fillChunk(long chunck) throws IOException {
-        final GetObjectRequest objectRequest = new GetObjectRequest(bucket, key);
         final long start = chunck * BUFFER_SIZE;
         final long end = Math.min((chunck + 1) * BUFFER_SIZE, size);
-        objectRequest.setRange(start, end - 1);
+
+        final GetObjectRequest objectRequest
+            = GetObjectRequest.builder().bucket(bucket).key(key).range("bytes=" + start + "-" + end).build();
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Fill chunck {} with {} bytes", chunck, end - start);
         }
 
-        final S3Object object = client.getObject(objectRequest);
-        try (InputStream is = object.getObjectContent()) {
+        try (InputStream is = client.getObject(objectRequest)) {
             final byte[] src = is.readAllBytes();
             internalBuffer.rewind().put(src);
         }
@@ -174,6 +174,12 @@ public class MCRS3SeekableFileChannel implements SeekableByteChannel {
     @Override
     public void close() throws IOException {
         open = false;
+    }
+
+    private long getContentLength(String bucket, String key) {
+        final HeadObjectRequest headObjectRequest
+            = HeadObjectRequest.builder().bucket(bucket).key(key).build();
+        return client.headObject(headObjectRequest).contentLength();
     }
 
 }
