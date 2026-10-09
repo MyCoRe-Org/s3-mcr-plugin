@@ -25,11 +25,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.SeekableByteChannel;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -41,22 +41,22 @@ import org.mycore.externalstore.exception.MCRExternalStoreNoAccessException;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.util.MCRExternalStoreUtils;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.HttpMethod;
-import com.amazonaws.Protocol;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
-import com.amazonaws.services.s3.model.HeadBucketRequest;
-import com.amazonaws.services.s3.model.ListObjectsV2Request;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.model.CommonPrefix;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
 /**
  * An {@link MCRExternalStoreProvider} for s3 bucket.
@@ -67,7 +67,7 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
 
     private MCRExternalStoreS3Settings settings;
 
-    private AmazonS3 client;
+    private S3Client client;
 
     @Override
     public void init(Map<String, String> settingsMap) {
@@ -77,7 +77,11 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
 
     @Override
     public InputStream newInputStream(String path) throws IOException {
-        return client.getObject(settings.bucket(), getKey(path)).getObjectContent();
+        final GetObjectRequest objectRequest = GetObjectRequest.builder()
+            .bucket(settings.bucket())
+            .key(getKey(path))
+            .build();
+        return client.getObject(objectRequest);
     }
 
     @Override
@@ -87,31 +91,33 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
 
     @Override
     public MCRExternalStoreFileInfo getFileInfo(String path) {
-        final ObjectMetadata metadata = getObjectMetadata(path);
+        final HeadObjectResponse object = headObject(path);
         final String parentPath = MCRExternalStoreUtils.getParentPath(path);
         final String name = MCRExternalStoreUtils.getFileName(path);
         return new MCRExternalStoreFileInfo.Builder(name, parentPath)
-            .checksum(metadata.getETag())
-            .size(metadata.getContentLength())
-            .lastModified(metadata.getLastModified())
+            .checksum(object.eTag().replace("\"", ""))
+            .size(object.contentLength())
+            .lastModified(Date.from(object.lastModified()))
             .directory(false)
             .build();
     }
 
     @Override
     public List<MCRExternalStoreFileInfo> listFileInfos(String path) throws IOException {
-        final ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request()
-            .withBucketName(settings.bucket())
-            .withPrefix(getKey(path))
-            .withDelimiter("/");
+        final ListObjectsV2Request listObjectsV2Request = ListObjectsV2Request.builder()
+            .bucket(settings.bucket())
+            .prefix(getKey(path))
+            .delimiter("/")
+            .build();
         return list(listObjectsV2Request);
     }
 
     @Override
     public List<MCRExternalStoreFileInfo> listFileInfosRecursive(String path) throws IOException {
-        final ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request()
-            .withBucketName(settings.bucket())
-            .withPrefix(getKey(path));
+        final ListObjectsV2Request listObjectsV2Request = ListObjectsV2Request.builder()
+            .bucket(settings.bucket())
+            .prefix(getKey(path))
+            .build();
         final List<MCRExternalStoreFileInfo> result = list(listObjectsV2Request);
         final Set<MCRExternalStoreFileInfo> directories = new HashSet<>();
         for (MCRExternalStoreFileInfo file : result) {
@@ -123,30 +129,32 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
 
     @Override
     public URL getDownloadUrl(String path) {
-        final GeneratePresignedUrlRequest generatePresignedUrlRequest
-            = new GeneratePresignedUrlRequest(settings.bucket(), getKey(path)).withMethod(HttpMethod.GET)
-                .withExpiration(getExpirationDate());
-        return client.generatePresignedUrl(generatePresignedUrlRequest);
-    }
-
-    private Date getExpirationDate() {
-        final Date expiration = new Date();
-        final long expTimeMillis = expiration.getTime() + 1000 * 60 * 60;
-        expiration.setTime(expTimeMillis);
-        return expiration;
+        try (S3Presigner presigner = S3Presigner.create()) {
+            final GetObjectRequest objectRequest = GetObjectRequest.builder()
+                .bucket(settings.bucket())
+                .key(getKey(path))
+                .build();
+            final GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .getObjectRequest(objectRequest)
+                .signatureDuration(Duration.ofMinutes(60))
+                .build();
+            return presigner.presignGetObject(presignRequest).url();
+        }
     }
 
     @Override
     public void ensureReadAccess() {
         try {
-            client.headBucket(new HeadBucketRequest(settings.bucket()));
-        } catch (AmazonServiceException amazonServiceException) {
-            LOGGER.warn("Bucket head request failed", amazonServiceException);
-            if (amazonServiceException.getStatusCode() == 403) {
-                throw new MCRExternalStoreNoAccessException(amazonServiceException.getErrorMessage(),
-                    amazonServiceException);
+            HeadBucketRequest headBucketRequest = HeadBucketRequest.builder()
+                .bucket(settings.bucket())
+                .build();
+            client.headBucket(headBucketRequest);
+        } catch (S3Exception exception) {
+            LOGGER.warn("Bucket head request failed", exception);
+            if (exception.statusCode() == 403) {
+                throw new MCRExternalStoreNoAccessException(exception.getMessage(), exception);
             }
-            throw new MCRExternalStoreNoAccessException("Test failed.", amazonServiceException);
+            throw new MCRExternalStoreNoAccessException("Test failed.", exception);
         }
     }
 
@@ -162,72 +170,81 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
     }
 
     /**
-     * Builds {@link AmazonS3} instance by given {@link MCRExternalStoreS3Settings}.
+     * Builds {@link S3Client} instance by given {@link MCRExternalStoreS3Settings}.
      *
      * @param settings the settings
      * @return the client
      */
-    protected static AmazonS3 createClient(MCRExternalStoreS3Settings settings) {
-        final ClientConfiguration clientConfig = new ClientConfiguration()
-            .withProtocol(Protocol.valueOf(settings.protocol().toUpperCase(Locale.ROOT)));
-        final AWSCredentials credentials = new BasicAWSCredentials(settings.accessKey(), settings.secretKey());
-        final AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard()
-            .withEndpointConfiguration(
-                new AwsClientBuilder.EndpointConfiguration(settings.endpoint(), settings.signingRegion()))
-            .withPathStyleAccessEnabled(settings.pathStyleAccess())
-            .withClientConfiguration(clientConfig)
-            .withCredentials(new AWSStaticCredentialsProvider(credentials));
-        return builder.build();
+    protected static S3Client createClient(MCRExternalStoreS3Settings settings) {
+        final AwsBasicCredentials awsCreds = AwsBasicCredentials.create(settings.accessKey(), settings.secretKey());
+        final S3Configuration serviceConfiguration
+            = S3Configuration.builder().pathStyleAccessEnabled(settings.pathStyleAccess()).build();
+        return S3Client.builder()
+            .endpointOverride(URI.create(settings.protocol() + "://" + settings.endpoint()))
+            .region(Region.of(settings.signingRegion()))
+            .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
+            .serviceConfiguration(serviceConfiguration)
+            .build();
     }
 
     private List<MCRExternalStoreFileInfo> list(ListObjectsV2Request listObjectsV2Request) throws IOException {
-        ListObjectsV2Result listObjectsV2Result = null;
         final List<MCRExternalStoreFileInfo> fileInfos = new ArrayList<>();
-        do {
-            if (listObjectsV2Result != null) {
-                listObjectsV2Request.setContinuationToken(listObjectsV2Result.getNextContinuationToken());
+        boolean done = false;
+        while (!done) {
+            final ListObjectsV2Response listObjectsV2response = client.listObjectsV2(listObjectsV2Request);
+            listObjectsV2response.contents().stream().map(this::toFileInfo).forEach(fileInfos::add);
+            listObjectsV2response.commonPrefixes().stream().map(this::toDirectoryInfo).forEach(fileInfos::add);
+            if (listObjectsV2response.nextContinuationToken() == null) {
+                done = true;
             }
-            listObjectsV2Result = client.listObjectsV2(listObjectsV2Request);
-            listObjectsV2Result.getObjectSummaries().stream().map(this::toFileInfo).forEach(fileInfos::add);
-            listObjectsV2Result.getCommonPrefixes().stream().map(this::toDirectoryInfo).forEach(fileInfos::add);
-        } while (listObjectsV2Result.isTruncated());
+            listObjectsV2Request = listObjectsV2Request.toBuilder()
+                .continuationToken(listObjectsV2response.nextContinuationToken())
+                .build();
+        }
         return fileInfos;
     }
 
     /**
-     * Maps {@link S3ObjectSummary} to {@link MCRExternalStoreFileInfo}.
+     * Maps {@link S3Object} to {@link MCRExternalStoreFileInfo}.
      *
-     * @param summary the object summary
+     * @param object the object
      * @return file info
      */
-    protected MCRExternalStoreFileInfo toFileInfo(S3ObjectSummary summary) {
-        final String fileName = MCRExternalStoreUtils.getFileName(summary.getKey());
-        final String parentPath = removeDirectory(MCRExternalStoreUtils.getParentPath(summary.getKey()));
+    protected MCRExternalStoreFileInfo toFileInfo(S3Object object) {
+        final String fileName = MCRExternalStoreUtils.getFileName(object.key());
+        final String parentPath = removeDirectory(MCRExternalStoreUtils.getParentPath(object.key()));
         return new MCRExternalStoreFileInfo.Builder(fileName, parentPath)
-            .size(summary.getSize()).directory(false).lastModified(summary.getLastModified())
-            .checksum(summary.getETag()).build();
-    }
-
-    /**
-     * Maps key to {@link MCRExternalStoreFileInfo}.
-     *
-     * @param key key
-     * @return directory info
-     */
-    protected MCRExternalStoreFileInfo toDirectoryInfo(String key) {
-        final String fileName = MCRExternalStoreUtils.getFileName(key);
-        final String parentPath = removeDirectory(MCRExternalStoreUtils.getParentPath(key));
-        return new MCRExternalStoreFileInfo.Builder(fileName, parentPath).directory(true)
+            .size(object.size())
+            .directory(false)
+            .lastModified(Date.from(object.lastModified()))
+            .checksum(object.eTag().replace("\"", ""))
             .build();
     }
 
-    private ObjectMetadata getObjectMetadata(String path) {
-        return client.getObjectMetadata(settings.bucket(), getKey(path));
+    /**
+     * Maps prefix to {@link MCRExternalStoreFileInfo}.
+     *
+     * @param prefix prefix 
+     * @return directory info
+     */
+    protected MCRExternalStoreFileInfo toDirectoryInfo(CommonPrefix prefix) {
+        final String fileName = MCRExternalStoreUtils.getFileName(prefix.prefix());
+        final String parentPath = removeDirectory(MCRExternalStoreUtils.getParentPath(prefix.prefix()));
+        return new MCRExternalStoreFileInfo.Builder(fileName, parentPath).directory(true).build();
+    }
+
+    private HeadObjectResponse headObject(String path) {
+        final HeadObjectRequest headObjectRequest = HeadObjectRequest.builder()
+            .bucket(settings.bucket())
+            .key(getKey(path))
+            .build();
+        return client.headObject(headObjectRequest);
     }
 
     private String getKey(String path) {
         return Optional.ofNullable(settings.directory())
-            .map(d -> MCRExternalStoreUtils.concatPaths(d, path)).orElse(path);
+            .map(d -> MCRExternalStoreUtils.concatPaths(d, path))
+            .orElse(path);
     }
 
     private String removeDirectory(String path) {
