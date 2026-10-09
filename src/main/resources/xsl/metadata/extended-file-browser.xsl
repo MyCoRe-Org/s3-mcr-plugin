@@ -61,19 +61,18 @@
                         </xsl:when>
                         <xsl:otherwise>
                             <div class="mir_extended_file_browser">
-                                <script src="{$WebApplicationBaseURL}webjars/vue/2.6.14/vue.min.js" />
-                                <script src="{$WebApplicationBaseURL}vue/file-browser/fileBrowser.umd.min.js" />
-                                <link href="{$WebApplicationBaseURL}vue/file-browser/fileBrowser.css" rel="stylesheet"/>
-                                <div id="mir-extended-file-browser-mount">
-                                    <fb base-url="{$WebApplicationBaseURL}" object-id="{mycoreobject/@ID}"></fb>
-                                </div>
-                                <script>
-                                    new Vue({
-                                    components: {
-                                    fb: fileBrowser
-                                    }
-                                    }).$mount('#mir-extended-file-browser-mount');
+                                <script type="importmap">
+                                    <xsl:text>{</xsl:text>
+                                    <xsl:text>"imports": {</xsl:text>
+                                    <xsl:text>"vue": "</xsl:text>
+                                    <xsl:value-of select="$WebApplicationBaseURL"/>
+                                    <xsl:text>webjars/vue/3.5.17/dist/vue.runtime.esm-browser.prod.js"</xsl:text>
+                                    <xsl:text>}</xsl:text>
+                                    <xsl:text>}</xsl:text>
                                 </script>
+                                <script type="module" src="{$WebApplicationBaseURL}vue/external-storage-viewer/external-storage-viewer.es.js"/>
+                                <link href="{$WebApplicationBaseURL}vue/external-storage-viewer/external-storage-viewer.css" rel="stylesheet"/>
+                                <file-browser base-url="{$WebApplicationBaseURL}" object-id="{mycoreobject/@ID}"></file-browser>
                             </div>
                         </xsl:otherwise>
                     </xsl:choose>
