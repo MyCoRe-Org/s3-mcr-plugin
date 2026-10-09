@@ -42,6 +42,16 @@ public class MCRExternalStoreProviderFactory {
         return provider;
     }
 
+    /**
+     * Checks if a provider is configured for given store type.
+     *
+     * @param storeType store type
+     * @return true if store type is supported
+     */
+    public static boolean isSupported(String storeType) {
+        return MCRConfiguration2.getString(getProperty(storeType)).isPresent();
+    }
+
     private static String getProperty(String storeType) {
         return "MCR.ExternalStore." + storeType + ".Provider.Class";
     }
