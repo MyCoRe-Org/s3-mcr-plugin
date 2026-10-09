@@ -45,6 +45,7 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.HttpMethod;
 import com.amazonaws.Protocol;
+import com.amazonaws.SdkClientException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -146,7 +147,15 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
                 throw new MCRExternalStoreNoAccessException(amazonServiceException.getErrorMessage(),
                     amazonServiceException);
             }
+            if (amazonServiceException.getStatusCode() == 404) {
+                throw new MCRExternalStoreNoAccessException("Bucket does not exist: " + settings.bucket(),
+                    amazonServiceException);
+            }
             throw new MCRExternalStoreNoAccessException("Test failed.", amazonServiceException);
+        } catch (SdkClientException sdkClientException) {
+            LOGGER.warn("Bucket head request failed", sdkClientException);
+            throw new MCRExternalStoreNoAccessException("Endpoint is not reachable: " + settings.endpoint(),
+                sdkClientException);
         }
     }
 

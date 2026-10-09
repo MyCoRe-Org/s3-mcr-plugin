@@ -132,6 +132,7 @@ import {
   getInfo,
   saveS3Bucket,
   removeStore,
+  getErrorMessage,
   getJWT,
 } from '@/api/Client';
 
@@ -268,7 +269,7 @@ export default class FileBrowser extends Vue {
         this.$bvModal.hide('modal-2');
       } else {
         this.showDeleteBucketError = true;
-        this.deleteErrorMessage = await resp.text();
+        this.deleteErrorMessage = await getErrorMessage(resp);
       }
     } catch (e) {
       this.showDeleteBucketError = true;
@@ -285,7 +286,7 @@ export default class FileBrowser extends Vue {
         this.loadContents();
       } else {
         this.showAddBucketError = true;
-        this.addBucketErrorMessage = await resp.text();
+        this.addBucketErrorMessage = await getErrorMessage(resp);
       }
     } catch (e) {
       this.showAddBucketError = true;

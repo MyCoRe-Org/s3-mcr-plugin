@@ -177,8 +177,8 @@ export default class FileBrowserDerivate extends Vue {
         console.error('Error while downloading file');
         return;
       }
-      const downloadToken = await resp.text();
-      window.open(downloadToken);
+      const { url } = await resp.json();
+      window.open(url);
     }
   }
 
