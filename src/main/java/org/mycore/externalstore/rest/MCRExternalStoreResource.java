@@ -18,13 +18,17 @@
 
 package org.mycore.externalstore.rest;
 
+import static org.mycore.restapi.v2.MCRRestAuthorizationFilter.PARAM_DERID;
+import static org.mycore.restapi.v2.MCRRestAuthorizationFilter.PARAM_DER_PATH;
+import static org.mycore.restapi.v2.MCRRestAuthorizationFilter.PARAM_MCRID;
+
+import java.net.URI;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.mycore.access.MCRAccessManager;
 import org.mycore.common.config.MCRConfiguration2;
@@ -32,198 +36,275 @@ import org.mycore.datamodel.metadata.MCRMetadataManager;
 import org.mycore.datamodel.metadata.MCRObjectID;
 import org.mycore.externalstore.MCRExternalStore;
 import org.mycore.externalstore.MCRExternalStoreConstants;
+import org.mycore.externalstore.MCRExternalStoreProviderFactory;
 import org.mycore.externalstore.MCRExternalStoreService;
+import org.mycore.externalstore.MCRExternalStoreServiceUtils;
 import org.mycore.externalstore.exception.MCRExternalStoreException;
 import org.mycore.externalstore.exception.MCRExternalStoreIntegrityViolationException;
+import org.mycore.externalstore.exception.MCRExternalStorePermissionException;
 import org.mycore.externalstore.exception.MCRExternalStoreUnavailableException;
 import org.mycore.externalstore.index.MCRExternalStoreInfoIndex;
 import org.mycore.externalstore.index.MCRExternalStoreInfoIndexManager;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo.FileFlag;
+import org.mycore.externalstore.rest.dto.MCRCreateStoreDto;
 import org.mycore.externalstore.rest.dto.MCRDerivateInfoDto;
 import org.mycore.externalstore.rest.dto.MCRDerivateInfosDto;
+import org.mycore.externalstore.rest.dto.MCRDownloadUrlDto;
 import org.mycore.externalstore.rest.dto.MCRExternalStoreFileInfoDto;
+import org.mycore.externalstore.rest.dto.MCRStoreCapability;
 import org.mycore.restapi.annotations.MCRRequireTransaction;
+import org.mycore.restapi.v2.MCRErrorResponse;
+import org.mycore.restapi.v2.MCRRestAuthorizationFilter;
+import org.mycore.restapi.v2.MCRRestDerivates;
 
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 
 /**
- * Provides external store rest resource.
+ * Provides the external stores of an object as rest resource.
+ * <p>
+ * A store is represented by a derivate of the object. The path parameters are named like in
+ * {@link MCRRestAuthorizationFilter}, so the filter also checks the base permissions on object and derivate.
  */
-@Path("es/")
+@Path("objects/{" + PARAM_MCRID + "}/external-stores")
 public class MCRExternalStoreResource {
 
-    private static final String PARAM_OBJ_ID = "object_id";
+    private static final String PATH_PARAM_PATH = "{" + PARAM_DER_PATH + ":(/[^/]+)*}";
 
-    private static final String PARAM_DER_ID = "derivate_id";
-
-    private static final String PARAM_STORE_TYPE = "store_type";
-
-    private static final String PARAM_PATH = "path";
+    private static final String PATH_PARAM_FILE_PATH = "{" + PARAM_DER_PATH + ":(/[^/]+)+}";
 
     private static final String CREATE_DERIVATE_PERMISSION = "create-derivate";
+
+    private static final String HEADER_TOTAL_COUNT = "X-Total-Count";
+
+    private static final int STATUS_UNPROCESSABLE_ENTITY = 422;
 
     private static final Optional<String> DOWNLOD_PROXY_URL
         = MCRConfiguration2.getString(MCRExternalStoreConstants.PROPERTY_PREFIX + "ProxyServlet.Url");
 
     private static final MCRExternalStoreInfoIndex INDEX = MCRExternalStoreInfoIndexManager.getInfoIndex();
 
+    @PathParam(PARAM_MCRID)
+    private MCRObjectID objectId;
+
+    @Context
+    private UriInfo uriInfo;
+
+    @Context
+    private HttpHeaders httpHeaders;
+
     /**
-     * Returns derivate info for object.
+     * Returns the stores of the object.
      *
-     * @param objectId object id
      * @return derivate infos dto
      */
     @GET
-    @Path("{" + PARAM_OBJ_ID + "}/info")
     @Produces(MediaType.APPLICATION_JSON)
-    public MCRDerivateInfosDto listInfo(@PathParam(PARAM_OBJ_ID) MCRObjectID objectId) {
-        ensureObjectExists(objectId);
+    public MCRDerivateInfosDto listStores() {
+        ensureObjectExists();
         if (!MCRAccessManager.checkPermission(objectId, MCRAccessManager.PERMISSION_READ)) {
-            throw new ForbiddenException();
+            throw error(Response.Status.FORBIDDEN.getStatusCode(), "No permission to read " + objectId);
         }
         final List<MCRDerivateInfoDto> derivateInfos = MCRExternalStoreResourceHelper
             .listDerivateInformations(objectId);
-        final boolean canCreateStore = checkCreateStorePermission(objectId.toString());
-        return new MCRDerivateInfosDto(derivateInfos, canCreateStore);
+        final Set<MCRStoreCapability> capabilities = checkCreateStorePermission()
+            ? EnumSet.of(MCRStoreCapability.CREATE)
+            : EnumSet.noneOf(MCRStoreCapability.class);
+        return new MCRDerivateInfosDto(derivateInfos, capabilities);
     }
 
     /**
-     * Creates external store for object with store settings.
+     * Creates a store for the object.
      *
-     * @param objectId object id
-     * @param storeType store type
-     * @param storeProviderSettings map over store settings
-     * @return response
+     * @param createStore store type and store settings
+     * @return response with status 201 and location of the created store
      */
     @POST
-    @Path("{" + PARAM_OBJ_ID + "}/add/{" + PARAM_STORE_TYPE + "}/")
     @Consumes(MediaType.APPLICATION_JSON)
     @MCRRequireTransaction
-    public Response createStore(@PathParam(PARAM_OBJ_ID) MCRObjectID objectId,
-        @PathParam(PARAM_STORE_TYPE) String storeType, Map<String, String> storeProviderSettings) {
-        ensureObjectExists(objectId);
-        if (!checkCreateStorePermission(objectId.toString())) {
-            throw new ForbiddenException();
+    public Response createStore(MCRCreateStoreDto createStore) {
+        ensureObjectExists();
+        if (!checkCreateStorePermission()) {
+            throw error(Response.Status.FORBIDDEN.getStatusCode(), "No permission to create store for " + objectId);
+        }
+        if (createStore == null || createStore.type() == null || createStore.settings() == null) {
+            throw error(Response.Status.BAD_REQUEST.getStatusCode(), "Store type and settings are required");
+        }
+        if (!MCRExternalStoreProviderFactory.isConfigured(createStore.type())) {
+            throw error(Response.Status.BAD_REQUEST.getStatusCode(),
+                "Unsupported store type: " + createStore.type());
+        }
+        final MCRObjectID derivateId;
+        try {
+            derivateId = MCRExternalStoreService.createStore(objectId, createStore.type(), createStore.settings());
+        } catch (IllegalArgumentException e) {
+            throw error(Response.Status.BAD_REQUEST.getStatusCode(), "Invalid store settings", e);
+        } catch (MCRExternalStoreUnavailableException e) {
+            throw error(STATUS_UNPROCESSABLE_ENTITY, "Store is not available with given settings", e);
+        } catch (MCRExternalStorePermissionException e) {
+            throw error(Response.Status.FORBIDDEN.getStatusCode(), "No permission to create store for " + objectId, e);
+        } catch (MCRExternalStoreException e) {
+            throw error(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Error while creating store", e);
+        }
+        final URI location = uriInfo.getAbsolutePathBuilder().path(derivateId.toString()).build();
+        return Response.created(location).build();
+    }
+
+    /**
+     * Returns a store of the object.
+     *
+     * @param derivateId derivate id of the store
+     * @return derivate info dto
+     */
+    @GET
+    @Path("{" + PARAM_DERID + "}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public MCRDerivateInfoDto getStore(@PathParam(PARAM_DERID) MCRObjectID derivateId) {
+        ensureObjectExists();
+        ensureStoreExists(derivateId);
+        ensureDerivateReadPermission(derivateId);
+        return MCRExternalStoreResourceHelper.getDerivateInformation(derivateId);
+    }
+
+    /**
+     * Deletes a store of the object.
+     *
+     * @param derivateId derivate id of the store
+     * @return response with status 204
+     */
+    @DELETE
+    @Path("{" + PARAM_DERID + "}")
+    @MCRRequireTransaction
+    public Response deleteStore(@PathParam(PARAM_DERID) MCRObjectID derivateId) {
+        ensureObjectExists();
+        ensureStoreExists(derivateId);
+        if (!MCRAccessManager.checkPermission(derivateId, MCRAccessManager.PERMISSION_DELETE)) {
+            throw error(Response.Status.FORBIDDEN.getStatusCode(), "No permission to delete " + derivateId);
         }
         try {
-            MCRExternalStoreService.createStore(objectId, storeType, storeProviderSettings);
+            MCRExternalStoreService.getInstance().deleteStore(derivateId);
+        } catch (MCRExternalStorePermissionException e) {
+            throw error(Response.Status.FORBIDDEN.getStatusCode(), "No permission to delete " + derivateId, e);
         } catch (MCRExternalStoreException e) {
-            throw new BadRequestException(e);
+            throw error(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Error while deleting store", e);
         }
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     /**
-     * Returns file infos for external store.
+     * Returns the content of a path of a store.
+     * <p>
+     * A directory is listed. If JSON is requested, an archive is listed and the file info of other files is returned.
+     * Otherwise, the client is redirected to the download url of the file.
      *
-     * @param objectId object id
-     * @param base64DerivateId derivate id
-     * @param offset offset
-     * @param limit limit
-     * @return response with list over file infos dtos
+     * @param derivateId derivate id of the store
+     * @param path path, empty for the root directory
+     * @param offset offset of a listing
+     * @param limit limit of a listing
+     * @return response with list over file info dtos, with file info dto or with redirect to the download url
      */
     @GET
-    @Path("{" + PARAM_OBJ_ID + "}/list/{" + PARAM_DER_ID + "}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response listFileInfos(@PathParam(PARAM_OBJ_ID) MCRObjectID objectId,
-        @PathParam(PARAM_DER_ID) String base64DerivateId, @DefaultValue("0") @QueryParam("offset") int offset,
+    @Path("{" + PARAM_DERID + "}/contents" + PATH_PARAM_PATH)
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.WILDCARD })
+    public Response getContents(@PathParam(PARAM_DERID) MCRObjectID derivateId,
+        @PathParam(PARAM_DER_PATH) String path, @DefaultValue("0") @QueryParam("offset") int offset,
         @DefaultValue("" + Integer.MAX_VALUE) @QueryParam("limit") int limit) {
-        return listFileInfos(objectId, base64DerivateId, "", offset, limit);
-    }
-
-    /**
-     * Returns file infos for external store by path.
-     *
-     * @param objectId object id
-     * @param base64DerivateId derivate id
-     * @param base64Path path
-     * @param offset offset
-     * @param limit limit
-     * @return response with list over file infos dtos
-     */
-    @GET
-    @Path("{" + PARAM_OBJ_ID + "}/list/{" + PARAM_DER_ID + "}/{" + PARAM_PATH + "}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response listFileInfos(@PathParam(PARAM_OBJ_ID) MCRObjectID objectId,
-        @PathParam(PARAM_DER_ID) String base64DerivateId, @PathParam(PARAM_PATH) String base64Path,
-        @DefaultValue("0") @QueryParam("offset") int offset,
-        @DefaultValue("2147483647") @QueryParam("limit") int limit) {
         ensureValidPaging(offset, limit);
-        ensureObjectExists(objectId);
-        final String derivateIdStr = decodeBase64(base64DerivateId);
-        ensureObjectHasChild(objectId, derivateIdStr);
-        ensureDerivateReadPermission(derivateIdStr);
-        final String path = decodeBase64(base64Path);
-        final MCRObjectID derivateId = MCRObjectID.getInstance(derivateIdStr);
-        final List<MCRExternalStoreFileInfoDto> fileInfos = listFileInfos(derivateId, path);
-        final List<MCRExternalStoreFileInfoDto> result = fileInfos.stream().skip(offset).limit(limit).toList();
-        return Response.ok(result).header("X-Total-Count", fileInfos.size()).build();
+        ensureObjectExists();
+        ensureStoreExists(derivateId);
+        ensureDerivateReadPermission(derivateId);
+        final String relativePath = toRelativePath(path);
+        final MCRExternalStoreFileInfo fileInfo = relativePath.isEmpty()
+            ? new MCRExternalStoreFileInfo.Builder("", "").directory(true).build()
+            : findFileInfo(derivateId, relativePath);
+        if (fileInfo.isDirectory() || (fileInfo.flags().contains(FileFlag.ARCHIVE) && isJsonRequested())) {
+            final List<MCRExternalStoreFileInfoDto> fileInfos = listFileInfos(derivateId, relativePath, fileInfo);
+            final List<MCRExternalStoreFileInfoDto> result = fileInfos.stream().skip(offset).limit(limit).toList();
+            return Response.ok(result, MediaType.APPLICATION_JSON_TYPE)
+                .header(HEADER_TOTAL_COUNT, fileInfos.size()).build();
+        }
+        if (isJsonRequested()) {
+            final boolean downloadable = !fileInfo.flags().contains(FileFlag.ARCHIVE_ENTRY);
+            return Response.ok(MCRExternalStoreResourceHelper.toDto(fileInfo, downloadable),
+                MediaType.APPLICATION_JSON_TYPE).build();
+        }
+        return Response.seeOther(URI.create(getCheckedDownloadUrl(derivateId, relativePath, fileInfo))).build();
     }
 
-    private List<MCRExternalStoreFileInfoDto> listFileInfos(MCRObjectID derivateId, String path) {
-        final MCRExternalStoreFileInfo fileInfo = path.isEmpty()
-            ? new MCRExternalStoreFileInfo.Builder("", "").directory(true).build()
-            : INDEX.findFileInfo(derivateId, path).orElseThrow(() -> new BadRequestException("Path does not exist"));
-
-        if (fileInfo.isDirectory() && !fileInfo.flags().contains(FileFlag.ARCHIVE_ENTRY)) {
-            return INDEX.listFileInfos(derivateId, path).stream()
-                .map(i -> MCRExternalStoreResourceHelper.toDto(i, true)).toList();
-        }
-        if (fileInfo.flags().contains(FileFlag.ARCHIVE)
-            || (fileInfo.isDirectory() && fileInfo.flags().contains(FileFlag.ARCHIVE_ENTRY))) {
-            return INDEX.listFileInfos(derivateId, path).stream()
-                .map(i -> MCRExternalStoreResourceHelper.toDto(i, false)).toList();
-        }
-        throw new BadRequestException("Path is not a directory or archive");
+    private List<MCRExternalStoreFileInfoDto> listFileInfos(MCRObjectID derivateId, String path,
+        MCRExternalStoreFileInfo fileInfo) {
+        final boolean downloadable = !fileInfo.flags().contains(FileFlag.ARCHIVE)
+            && !fileInfo.flags().contains(FileFlag.ARCHIVE_ENTRY);
+        return INDEX.listFileInfos(derivateId, path).stream()
+            .map(i -> MCRExternalStoreResourceHelper.toDto(i, downloadable)).toList();
     }
 
     /**
-     * Creates download token for file.
+     * Returns a download url for a file of a store.
      *
-     * @param objectId object id
-     * @param base64DerivateId derivate id
-     * @param base64Path path
-     * @return response with download token
+     * @param derivateId derivate id of the store
+     * @param path path of the file
+     * @return download url dto
      */
     @GET
-    @Path("{" + PARAM_OBJ_ID + "}/download/{" + PARAM_DER_ID + "}/{" + PARAM_PATH + "}")
-    @Produces({ "text/plain", MediaType.APPLICATION_JSON })
-    public String getDownloadUrl(@PathParam(PARAM_OBJ_ID) MCRObjectID objectId,
-        @PathParam(PARAM_DER_ID) String base64DerivateId, @PathParam(PARAM_PATH) String base64Path) {
-        ensureObjectExists(objectId);
-        final String derivateIdStr = decodeBase64(base64DerivateId);
-        ensureObjectHasChild(objectId, derivateIdStr);
-        ensureDerivateReadPermission(derivateIdStr);
-        final MCRObjectID derivateId = MCRObjectID.getInstance(derivateIdStr);
-        final String path = decodeBase64(base64Path);
-        final MCRExternalStoreFileInfo fileInfo = INDEX.findFileInfo(derivateId, path)
-            .orElseThrow(() -> new BadRequestException("File does not exist"));
+    @Path("{" + PARAM_DERID + "}/download-url" + PATH_PARAM_FILE_PATH)
+    @Produces(MediaType.APPLICATION_JSON)
+    public MCRDownloadUrlDto getDownloadUrl(@PathParam(PARAM_DERID) MCRObjectID derivateId,
+        @PathParam(PARAM_DER_PATH) String path) {
+        ensureObjectExists();
+        ensureStoreExists(derivateId);
+        ensureDerivateReadPermission(derivateId);
+        final String relativePath = toRelativePath(path);
+        final MCRExternalStoreFileInfo fileInfo = findFileInfo(derivateId, relativePath);
+        return new MCRDownloadUrlDto(getCheckedDownloadUrl(derivateId, relativePath, fileInfo));
+    }
+
+    private String getCheckedDownloadUrl(MCRObjectID derivateId, String path, MCRExternalStoreFileInfo fileInfo) {
         ensureFileIsDownloadable(fileInfo);
         ensureAllowedFileSize(fileInfo);
         ensureFileIntegrity(derivateId, fileInfo);
-        return getDownloadUrl(derivateId, path);
+        return createDownloadUrl(derivateId, path);
+    }
+
+    private static String toRelativePath(String path) {
+        return path.startsWith("/") ? path.substring(1) : path;
+    }
+
+    /**
+     * Checks if the client prefers JSON over other media types, e.g. a browser or {@code curl} does not.
+     *
+     * @return true if JSON is the most acceptable media type
+     */
+    private boolean isJsonRequested() {
+        final MediaType preferred = httpHeaders.getAcceptableMediaTypes().get(0);
+        return !preferred.isWildcardType() && preferred.isCompatible(MediaType.APPLICATION_JSON_TYPE);
+    }
+
+    private MCRExternalStoreFileInfo findFileInfo(MCRObjectID derivateId, String path) {
+        return INDEX.findFileInfo(derivateId, path)
+            .orElseThrow(() -> error(Response.Status.NOT_FOUND.getStatusCode(), "Path does not exist: " + path));
     }
 
     private void ensureFileIsDownloadable(MCRExternalStoreFileInfo fileInfo) {
         if (fileInfo.isDirectory()) {
-            throw new BadRequestException("File is a directory");
+            throw error(Response.Status.BAD_REQUEST.getStatusCode(), "File is a directory");
         }
         if (fileInfo.flags().contains(MCRExternalStoreFileInfo.FileFlag.ARCHIVE_ENTRY)) {
-            throw new BadRequestException("File is part of an archive.");
+            throw error(Response.Status.BAD_REQUEST.getStatusCode(), "File is part of an archive");
         }
     }
 
@@ -231,13 +312,13 @@ public class MCRExternalStoreResource {
         try {
             MCRExternalStoreService.getInstance().ensureFileIntegrity(derivateId, fileInfo);
         } catch (MCRExternalStoreIntegrityViolationException e) {
-            throw new InternalServerErrorException("Detected integrity violation", e);
+            throw error(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Detected integrity violation", e);
         } catch (MCRExternalStoreUnavailableException e) {
-            throw new WebApplicationException("Store is not available", e, Response.Status.BAD_GATEWAY);
+            throw error(Response.Status.BAD_GATEWAY.getStatusCode(), "Store is not available", e);
         }
     }
 
-    final String getDownloadUrl(MCRObjectID derivateId, String path) {
+    private String createDownloadUrl(MCRObjectID derivateId, String path) {
         final MCRExternalStore store = MCRExternalStoreService.getInstance().getStore(derivateId);
         final URL downloadUrl = store.getStoreProvider().getDownloadUrl(path);
         if (store.useDownloadProxy()) {
@@ -247,7 +328,7 @@ public class MCRExternalStoreResource {
             } else if (!DOWNLOD_PROXY_URL.isEmpty()) {
                 return createProxyDownloadUrl(DOWNLOD_PROXY_URL.get() + "/" + derivateId, downloadUrl);
             }
-            throw new InternalServerErrorException("Internal proxy url is not set");
+            throw error(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Internal proxy url is not set");
         }
         return downloadUrl.toString();
     }
@@ -258,32 +339,49 @@ public class MCRExternalStoreResource {
 
     private void ensureAllowedFileSize(MCRExternalStoreFileInfo fileInfo) {
         if (fileInfo.size() > MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
-            throw new BadRequestException("File size is not allowed to download");
+            throw error(Response.Status.BAD_REQUEST.getStatusCode(), "File size is not allowed to download");
         }
     }
 
     private static void ensureValidPaging(int offset, int limit) {
         if (offset < 0 || limit < 0) {
-            throw new BadRequestException("Offset and limit must not be negative");
+            throw error(Response.Status.BAD_REQUEST.getStatusCode(), "Offset and limit must not be negative");
         }
     }
 
-    private void ensureObjectExists(MCRObjectID objectId) {
+    private void ensureObjectExists() {
         if (!MCRMetadataManager.exists(objectId)) {
-            throw new BadRequestException(objectId + " does not exist");
+            throw error(Response.Status.NOT_FOUND.getStatusCode(), objectId + " does not exist");
         }
     }
 
-    private void ensureObjectHasChild(MCRObjectID objectId, String derivateIdStr) {
-        if (!MCRExternalStoreResourceHelper.listStoreDerivates(objectId).contains(derivateIdStr)) {
-            throw new BadRequestException(derivateIdStr + " is not a store derivate of " + objectId);
+    /**
+     * Ensures that the derivate belongs to the object and is a store.
+     * <p>
+     * The relation is checked via the link table, so the object does not have to be loaded.
+     *
+     * @param derivateId derivate id
+     * @throws WebApplicationException with status 404 if the derivate is not a store of the object
+     */
+    private void ensureStoreExists(MCRObjectID derivateId) {
+        MCRRestDerivates.validateDerivateRelation(objectId, derivateId);
+        if (!isStoreDerivate(derivateId)) {
+            throw error(Response.Status.NOT_FOUND.getStatusCode(),
+                derivateId + " is not a store of " + objectId);
         }
+    }
+
+    private static boolean isStoreDerivate(MCRObjectID derivateId) {
+        // the relation lookup is cached, so the derivate may have been deleted in the meantime
+        return MCRMetadataManager.exists(derivateId)
+            && MCRMetadataManager.retrieveMCRDerivate(derivateId).getDerivate().getClassifications().stream()
+                .anyMatch(MCRExternalStoreServiceUtils::checkExternalStoreClassification);
     }
 
     // TODO may replace with MCRMetadataManager#checkCreatePrivilege
-    private boolean checkCreateStorePermission(String objectIdStr) {
+    private boolean checkCreateStorePermission() {
         return MCRAccessManager.checkPermission(CREATE_DERIVATE_PERMISSION)
-            && MCRAccessManager.checkPermission(objectIdStr, MCRAccessManager.PERMISSION_WRITE);
+            && MCRAccessManager.checkPermission(objectId, MCRAccessManager.PERMISSION_WRITE);
     }
 
     /**
@@ -296,16 +394,25 @@ public class MCRExternalStoreResource {
      * {@code mir_access:intern} and {@code state:blocked}/{@code state:deleted} restrictions. Once MIR applies those
      * restrictions to {@code view} too, this check can be relaxed again.
      *
-     * @param derivateIdStr derivate id
-     * @throws ForbiddenException if the current user has no read permission
+     * @param derivateId derivate id
+     * @throws WebApplicationException with status 403 if the current user has no read permission
      */
-    private void ensureDerivateReadPermission(String derivateIdStr) {
-        if (!MCRAccessManager.checkPermission(derivateIdStr, MCRAccessManager.PERMISSION_READ)) {
-            throw new ForbiddenException();
+    private void ensureDerivateReadPermission(MCRObjectID derivateId) {
+        if (!MCRAccessManager.checkPermission(derivateId, MCRAccessManager.PERMISSION_READ)) {
+            throw error(Response.Status.FORBIDDEN.getStatusCode(), "No permission to read " + derivateId);
         }
     }
 
-    private static String decodeBase64(String base64) {
-        return new String(Base64.getUrlDecoder().decode(base64), StandardCharsets.UTF_8);
+    private static WebApplicationException error(int status, String message) {
+        return MCRErrorResponse.ofStatusCode(status).withMessage(message).toException();
+    }
+
+    private static WebApplicationException error(int status, String message, Throwable cause) {
+        final MCRErrorResponse response = MCRErrorResponse.ofStatusCode(status).withMessage(message).withCause(cause);
+        // expose the cause only for client errors, server errors are logged
+        if (status < Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()) {
+            response.withDetail(cause.getMessage());
+        }
+        return response.toException();
     }
 }

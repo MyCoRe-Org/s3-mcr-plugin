@@ -49,6 +49,19 @@ public class MCRExternalStoreProviderFactory {
         return provider;
     }
 
+    /**
+     * Checks if a provider class is configured for given store type.
+     * <p>
+     * The configured class is not validated here, a broken configuration is reported by
+     * {@link #createStoreProvider(String, Map)}.
+     *
+     * @param storeType store type
+     * @return true if a provider class is configured for the store type
+     */
+    public static boolean isConfigured(String storeType) {
+        return MCRConfiguration2.getString(getProperty(storeType)).isPresent();
+    }
+
     private static String getProperty(String storeType) {
         return "MCR.ExternalStore." + storeType + ".Provider.Class";
     }
