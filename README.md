@@ -71,23 +71,5 @@ MCR.ExternalStore.ProxyServlet.Url=%MCR.baseurl%/esp
 
 
 ## How can I test local?
-You can use minio for testing s3 with docker and docker-compose.
-Copy this to a docker-compose.yml and run `docker-compose up` to start a demo s3 server.
-```
-version: '3.3'
-services:
-    minio:
-        ports:
-            - '9000:9000'
-            - '9001:9001'
-        environment:
-            - MINIO_ROOT_USER=admin
-            - MINIO_ROOT_PASSWORD=alleswirdgut
-        volumes:
-            - './data:/data'
-        image: minio/minio
-        command: server /data --console-address :9001
-
-```
-
-The login for the admin user is stored in the environment variables **MINIO_ROOT_USER** and **MINIO_ROOT_PASSWORD**.
+You can use MinIO as S3 compatible store with Docker.
+See [examples/minio](examples/minio/README.md) for a ready-to-use setup and the settings to link a bucket.

@@ -1,0 +1,20 @@
+# MinIO as S3 compatible store for local development and testing.
+# See README.md in this directory.
+services:
+  minio:
+    image: cgr.dev/chainguard/minio
+    command: server /data --console-address :9001
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-admin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-changeme123}
+    volumes:
+      - './data:/data'
+    networks:
+      - s3net
+
+networks:
+  s3net:
+    name: s3net
