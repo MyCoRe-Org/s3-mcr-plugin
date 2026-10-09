@@ -64,8 +64,8 @@ public class MCRExternalStoreArchiveUtils {
     public static List<ArchiveEntry> getEntries(TarArchiveInputStream tarArchiveInputStream, String path)
         throws IOException {
         final List<ArchiveEntry> entries = new ArrayList<>();
-        ArchiveEntry entry;
-        while ((entry = tarArchiveInputStream.getNextEntry()) != null) {
+        ArchiveEntry entry = tarArchiveInputStream.getNextEntry();
+        while (entry != null) {
             final String entryName = entry.getName();
             final String parentPath = (entry.isDirectory())
                 ? MCRExternalStoreUtils.getParentPath(entryName.substring(0, entryName.length() - 1))
@@ -73,6 +73,7 @@ public class MCRExternalStoreArchiveUtils {
             if (Objects.equals(path, parentPath)) {
                 entries.add(entry);
             }
+            entry = tarArchiveInputStream.getNextEntry();
         }
         return entries;
     }
