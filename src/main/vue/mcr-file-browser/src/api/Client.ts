@@ -1,17 +1,30 @@
 import { S3BucketSettings, Token } from '@/model';
 
+const getStoresUrl = (baseUrl: string, objectId: string) => `${baseUrl}api/v2/es/${objectId}/stores`;
+
+const encodePath = (path: string) => path.split('/').map(encodeURIComponent).join('/');
+
+export const getErrorMessage = async (response: Response): Promise<string> => {
+  try {
+    const error = await response.json();
+    return [error.message, error.detail].filter((m) => m).join(': ');
+  } catch (e) {
+    return response.statusText;
+  }
+};
+
 export const saveS3Bucket = (
   baseUrl: string,
   objectId: string,
   bucketSettings: S3BucketSettings,
   token?: Token,
-) => fetch(`${baseUrl}api/v2/es/${objectId}/add/s3/`, {
+) => fetch(getStoresUrl(baseUrl, objectId), {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
     Authorization: `${token?.tokenType} ${token?.accessToken}`,
   },
-  body: JSON.stringify(bucketSettings),
+  body: JSON.stringify({ type: 's3', settings: bucketSettings }),
 });
 
 export const removeStore = (
@@ -19,10 +32,9 @@ export const removeStore = (
   objectId: string,
   derivateId: string,
   token?: Token,
-) => fetch(`${baseUrl}api/v2/objects/${objectId}/derivates/${derivateId}`, {
+) => fetch(`${getStoresUrl(baseUrl, objectId)}/${derivateId}`, {
   method: 'DELETE',
   headers: {
-    'Content-Type': 'application/json',
     Authorization: `${token?.tokenType} ${token?.accessToken}`,
   },
 });
@@ -31,9 +43,9 @@ export const getInfo = (
   baseUrl: string,
   objectId: string,
   token?: Token,
-) => fetch(`${baseUrl}api/v2/es/${objectId}/info/`, {
+) => fetch(getStoresUrl(baseUrl, objectId), {
   headers: {
-    'Content-Type': 'application/json',
+    Accept: 'application/json',
     Authorization: `${token?.tokenType} ${token?.accessToken}`,
   },
 });
@@ -44,7 +56,7 @@ export const getDownloadToken = (
   derivateId: string,
   path: string,
   token?: Token,
-) => fetch(`${baseUrl}api/v2/es/${objectId}/download/${btoa(derivateId)}/${btoa(path)}`, {
+) => fetch(`${getStoresUrl(baseUrl, objectId)}/${derivateId}/download-url/${encodePath(path)}`, {
   headers: {
     Authorization: `${token?.tokenType} ${token?.accessToken}`,
   },
@@ -57,8 +69,8 @@ export const listDirectory = (
   path?: string,
   token?: Token,
 ) => {
-  const url = (path !== undefined) ? `${baseUrl}api/v2/es/${objectId}/list/${btoa(derivateId)}/${btoa(path)}`
-    : `${baseUrl}api/v2/es/${objectId}/list/${btoa(derivateId)}`;
+  const filesUrl = `${getStoresUrl(baseUrl, objectId)}/${derivateId}/files`;
+  const url = path ? `${filesUrl}/${encodePath(path)}` : filesUrl;
   return fetch(url, {
     headers: {
       Authorization: `${token?.tokenType} ${token?.accessToken}`,

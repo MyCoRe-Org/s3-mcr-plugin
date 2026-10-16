@@ -112,9 +112,11 @@ public final class MCRExternalStoreService {
      * @param objectId object id
      * @param storeType store type
      * @param storeProviderSettings map over provider store setting elements
+     * @return id of the store derivate
      * @throws MCRExternalStoreException if an error while creating store info occurs
      */
-    public static void createStore(MCRObjectID objectId, String storeType, Map<String, String> storeProviderSettings) {
+    public static MCRObjectID createStore(MCRObjectID objectId, String storeType,
+        Map<String, String> storeProviderSettings) {
         testStoreProviderSettings(storeType, storeProviderSettings);
         MCRObjectID derivateId;
         try {
@@ -128,6 +130,7 @@ public final class MCRExternalStoreService {
             throw new MCRExternalStoreException("Error while saving store provider settings", e);
         }
         enqueueCreateStoreJob(derivateId);
+        return derivateId;
     }
 
     private static void testStoreProviderSettings(String storeType, Map<String, String> storeProviderSettings) {
