@@ -21,10 +21,8 @@ package org.mycore.externalstore.rest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -42,6 +40,9 @@ import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.rest.dto.MCRDerivateInfoDto;
 import org.mycore.externalstore.rest.dto.MCRDerivateTitleDto;
 import org.mycore.externalstore.rest.dto.MCRExternalStoreFileInfoDto;
+import org.mycore.externalstore.rest.dto.MCRExternalStoreS3SettingsDto;
+import org.mycore.externalstore.rest.dto.MCRExternalStoreSettingsDto;
+import org.mycore.externalstore.s3.MCRExternalStoreS3Provider;
 import org.mycore.externalstore.util.MCRExternalStoreUtils;
 import org.mycore.services.i18n.MCRTranslation;
 
@@ -119,13 +120,25 @@ public class MCRExternalStoreResourceHelper {
                         title.getForm()))
                     .collect(Collectors.toList());
 
-                final MCRExternalStore store = MCRExternalStoreService.getInstance().getStore(der.getId());
-                final Map<String, String> metadataMap = canEdit ? store.getStoreSettings() : Collections.emptyMap();
-                final MCRDerivateInfoDto derivateInfo = new MCRDerivateInfoDto(der.getId().toString(), titles,
-                    metadataMap, canView, canDelete, canEdit);
-                return derivateInfo;
+                final MCRExternalStoreSettingsDto settings = canEdit
+                    ? toSettingsDto(MCRExternalStoreService.getInstance().getStore(der.getId()))
+                    : null;
+                return new MCRDerivateInfoDto(der.getId().toString(), titles, settings, canView, canDelete, canEdit);
             })
             .collect(Collectors.toList());
+    }
+
+    /**
+     * Maps the settings of a store to a dto, which contains only settings that may be exposed.
+     *
+     * @param store the store
+     * @return settings dto or null if the store type is not supported
+     */
+    protected static MCRExternalStoreSettingsDto toSettingsDto(MCRExternalStore store) {
+        if (store.getStoreProvider() instanceof MCRExternalStoreS3Provider) {
+            return MCRExternalStoreS3SettingsDto.fromMap(store.getStoreSettings());
+        }
+        return null;
     }
 
     /**
