@@ -25,6 +25,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.NoSuchFileException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -95,9 +96,10 @@ public interface MCRExternalStoreProvider {
      * Generates and returns url to download file.
      *
      * @param path path to file
+     * @param validity how long the url is valid
      * @return download url
      */
-    URL getDownloadUrl(String path);
+    URL getDownloadUrl(String path, Duration validity);
 
     /**
      * Returns base url.

@@ -36,7 +36,7 @@
               </select>
               <span v-else class="title">{{getTitle(derivateInfos[0])}}</span>
             </div>
-            <div class="col-auto options" v-if="current?.write || current?.delete">
+            <div class="col-auto options" v-if="canCreate || canEdit || canDelete">
               <b-dropdown variant="link"
                           toggle-class="text-decoration-none">
                 <template #button-content>
@@ -45,14 +45,14 @@
                 <b-dropdown-item v-b-modal.modal-1 v-if="canCreate">
                   {{ i18n.addBucket }}
                 </b-dropdown-item>
-                <b-dropdown-item v-b-modal.modal-3 v-if="current.write">
+                <b-dropdown-item v-b-modal.modal-3 v-if="canEdit">
                   {{ i18n.displayInfo }}
                 </b-dropdown-item>
-                <b-dropdown-item v-if="current.write"
+                <b-dropdown-item v-if="canEdit"
                   :href="baseUrl + 'editor/editor-derivate.xed?derivateid='+current.id">
                   {{ i18n.manageDerivate }}
                 </b-dropdown-item>
-                <b-dropdown-item v-b-modal.modal-2 v-if="current.delete">
+                <b-dropdown-item v-b-modal.modal-2 v-if="canDelete">
                   {{ i18n.deleteBucket }}
                 </b-dropdown-item>
               </b-dropdown>
@@ -127,11 +127,13 @@ import {
   TokenResponse,
   DerivateInformations,
   DerivateInfo,
+  StoreCapability,
 } from '@/model';
 import {
   getInfo,
   saveS3Bucket,
   removeStore,
+  getErrorMessage,
   getJWT,
 } from '@/api/Client';
 
@@ -196,6 +198,14 @@ export default class FileBrowser extends Vue {
     customDownloadProxyUrl: '',
   };
 
+  get canEdit(): boolean {
+    return this.current?.capabilities.includes(StoreCapability.EDIT) ?? false;
+  }
+
+  get canDelete(): boolean {
+    return this.current?.capabilities.includes(StoreCapability.DELETE) ?? false;
+  }
+
   async loadContents(): Promise<void> {
     this.loaded = false;
     const response = await getInfo(this.baseUrl, this.objectId, this.token);
@@ -209,9 +219,9 @@ export default class FileBrowser extends Vue {
       this.derivateInfos.pop();
     }
 
-    this.canCreate = newInfos.create;
+    this.canCreate = newInfos.capabilities.includes(StoreCapability.CREATE);
 
-    newInfos.derivates.filter((info) => info.view).forEach((info) => {
+    newInfos.stores.forEach((info) => {
       this.derivateInfos.push(info);
     });
 
@@ -268,7 +278,7 @@ export default class FileBrowser extends Vue {
         this.$bvModal.hide('modal-2');
       } else {
         this.showDeleteBucketError = true;
-        this.deleteErrorMessage = await resp.text();
+        this.deleteErrorMessage = await getErrorMessage(resp);
       }
     } catch (e) {
       this.showDeleteBucketError = true;
@@ -285,7 +295,7 @@ export default class FileBrowser extends Vue {
         this.loadContents();
       } else {
         this.showAddBucketError = true;
-        this.addBucketErrorMessage = await resp.text();
+        this.addBucketErrorMessage = await getErrorMessage(resp);
       }
     } catch (e) {
       this.showAddBucketError = true;

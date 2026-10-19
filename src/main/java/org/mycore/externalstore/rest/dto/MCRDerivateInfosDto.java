@@ -19,15 +19,16 @@
 package org.mycore.externalstore.rest.dto;
 
 import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Dto for derivate infos.
  *
- * @param derivates list over derivate info elements
- * @param create user can create external store
+ * @param stores list over derivate info elements of the stores the current user can read
+ * @param capabilities what the current user can do with the stores of the object
  */
-public record MCRDerivateInfosDto(@JsonProperty("derivates") List<MCRDerivateInfoDto> derivates,
-    @JsonProperty("create") boolean create) {
+public record MCRDerivateInfosDto(@JsonProperty("stores") List<MCRDerivateInfoDto> stores,
+    @JsonProperty("capabilities") Set<MCRStoreCapability> capabilities) {
 }

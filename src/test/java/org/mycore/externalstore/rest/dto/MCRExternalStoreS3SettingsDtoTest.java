@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
@@ -46,8 +47,8 @@ public class MCRExternalStoreS3SettingsDtoTest {
             MCRExternalStoreS3Settings.ACCESS_KEY, "access",
             MCRExternalStoreS3Settings.SECRET_KEY, "secret",
             MCRExternalStore.USE_DOWNLOAD_PROXY, "true");
-        final MCRDerivateInfoDto info = new MCRDerivateInfoDto("mcr_derivate_00000001", List.of(),
-            MCRExternalStoreS3SettingsDto.fromMap(settings), true, true, true);
+        final MCRDerivateInfoDto info = new MCRDerivateInfoDto("mcr_derivate_00000001", "s3", List.of(),
+            MCRExternalStoreS3SettingsDto.fromMap(settings), EnumSet.allOf(MCRStoreCapability.class));
 
         final String json = MAPPER.writeValueAsString(info);
         final JsonNode metadata = MAPPER.readTree(json).get("metadata");

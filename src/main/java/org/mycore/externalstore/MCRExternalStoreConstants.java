@@ -18,7 +18,11 @@
 
 package org.mycore.externalstore;
 
+import java.time.Duration;
+import java.time.format.DateTimeParseException;
+
 import org.mycore.common.config.MCRConfiguration2;
+import org.mycore.common.config.MCRConfigurationException;
 
 /**
  * Provides various constants.
@@ -35,5 +39,26 @@ public class MCRExternalStoreConstants {
      */
     public static final Long MAX_DOWNLOAD_SIZE = MCRConfiguration2.getLong(PROPERTY_PREFIX + "MaxDownloadSize")
         .orElseThrow(() -> MCRConfiguration2.createConfigurationException(PROPERTY_PREFIX + "MaxDownloadSize"));
+
+    /**
+     * Validity of a download url.
+     */
+    public static final Duration DOWNLOAD_URL_VALIDITY = getDownloadUrlValidity();
+
+    private static Duration getDownloadUrlValidity() {
+        final String property = PROPERTY_PREFIX + "DownloadUrl.Validity";
+        final String value = MCRConfiguration2.getString(property)
+            .orElseThrow(() -> MCRConfiguration2.createConfigurationException(property));
+        final Duration validity;
+        try {
+            validity = Duration.parse(value);
+        } catch (DateTimeParseException e) {
+            throw new MCRConfigurationException(property + " is not an ISO-8601 duration: " + value, e);
+        }
+        if (validity.isNegative() || validity.isZero()) {
+            throw new MCRConfigurationException(property + " must be positive: " + validity);
+        }
+        return validity;
+    }
 
 }

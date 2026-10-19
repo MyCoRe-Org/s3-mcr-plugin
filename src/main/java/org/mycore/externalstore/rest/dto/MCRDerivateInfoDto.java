@@ -19,6 +19,7 @@
 package org.mycore.externalstore.rest.dto;
 
 import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -26,13 +27,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Dto for derivate info.
  *
  * @param id derivate id
+ * @param type store type
  * @param titles list over derivate title elements
  * @param metadata store settings without secrets, only for users with write permission
- * @param view user can view store
- * @param delete user can delete store
- * @param write user can update store
+ * @param capabilities what the current user can do with the store
  */
-public record MCRDerivateInfoDto(@JsonProperty("id") String id,
+public record MCRDerivateInfoDto(@JsonProperty("id") String id, @JsonProperty("type") String type,
     @JsonProperty("titles") List<MCRDerivateTitleDto> titles,
-    @JsonProperty("metadata") MCRExternalStoreSettingsDto metadata, @JsonProperty("view") boolean view, @JsonProperty("delete") boolean delete, @JsonProperty("write") boolean write) {
+    @JsonProperty("metadata") MCRExternalStoreSettingsDto metadata,
+    @JsonProperty("capabilities") Set<MCRStoreCapability> capabilities) {
 }

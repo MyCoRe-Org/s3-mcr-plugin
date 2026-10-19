@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mycore.access.MCRAccessManager;
+import org.mycore.datamodel.metadata.MCRDerivate;
 import org.mycore.datamodel.metadata.MCRMetaLangText;
 import org.mycore.datamodel.metadata.MCRMetadataManager;
 import org.mycore.datamodel.metadata.MCRObject;
@@ -45,6 +46,7 @@ import org.mycore.externalstore.rest.dto.MCRDerivateTitleDto;
 import org.mycore.externalstore.rest.dto.MCRExternalStoreFileInfoDto;
 import org.mycore.externalstore.rest.dto.MCRExternalStoreS3SettingsDto;
 import org.mycore.externalstore.rest.dto.MCRExternalStoreSettingsDto;
+import org.mycore.externalstore.rest.dto.MCRStoreCapability;
 import org.mycore.externalstore.s3.MCRExternalStoreS3Provider;
 import org.mycore.externalstore.util.MCRExternalStoreUtils;
 import org.mycore.services.i18n.MCRTranslation;
@@ -109,26 +111,9 @@ public class MCRExternalStoreResourceHelper {
     protected static List<MCRDerivateInfoDto> listDerivateInformations(MCRObjectID objectId) {
         return listStoreDerivates(objectId).stream()
             .map(MCRObjectID::getInstance)
-            .map(MCRMetadataManager::retrieveMCRDerivate)
-            .map(der -> {
-                // read only, see MCRExternalStoreResource#ensureDerivateReadPermission
-                final boolean canView = MCRAccessManager.checkPermission(der.getId(),
-                    MCRAccessManager.PERMISSION_READ);
-                final boolean canDelete = MCRAccessManager.checkPermission(der.getId(),
-                    MCRAccessManager.PERMISSION_DELETE);
-                final boolean canEdit = MCRAccessManager.checkPermission(der.getId(),
-                    MCRAccessManager.PERMISSION_WRITE);
-
-                final List<MCRDerivateTitleDto> titles = der.getDerivate().getTitles().stream()
-                    .sorted((t1, t2) -> getLanguageValue(t2) - getLanguageValue(t1))
-                    .map(title -> new MCRDerivateTitleDto(title.getText(),
-                        title.getLang(),
-                        title.getForm()))
-                    .collect(Collectors.toList());
-
-                final MCRExternalStoreSettingsDto settings = canEdit ? getSettingsDto(der.getId()) : null;
-                return new MCRDerivateInfoDto(der.getId().toString(), titles, settings, canView, canDelete, canEdit);
-            })
+            // read only, see MCRExternalStoreResource#ensureDerivateReadPermission
+            .filter(derivateId -> MCRAccessManager.checkPermission(derivateId, MCRAccessManager.PERMISSION_READ))
+            .map(MCRExternalStoreResourceHelper::getDerivateInformation)
             .collect(Collectors.toList());
     }
 
@@ -140,6 +125,36 @@ public class MCRExternalStoreResourceHelper {
             LOGGER.warn("Cannot load settings of store {}", derivateId, e);
             return null;
         }
+    }
+
+    /**
+     * Returns the {@link MCRDerivateInfoDto} of a store derivate.
+     *
+     * @param derivateId derivate id of the store
+     * @return derivate info dto
+     */
+    protected static MCRDerivateInfoDto getDerivateInformation(MCRObjectID derivateId) {
+        final MCRDerivate der = MCRMetadataManager.retrieveMCRDerivate(derivateId);
+        final boolean canEdit = MCRAccessManager.checkPermission(der.getId(),
+            MCRAccessManager.PERMISSION_WRITE);
+        final Set<MCRStoreCapability> capabilities = EnumSet.noneOf(MCRStoreCapability.class);
+        if (canEdit) {
+            capabilities.add(MCRStoreCapability.EDIT);
+        }
+        if (MCRAccessManager.checkPermission(der.getId(), MCRAccessManager.PERMISSION_DELETE)) {
+            capabilities.add(MCRStoreCapability.DELETE);
+        }
+
+        final List<MCRDerivateTitleDto> titles = der.getDerivate().getTitles().stream()
+            .sorted((t1, t2) -> getLanguageValue(t2) - getLanguageValue(t1))
+            .map(title -> new MCRDerivateTitleDto(title.getText(),
+                title.getLang(),
+                title.getForm()))
+            .collect(Collectors.toList());
+
+        final MCRExternalStoreSettingsDto settings = canEdit ? getSettingsDto(der.getId()) : null;
+        return new MCRDerivateInfoDto(der.getId().toString(), MCRExternalStoreServiceUtils.getStoreType(der), titles,
+            settings, capabilities);
     }
 
     /**

@@ -49,6 +49,7 @@ import org.mycore.externalstore.archive.MCRExternalStoreArchiveResolverFactory;
 import org.mycore.externalstore.exception.MCRExternalStoreException;
 import org.mycore.externalstore.exception.MCRExternalStoreIntegrityViolationException;
 import org.mycore.externalstore.exception.MCRExternalStoreNotExistsException;
+import org.mycore.externalstore.exception.MCRExternalStorePermissionException;
 import org.mycore.externalstore.exception.MCRExternalStoreUnavailableException;
 import org.mycore.externalstore.model.MCRExternalStoreArchiveInfo;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
@@ -116,14 +117,19 @@ public final class MCRExternalStoreService {
      * @param objectId object id
      * @param storeType store type
      * @param storeProviderSettings map over provider store setting elements
+     * @return id of the store derivate
+     * @throws MCRExternalStorePermissionException if the current user is not permitted to create the store
      * @throws MCRExternalStoreException if an error while creating store info occurs
      */
-    public static void createStore(MCRObjectID objectId, String storeType, Map<String, String> storeProviderSettings) {
+    public static MCRObjectID createStore(MCRObjectID objectId, String storeType,
+        Map<String, String> storeProviderSettings) {
         testStoreProviderSettings(storeType, storeProviderSettings);
         MCRObjectID derivateId;
         try {
             derivateId = createStoreDerivate(objectId, storeType);
-        } catch (MCRAccessException | MCRException e) {
+        } catch (MCRAccessException e) {
+            throw new MCRExternalStorePermissionException("No permission to create store", e);
+        } catch (MCRException e) {
             throw new MCRExternalStoreException("Error while creating store", e);
         }
         try {
@@ -132,6 +138,7 @@ public final class MCRExternalStoreService {
             throw new MCRExternalStoreException("Error while saving store provider settings", e);
         }
         enqueueCreateStoreJob(derivateId);
+        return derivateId;
     }
 
     private static void testStoreProviderSettings(String storeType, Map<String, String> storeProviderSettings) {
@@ -335,11 +342,15 @@ public final class MCRExternalStoreService {
      * Deletes store/derivate.
      *
      * @param derivateId derivate id
+     * @throws MCRExternalStorePermissionException if the current user is not permitted to delete the store
+     * @throws MCRExternalStoreException if an error occurs while deleting store
      */
     public void deleteStore(MCRObjectID derivateId) {
         try {
             MCRMetadataManager.deleteMCRDerivate(derivateId);
         } catch (MCRAccessException e) {
+            throw new MCRExternalStorePermissionException("No permission to delete store", e);
+        } catch (MCRException e) {
             throw new MCRExternalStoreException("Error while deleting store", e);
         }
         evictStore(derivateId);

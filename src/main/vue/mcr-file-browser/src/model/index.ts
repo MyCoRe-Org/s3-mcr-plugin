@@ -44,19 +44,25 @@ export type DerivateTitle = {
   form: string;
 };
 
+// eslint-disable-next-line no-shadow
+export enum StoreCapability {
+  CREATE = 'CREATE',
+  EDIT = 'EDIT',
+  DELETE = 'DELETE',
+}
+
 export type DerivateInfo = {
   id: string;
-  view: boolean;
-  write: boolean;
-  delete: boolean;
+  type: string;
+  capabilities: StoreCapability[];
   titles: DerivateTitle[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata: Record<string, any>
 }
 
 export type DerivateInformations = {
-  derivates: DerivateInfo[];
-  create: boolean;
+  stores: DerivateInfo[];
+  capabilities: StoreCapability[];
 };
 
 export type TokenResponse = {
