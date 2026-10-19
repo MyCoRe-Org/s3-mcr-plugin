@@ -20,6 +20,7 @@ package org.mycore.externalstore;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -65,6 +66,18 @@ public class MCRExternalStoreServiceUtilsTest extends MCRStoreTestCase {
     public void testCheckPathIsInformationFile_noCorrectFileName() {
         final MCRPath path = MCRPath.getPath("derivate", "foo.txt");
         assertFalse(MCRExternalStoreServiceUtils.checkPathIsFileInfosFile(path));
+    }
+
+    @Test
+    public void testCheckPathIsStoreProviderSettingsFile() {
+        final MCRPath path = MCRPath.getPath("derivate", MCRExternalStoreService.STORE_PROVIDER_SETTINGS_FILENAME);
+        assertTrue(MCRExternalStoreServiceUtils.checkPathIsStoreProviderSettingsFile(path));
+    }
+
+    @Test
+    public void testCheckPathIsStoreProviderSettingsFile_noCorrectFileName() {
+        final MCRPath path = MCRPath.getPath("derivate", MCRExternalStoreService.FILE_INFOS_FILENAME);
+        assertFalse(MCRExternalStoreServiceUtils.checkPathIsStoreProviderSettingsFile(path));
     }
 
     @Test(expected = MCRExternalStoreNotExistsException.class)

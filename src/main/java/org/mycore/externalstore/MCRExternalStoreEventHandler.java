@@ -60,6 +60,7 @@ public class MCRExternalStoreEventHandler extends MCREventHandlerBase {
 
     @Override
     protected void handlePathDeleted(MCREvent evt, Path path, BasicFileAttributes attrs) {
+        evictStoreIfSettingsChanged(path);
         if (!MCRExternalStoreServiceUtils.checkPathIsFileInfosFile(path)) {
             return;
         }
@@ -71,7 +72,14 @@ public class MCRExternalStoreEventHandler extends MCREventHandlerBase {
 
     @Override
     protected void handleDerivateDeleted(MCREvent evt, MCRDerivate der) {
+        MCRExternalStoreService.evictStore(der.getId());
         deleteFileInfosFromIndex(der);
+    }
+
+    private static void evictStoreIfSettingsChanged(Path path) {
+        if (MCRExternalStoreServiceUtils.checkPathIsStoreProviderSettingsFile(path)) {
+            MCRExternalStoreService.evictStore(MCRObjectID.getInstance(MCRPath.ofPath(path).getOwner()));
+        }
     }
 
     private void addArchiveInfosToIndex(MCRObjectID derivateId, Path path) {
@@ -106,6 +114,7 @@ public class MCRExternalStoreEventHandler extends MCREventHandlerBase {
     }
 
     private void handlePathCreatedUpdated(Path path) {
+        evictStoreIfSettingsChanged(path);
         final String derivateIdString = MCRPath.ofPath(path).getOwner();
         final MCRObjectID derivateId = MCRObjectID.getInstance(derivateIdString);
         final MCRDerivate derivate = MCRMetadataManager.retrieveMCRDerivate(derivateId);

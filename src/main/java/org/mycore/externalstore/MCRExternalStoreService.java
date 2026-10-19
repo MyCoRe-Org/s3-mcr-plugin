@@ -170,6 +170,7 @@ public final class MCRExternalStoreService {
         }
         final MCRPath path = MCRPath.getPath(derivateId.toString(), STORE_PROVIDER_SETTINGS_FILENAME);
         MCRExternalStoreServiceHelper.saveSettingsWrapper(path, wrapper);
+        evictStore(derivateId);
     }
 
     private static void enqueueCreateStoreJob(MCRObjectID derivateId) {
@@ -341,6 +342,15 @@ public final class MCRExternalStoreService {
         } catch (MCRAccessException e) {
             throw new MCRExternalStoreException("Error while deleting store", e);
         }
+        evictStore(derivateId);
+    }
+
+    /**
+     * Removes a store from the cache, so it is loaded again with current settings on next access.
+     *
+     * @param derivateId derivate id
+     */
+    static void evictStore(MCRObjectID derivateId) {
         STORE_CACHE.remove(derivateId.toString());
     }
 

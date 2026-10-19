@@ -126,6 +126,16 @@ public class MCRExternalStoreServiceUtils {
         return checkFileName(file, MCRExternalStoreService.ARCHIVE_INFOS_FILENAME);
     }
 
+    /**
+     * Checks if file is store provider settings file.
+     *
+     * @param file the file
+     * @return true if file is store provider settings file
+     */
+    public static boolean checkPathIsStoreProviderSettingsFile(Path file) {
+        return checkFileName(file, MCRExternalStoreService.STORE_PROVIDER_SETTINGS_FILENAME);
+    }
+
     private static boolean checkFileName(Path file, String fileName) {
         return file instanceof MCRPath && Objects.equals(fileName, file.getFileName().toString());
     }
