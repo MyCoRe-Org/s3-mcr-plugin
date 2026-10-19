@@ -31,9 +31,15 @@ import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
  */
 public class MCRExternalStore {
 
-    private static final String USE_DOWNLOAD_PROXY = "useDownloadProxy";
+    /**
+     * Use download proxy settings key.
+     */
+    public static final String USE_DOWNLOAD_PROXY = "useDownloadProxy";
 
-    private static final String CUSTOM_DOWNLOAD_PROXY_URL = "customDownloadProxyUrl";
+    /**
+     * Custom download proxy url settings key.
+     */
+    public static final String CUSTOM_DOWNLOAD_PROXY_URL = "customDownloadProxyUrl";
 
     private final String storeType;
 
