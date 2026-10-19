@@ -36,4 +36,14 @@ public class MCRExternalStoreIntegrityViolationException extends MCRExternalStor
     public MCRExternalStoreIntegrityViolationException(String message) {
         super(message);
     }
+
+    /**
+     * Constructs an exception with message and cause.
+     *
+     * @param message the message
+     * @param cause the cause
+     */
+    public MCRExternalStoreIntegrityViolationException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

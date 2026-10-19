@@ -20,9 +20,11 @@ package org.mycore.externalstore;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -45,7 +47,9 @@ import org.mycore.datamodel.metadata.MCRObjectID;
 import org.mycore.datamodel.niofs.MCRPath;
 import org.mycore.externalstore.archive.MCRExternalStoreArchiveResolverFactory;
 import org.mycore.externalstore.exception.MCRExternalStoreException;
+import org.mycore.externalstore.exception.MCRExternalStoreIntegrityViolationException;
 import org.mycore.externalstore.exception.MCRExternalStoreNotExistsException;
+import org.mycore.externalstore.exception.MCRExternalStoreUnavailableException;
 import org.mycore.externalstore.model.MCRExternalStoreArchiveInfo;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.model.MCRExternalStoreSettingsWrapper;
@@ -301,6 +305,29 @@ public final class MCRExternalStoreService {
 
     private static String getChiperFilePath() {
         return MCRConfiguration2.getStringOrThrow(PROPERTY_PEFIX + "StoreProviderSettings.Cipher");
+    }
+
+    /**
+     * Ensures that a file of a store still matches its indexed file info.
+     *
+     * @param derivateId derivate id of the store
+     * @param fileInfo indexed file info
+     * @throws MCRExternalStoreIntegrityViolationException if the file is missing in the store or its checksum differs
+     * @throws MCRExternalStoreUnavailableException if the store is not available
+     */
+    public void ensureFileIntegrity(MCRObjectID derivateId, MCRExternalStoreFileInfo fileInfo) {
+        final String path = fileInfo.getAbsolutePath();
+        final MCRExternalStoreFileInfo storeFileInfo;
+        try {
+            storeFileInfo = getStore(derivateId).getFileInfo(path);
+        } catch (NoSuchFileException e) {
+            throw new MCRExternalStoreIntegrityViolationException("File does not exist in store: " + path, e);
+        } catch (IOException e) {
+            throw new MCRExternalStoreUnavailableException("Error while reading file info: " + path, e);
+        }
+        if (!Objects.equals(fileInfo.checksum(), storeFileInfo.checksum())) {
+            throw new MCRExternalStoreIntegrityViolationException("Checksum does not match: " + path);
+        }
     }
 
     /**

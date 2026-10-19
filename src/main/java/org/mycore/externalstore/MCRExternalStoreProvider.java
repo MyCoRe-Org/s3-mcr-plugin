@@ -24,10 +24,11 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.file.NoSuchFileException;
 import java.util.List;
 import java.util.Map;
 
-import org.mycore.externalstore.exception.MCRExternalStoreNoAccessException;
+import org.mycore.externalstore.exception.MCRExternalStoreUnavailableException;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 
 /**
@@ -66,7 +67,9 @@ public interface MCRExternalStoreProvider {
      *
      * @param path path to file
      * @return file info
+     * @throws NoSuchFileException if the file does not exist
      * @throws IOException if an I/O error occurs
+     * @throws MCRExternalStoreUnavailableException if the store is not available
      */
     MCRExternalStoreFileInfo getFileInfo(String path) throws IOException;
 
@@ -107,7 +110,7 @@ public interface MCRExternalStoreProvider {
     /**
      * Ensures that the provider is able to read.
      *
-     * @throws MCRExternalStoreNoAccessException if an access problem occurs
+     * @throws MCRExternalStoreUnavailableException if the store is not available
      */
     void ensureReadAccess();
 

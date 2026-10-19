@@ -21,27 +21,24 @@ package org.mycore.externalstore.exception;
 import java.io.Serial;
 
 /**
- * Indicates an inconsistency in the index.
+ * Indicates that a store cannot be used, e.g. because its endpoint is not reachable, it rejects the configured
+ * credentials or the bucket does not exist.
+ * <p>
+ * Not to be confused with a missing permission of the current user.
  */
-public class MCRExternalStoreIndexInconsistentException extends MCRExternalStoreException {
+public class MCRExternalStoreUnavailableException extends MCRExternalStoreException {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
     /**
-     * Constructs {@link MCRExternalStoreIndexInconsistentException} with message.
+     * Constructs an exception with message and cause.
      *
      * @param message the message
+     * @param cause the cause
      */
-    public MCRExternalStoreIndexInconsistentException(String message) {
-        super(message);
-    }
-
-    /**
-     * Constructs {@link MCRExternalStoreIndexInconsistentException}.
-     */
-    public MCRExternalStoreIndexInconsistentException() {
-        this("Index is inconsistent");
+    public MCRExternalStoreUnavailableException(String message, Throwable cause) {
+        super(message, cause);
     }
 
 }

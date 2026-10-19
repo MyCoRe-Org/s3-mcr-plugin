@@ -25,6 +25,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -37,7 +38,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mycore.externalstore.MCRExternalStoreProvider;
-import org.mycore.externalstore.exception.MCRExternalStoreNoAccessException;
+import org.mycore.externalstore.exception.MCRExternalStoreUnavailableException;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.util.MCRExternalStoreUtils;
 
@@ -45,6 +46,7 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.HttpMethod;
 import com.amazonaws.Protocol;
+import com.amazonaws.SdkClientException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -86,8 +88,22 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
     }
 
     @Override
-    public MCRExternalStoreFileInfo getFileInfo(String path) {
-        final ObjectMetadata metadata = getObjectMetadata(path);
+    public MCRExternalStoreFileInfo getFileInfo(String path) throws IOException {
+        final ObjectMetadata metadata;
+        try {
+            metadata = getObjectMetadata(path);
+        } catch (AmazonServiceException amazonServiceException) {
+            if (amazonServiceException.getStatusCode() == 404) {
+                final NoSuchFileException noSuchFileException = new NoSuchFileException(path);
+                noSuchFileException.initCause(amazonServiceException);
+                throw noSuchFileException;
+            }
+            throw new MCRExternalStoreUnavailableException(amazonServiceException.getErrorMessage(),
+                amazonServiceException);
+        } catch (SdkClientException sdkClientException) {
+            throw new MCRExternalStoreUnavailableException("Endpoint is not reachable: " + settings.endpoint(),
+                sdkClientException);
+        }
         final String parentPath = MCRExternalStoreUtils.getParentPath(path);
         final String name = MCRExternalStoreUtils.getFileName(path);
         return new MCRExternalStoreFileInfo.Builder(name, parentPath)
@@ -143,10 +159,18 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
         } catch (AmazonServiceException amazonServiceException) {
             LOGGER.warn("Bucket head request failed", amazonServiceException);
             if (amazonServiceException.getStatusCode() == 403) {
-                throw new MCRExternalStoreNoAccessException(amazonServiceException.getErrorMessage(),
+                throw new MCRExternalStoreUnavailableException(amazonServiceException.getErrorMessage(),
                     amazonServiceException);
             }
-            throw new MCRExternalStoreNoAccessException("Test failed.", amazonServiceException);
+            if (amazonServiceException.getStatusCode() == 404) {
+                throw new MCRExternalStoreUnavailableException("Bucket does not exist: " + settings.bucket(),
+                    amazonServiceException);
+            }
+            throw new MCRExternalStoreUnavailableException("Test failed.", amazonServiceException);
+        } catch (SdkClientException sdkClientException) {
+            LOGGER.warn("Bucket head request failed", sdkClientException);
+            throw new MCRExternalStoreUnavailableException("Endpoint is not reachable: " + settings.endpoint(),
+                sdkClientException);
         }
     }
 

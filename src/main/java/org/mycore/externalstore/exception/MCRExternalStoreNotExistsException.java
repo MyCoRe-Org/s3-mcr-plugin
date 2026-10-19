@@ -20,12 +20,10 @@ package org.mycore.externalstore.exception;
 
 import java.io.Serial;
 
-import org.mycore.common.MCRException;
-
 /**
  * Occurs if an external store does not exist.
  */
-public class MCRExternalStoreNotExistsException extends MCRException {
+public class MCRExternalStoreNotExistsException extends MCRExternalStoreException {
 
     @Serial
     private static final long serialVersionUID = 1L;

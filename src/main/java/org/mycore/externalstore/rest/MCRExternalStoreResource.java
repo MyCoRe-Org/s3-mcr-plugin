@@ -18,14 +18,12 @@
 
 package org.mycore.externalstore.rest;
 
-import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.mycore.access.MCRAccessManager;
@@ -36,6 +34,8 @@ import org.mycore.externalstore.MCRExternalStore;
 import org.mycore.externalstore.MCRExternalStoreConstants;
 import org.mycore.externalstore.MCRExternalStoreService;
 import org.mycore.externalstore.exception.MCRExternalStoreException;
+import org.mycore.externalstore.exception.MCRExternalStoreIntegrityViolationException;
+import org.mycore.externalstore.exception.MCRExternalStoreUnavailableException;
 import org.mycore.externalstore.index.MCRExternalStoreInfoIndex;
 import org.mycore.externalstore.index.MCRExternalStoreInfoIndexManager;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
@@ -56,6 +56,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -226,15 +227,12 @@ public class MCRExternalStoreResource {
     }
 
     private void ensureFileIntegrity(MCRObjectID derivateId, MCRExternalStoreFileInfo fileInfo) {
-        String storeArchiveChecksum;
         try {
-            storeArchiveChecksum = MCRExternalStoreService.getInstance().getStore(derivateId)
-                .getFileInfo(fileInfo.getAbsolutePath()).checksum();
-        } catch (IOException e) {
+            MCRExternalStoreService.getInstance().ensureFileIntegrity(derivateId, fileInfo);
+        } catch (MCRExternalStoreIntegrityViolationException e) {
             throw new InternalServerErrorException("Detected integrity violation", e);
-        }
-        if (!Objects.equals(fileInfo.checksum(), storeArchiveChecksum)) {
-            throw new InternalServerErrorException("Detected integrity violation");
+        } catch (MCRExternalStoreUnavailableException e) {
+            throw new WebApplicationException("Store is not available", e, Response.Status.BAD_GATEWAY);
         }
     }
 

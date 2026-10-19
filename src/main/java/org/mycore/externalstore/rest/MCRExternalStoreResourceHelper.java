@@ -27,6 +27,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.mycore.access.MCRAccessManager;
 import org.mycore.datamodel.metadata.MCRMetaLangText;
 import org.mycore.datamodel.metadata.MCRMetadataManager;
@@ -36,6 +38,7 @@ import org.mycore.externalstore.MCRExternalStore;
 import org.mycore.externalstore.MCRExternalStoreConstants;
 import org.mycore.externalstore.MCRExternalStoreService;
 import org.mycore.externalstore.MCRExternalStoreServiceUtils;
+import org.mycore.externalstore.exception.MCRExternalStoreException;
 import org.mycore.externalstore.model.MCRExternalStoreFileInfo;
 import org.mycore.externalstore.rest.dto.MCRDerivateInfoDto;
 import org.mycore.externalstore.rest.dto.MCRDerivateTitleDto;
@@ -54,6 +57,8 @@ import jakarta.ws.rs.core.StreamingOutput;
  * Provides helper methods for external store resource.
  */
 public class MCRExternalStoreResourceHelper {
+
+    private static final Logger LOGGER = LogManager.getLogger();
 
     /**
      * Returns an input stream response with file specified by path.
@@ -121,12 +126,20 @@ public class MCRExternalStoreResourceHelper {
                         title.getForm()))
                     .collect(Collectors.toList());
 
-                final MCRExternalStoreSettingsDto settings = canEdit
-                    ? toSettingsDto(MCRExternalStoreService.getInstance().getStore(der.getId()))
-                    : null;
+                final MCRExternalStoreSettingsDto settings = canEdit ? getSettingsDto(der.getId()) : null;
                 return new MCRDerivateInfoDto(der.getId().toString(), titles, settings, canView, canDelete, canEdit);
             })
             .collect(Collectors.toList());
+    }
+
+    private static MCRExternalStoreSettingsDto getSettingsDto(MCRObjectID derivateId) {
+        try {
+            return toSettingsDto(MCRExternalStoreService.getInstance().getStore(derivateId));
+        } catch (MCRExternalStoreException e) {
+            // a broken store must not break the listing of the other stores
+            LOGGER.warn("Cannot load settings of store {}", derivateId, e);
+            return null;
+        }
     }
 
     /**
