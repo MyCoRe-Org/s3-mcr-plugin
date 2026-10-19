@@ -81,17 +81,14 @@ public record MCRExternalStoreS3Settings(String protocol, String endpoint, Strin
      *
      * @param map map
      * @return s3 settings
+     * @throws IllegalArgumentException if a required setting is missing
      */
     public static MCRExternalStoreS3Settings fromMap(Map<String, String> map) {
         final String protocol = Optional.ofNullable(map.get(PROTOCOL)).orElse("https");
-        final String endpoint = Optional.ofNullable(map.get(ENDPOINT))
-            .orElseThrow(() -> new IllegalArgumentException());
-        final String accessKey = Optional.ofNullable(map.get(ACCESS_KEY))
-            .orElseThrow(() -> new IllegalArgumentException());
-        final String secretKey = Optional.ofNullable(map.get(SECRET_KEY))
-            .orElseThrow(() -> new IllegalArgumentException());
-        final String bucket = Optional.ofNullable(map.get(BUCKET))
-            .orElseThrow(() -> new IllegalArgumentException());
+        final String endpoint = getRequired(map, ENDPOINT);
+        final String accessKey = getRequired(map, ACCESS_KEY);
+        final String secretKey = getRequired(map, SECRET_KEY);
+        final String bucket = getRequired(map, BUCKET);
         final String signingRegion = Optional.ofNullable(map.get(SIGNING_REGION)).orElse("us-east-1");
         final boolean isPathStyleAccess = Optional.ofNullable(map.get(PATH_STYLE_ACCESS)).map(Boolean::parseBoolean)
             .orElse(false);
@@ -100,5 +97,10 @@ public record MCRExternalStoreS3Settings(String protocol, String endpoint, Strin
         return new MCRExternalStoreS3Settings(protocol, endpoint, accessKey, secretKey, bucket, signingRegion,
             isPathStyleAccess,
             directory);
+    }
+
+    private static String getRequired(Map<String, String> map, String key) {
+        return Optional.ofNullable(map.get(key))
+            .orElseThrow(() -> new IllegalArgumentException("Missing required setting: " + key));
     }
 }

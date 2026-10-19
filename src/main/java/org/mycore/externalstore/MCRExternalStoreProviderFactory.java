@@ -21,6 +21,8 @@ package org.mycore.externalstore;
 import java.util.Map;
 
 import org.mycore.common.config.MCRConfiguration2;
+import org.mycore.common.config.MCRConfigurationException;
+import org.mycore.externalstore.exception.MCRExternalStoreException;
 
 /**
  * This class provides factory methods for {@link MCRExternalStoreProvider}.
@@ -33,11 +35,16 @@ public class MCRExternalStoreProviderFactory {
      * @param storeType store type
      * @param storeProviderSettings provider settings
      * @return store provider
+     * @throws MCRExternalStoreException if no provider is configured for the store type or it cannot be created
      */
     public static MCRExternalStoreProvider createStoreProvider(String storeType,
         Map<String, String> storeProviderSettings) {
-        final MCRExternalStoreProvider provider
-            = MCRConfiguration2.getInstanceOfOrThrow(MCRExternalStoreProvider.class, getProperty(storeType));
+        final MCRExternalStoreProvider provider;
+        try {
+            provider = MCRConfiguration2.getInstanceOfOrThrow(MCRExternalStoreProvider.class, getProperty(storeType));
+        } catch (MCRConfigurationException e) {
+            throw new MCRExternalStoreException("Cannot create provider for store type: " + storeType, e);
+        }
         provider.init(storeProviderSettings);
         return provider;
     }

@@ -21,6 +21,7 @@ package org.mycore.externalstore.s3;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
@@ -79,6 +80,15 @@ public class MCRExternalStoreS3SettingsTest {
         settingsMap.put(MCRExternalStoreS3Settings.PATH_STYLE_ACCESS, "false");
         final MCRExternalStoreS3Settings settings = MCRExternalStoreS3Settings.fromMap(settingsMap);
         assertFalse(settings.pathStyleAccess());
+    }
+
+    @Test
+    public void testFromMap_endpointMissing() {
+        final Map<String, String> settingsMap = getSettingsMap();
+        settingsMap.remove(MCRExternalStoreS3Settings.ENDPOINT);
+        final IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+            () -> MCRExternalStoreS3Settings.fromMap(settingsMap));
+        assertEquals("Missing required setting: " + MCRExternalStoreS3Settings.ENDPOINT, exception.getMessage());
     }
 
     protected static Map<String, String> getSettingsMap() {
