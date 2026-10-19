@@ -26,6 +26,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.NoSuchFileException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -138,18 +140,11 @@ public class MCRExternalStoreS3Provider implements MCRExternalStoreProvider {
     }
 
     @Override
-    public URL getDownloadUrl(String path) {
+    public URL getDownloadUrl(String path, Duration validity) {
         final GeneratePresignedUrlRequest generatePresignedUrlRequest
             = new GeneratePresignedUrlRequest(settings.bucket(), getKey(path)).withMethod(HttpMethod.GET)
-                .withExpiration(getExpirationDate());
+                .withExpiration(Date.from(Instant.now().plus(validity)));
         return client.generatePresignedUrl(generatePresignedUrlRequest);
-    }
-
-    private Date getExpirationDate() {
-        final Date expiration = new Date();
-        final long expTimeMillis = expiration.getTime() + 1000 * 60 * 60;
-        expiration.setTime(expTimeMillis);
-        return expiration;
     }
 
     @Override

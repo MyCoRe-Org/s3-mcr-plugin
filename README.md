@@ -55,6 +55,10 @@ Information about archives is stored separately in archives.json because it depe
 ## Download
 Before a download, the integrity is checked and a download URL is generated.
 In the case of S3, this is a presigned url.
+The validity of a download url is set as ISO-8601 duration and only has to cover the start of a download:
+```
+MCR.ExternalStore.DownloadUrl.Validity=PT1H
+```
 It is possible that the provider endpoint cannot be reached publicly.
 In this case, a proxy can be activated when creating a store.
 A proxy servlet is available for this purpose.

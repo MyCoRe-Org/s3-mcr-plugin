@@ -53,6 +53,7 @@ import org.mycore.externalstore.rest.dto.MCRDerivateInfosDto;
 import org.mycore.externalstore.rest.dto.MCRDownloadUrlDto;
 import org.mycore.externalstore.rest.dto.MCRExternalStoreFileInfoDto;
 import org.mycore.externalstore.rest.dto.MCRStoreCapability;
+import org.mycore.frontend.jersey.MCRCacheControl;
 import org.mycore.restapi.annotations.MCRRequireTransaction;
 import org.mycore.restapi.v2.MCRErrorResponse;
 import org.mycore.restapi.v2.MCRRestAuthorizationFilter;
@@ -68,6 +69,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.CacheControl;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -242,7 +244,8 @@ public class MCRExternalStoreResource {
             return Response.ok(MCRExternalStoreResourceHelper.toDto(fileInfo, downloadable),
                 MediaType.APPLICATION_JSON_TYPE).build();
         }
-        return Response.seeOther(URI.create(getCheckedDownloadUrl(derivateId, relativePath, fileInfo))).build();
+        return Response.seeOther(URI.create(getCheckedDownloadUrl(derivateId, relativePath, fileInfo)))
+            .cacheControl(noStore()).build();
     }
 
     private List<MCRExternalStoreFileInfoDto> listFileInfos(MCRObjectID derivateId, String path,
@@ -263,6 +266,7 @@ public class MCRExternalStoreResource {
     @GET
     @Path("{" + PARAM_DERID + "}/download-url" + PATH_PARAM_FILE_PATH)
     @Produces(MediaType.APPLICATION_JSON)
+    @MCRCacheControl(noStore = true)
     public MCRDownloadUrlDto getDownloadUrl(@PathParam(PARAM_DERID) MCRObjectID derivateId,
         @PathParam(PARAM_DER_PATH) String path) {
         ensureObjectExists();
@@ -271,6 +275,19 @@ public class MCRExternalStoreResource {
         final String relativePath = toRelativePath(path);
         final MCRExternalStoreFileInfo fileInfo = findFileInfo(derivateId, relativePath);
         return new MCRDownloadUrlDto(getCheckedDownloadUrl(derivateId, relativePath, fileInfo));
+    }
+
+    /**
+     * Download urls are short-lived bearer tokens and must not be cached.
+     * <p>
+     * Set by hand because {@link MCRCacheControl} is not applied to redirects.
+     *
+     * @return no-store cache control
+     */
+    private static CacheControl noStore() {
+        final CacheControl cacheControl = new CacheControl();
+        cacheControl.setNoStore(true);
+        return cacheControl;
     }
 
     private String getCheckedDownloadUrl(MCRObjectID derivateId, String path, MCRExternalStoreFileInfo fileInfo) {
@@ -320,7 +337,8 @@ public class MCRExternalStoreResource {
 
     private String createDownloadUrl(MCRObjectID derivateId, String path) {
         final MCRExternalStore store = MCRExternalStoreService.getInstance().getStore(derivateId);
-        final URL downloadUrl = store.getStoreProvider().getDownloadUrl(path);
+        final URL downloadUrl = store.getStoreProvider()
+            .getDownloadUrl(path, MCRExternalStoreConstants.DOWNLOAD_URL_VALIDITY);
         if (store.useDownloadProxy()) {
             final String downloadProxyUrl = store.getCustomDownloadProxyUrl();
             if (downloadProxyUrl != null) {
