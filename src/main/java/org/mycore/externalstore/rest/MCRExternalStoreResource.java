@@ -162,6 +162,7 @@ public class MCRExternalStoreResource {
         @PathParam(PARAM_DER_ID) String base64DerivateId, @PathParam(PARAM_PATH) String base64Path,
         @DefaultValue("0") @QueryParam("offset") int offset,
         @DefaultValue("2147483647") @QueryParam("limit") int limit) {
+        ensureValidPaging(offset, limit);
         ensureObjectExists(objectId);
         final String derivateIdStr = decodeBase64(base64DerivateId);
         ensureObjectHasChild(objectId, derivateIdStr);
@@ -258,6 +259,12 @@ public class MCRExternalStoreResource {
     private void ensureAllowedFileSize(MCRExternalStoreFileInfo fileInfo) {
         if (fileInfo.size() > MCRExternalStoreConstants.MAX_DOWNLOAD_SIZE) {
             throw new BadRequestException("File size is not allowed to download");
+        }
+    }
+
+    private static void ensureValidPaging(int offset, int limit) {
+        if (offset < 0 || limit < 0) {
+            throw new BadRequestException("Offset and limit must not be negative");
         }
     }
 
